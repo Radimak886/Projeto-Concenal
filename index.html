@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Infográfico: Inequações do 1º e 2º Grau com IA - CONCENAL</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide-icons"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Cores personalizadas baseadas na logo CONCENAL */
+        :root {
+            --concenal-green-dark: #00583c;
+            --concenal-green-medium: #00834e;
+            --concenal-red: #dd1c1a;
+            --concenal-text-light: #f0f4f8;
+            --concenal-text-dark: #374151; /* Usado para texto geral */
+            --concenal-header-text: #1f2937; /* Preto/Cinza escuro para texto do cabeçalho */
+            --concenal-background-light: #f0f4f8;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--concenal-background-light);
+            overflow-x: hidden;
+        }
+        .card {
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            margin-bottom: 2rem;
+            padding: 1.75rem;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        .card-visible {
+            animation: fadeInUp 0.7s ease-out forwards;
+        }
+        .card:hover {
+            transform: translateY(-5px) !important;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        .card-title {
+            font-size: 1.875rem;
+            font-weight: 700;
+            color: var(--concenal-green-dark);
+            margin-bottom: 1.25rem;
+            border-bottom: 2px solid var(--concenal-red);
+            padding-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+        }
+        .card-title i {
+            margin-right: 0.75rem;
+            width: 28px;
+            height: 28px;
+            color: var(--concenal-green-medium);
+        }
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--concenal-green-dark);
+            margin-top: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        .subsection-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--concenal-green-medium);
+            margin-top: 1.25rem;
+            margin-bottom: 0.75rem;
+        }
+        .content-text {
+            color: var(--concenal-text-dark);
+            line-height: 1.75;
+            margin-bottom: 1rem;
+        }
+        .code-block {
+            background-color: #1f2937;
+            color: #d1d5db;
+            padding: 1rem;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+            font-size: 0.9rem;
+            margin-top: 0.75rem;
+            margin-bottom: 1rem;
+        }
+        .math-formula {
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+            color: var(--concenal-red);
+            font-weight: 600;
+            padding: 0.1em 0.3em;
+            background-color: #fee2e2;
+            border-radius: 4px;
+        }
+        .highlight {
+            color: var(--concenal-red);
+            font-weight: 600;
+        }
+        .table-container {
+            overflow-x: auto;
+            margin-top: 1rem;
+            margin-bottom: 1rem;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #d1d5db;
+            padding: 0.75rem;
+            text-align: left;
+            color: var(--concenal-text-dark);
+        }
+        th {
+            background-color: #e5e7eb;
+            font-weight: 600;
+            color: var(--concenal-green-dark);
+        }
+        .solution-box {
+            background-color: #d1fae5;
+            border-left: 4px solid var(--concenal-green-medium);
+            padding: 1rem;
+            margin-top: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 8px;
+        }
+        .solution-box strong {
+            color: var(--concenal-green-dark);
+        }
+        .main-header {
+            background-color: white;
+            color: var(--concenal-header-text);
+            padding: 1.5rem 1rem;
+            text-align: center;
+            border-radius: 0 0 25px 25px;
+            margin-bottom: 2.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 3px solid var(--concenal-green-dark);
+            box-shadow: 0 4px 8px -2px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.06);
+        }
+        .main-header img {
+            height: 80px; 
+            width: auto;
+            border-radius: 6px;
+            padding: 5px;
+        }
+        .main-header h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-grow: 1;
+            text-align: center;
+            color: var(--concenal-header-text);
+        }
+         .main-header h1 i {
+            margin: 0 0.5rem;
+            width: 28px;
+            height: 28px;
+            color: var(--concenal-header-text);
+        }
+
+        @media (min-width: 768px) {
+            .main-header {
+                padding: 2rem 1.5rem;
+            }
+            .main-header h1 {
+                font-size: 2.5rem;
+            }
+            .main-header h1 i {
+                width: 32px;
+                height: 32px;
+            }
+            .main-header img {
+                height: 100px; 
+            }
+            .card-title i {
+                width: 32px;
+                height: 32px;
+            }
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(221, 28, 26, 0.4); }
+            50% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(221, 28, 26, 0); }
+        }
+
+        i.inline-icon {
+            width: 1.2em; height: 1.2em; display: inline-block; vertical-align: middle;
+        }
+        .gemini-button {
+            background-color: var(--concenal-red);
+            color: white;
+            padding: 0.6rem 1.1rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 0.75rem;
+            border: none;
+            animation: pulse 2.5s infinite;
+        }
+        .gemini-button:hover {
+            background-color: #c51a18;
+            transform: translateY(-2px);
+            animation-play-state: paused;
+        }
+        .gemini-button:disabled {
+            background-color: #fca5a5;
+            color: #fee2e2;
+            cursor: not-allowed;
+            animation: none;
+        }
+        .gemini-button i {
+            color: white !important;
+        }
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex; justify-content: center; align-items: center;
+            z-index: 1000; opacity: 0; visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+        .modal-overlay.active { opacity: 1; visibility: visible; }
+        .modal-content {
+            background-color: white; padding: 2rem; border-radius: 12px;
+            width: 90%; max-width: 600px; max-height: 85vh;
+            overflow-y: auto; box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            transform: scale(0.95) translateY(10px);
+            transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+        }
+        .modal-overlay.active .modal-content { transform: scale(1) translateY(0); opacity: 1; }
+        .modal-title {
+            font-size: 1.5rem; font-weight: 700; color: var(--concenal-green-dark);
+            margin-bottom: 1rem; display: flex; align-items: center;
+        }
+        .modal-title i { margin-right: 0.5rem; color: var(--concenal-red); }
+        .modal-body { color: var(--concenal-text-dark); line-height: 1.6; white-space: pre-wrap; }
+        .modal-body .loading-spinner-container {
+            display: flex; flex-direction: column; justify-content: center;
+            align-items: center; min-height: 100px;
+        }
+        .modal-body .loading-spinner {
+            width: 3rem; height: 3rem;
+            border-top-color: var(--concenal-green-medium);
+            border-right-color: transparent;
+        }
+        .modal-close-button {
+            background-color: var(--concenal-red);
+            color: white; padding: 0.6rem 1.1rem; border-radius: 8px;
+            font-weight: 600; cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            border: none; margin-top: 1.5rem; float: right;
+        }
+        .modal-close-button:hover { background-color: #c51a18; transform: translateY(-1px); }
+        ul.list-disc li, ol.list-decimal li {
+            transition: background-color 0.2s ease; padding: 0.25rem 0.25rem 0.25rem 0;
+            border-radius: 4px;
+        }
+        ul.list-disc li:hover, ol.list-decimal li:hover {
+            background-color: #d1fae5;
+        }
+        .gemini-button i[data-lucide] {
+            color: inherit !important;
+        }
+
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <header class="main-header">
+        <img src="https://i.ibb.co/7tcrxzXy/1742263907113.png" alt="Logo CONCENAL"
+             onerror="this.onerror=null; this.src='https://placehold.co/150x50/FFFFFF/003366?text=Logo+Indisponível&font=arial';" />
+        <h1><i data-lucide="bar-chart-big"></i>Infográfico: Inequações<i data-lucide="sigma"></i></h1>
+    </header>
+
+    <div class="container mx-auto max-w-4xl">
+
+        <!-- Introdução Card -->
+        <section class="card">
+            <h2 class="card-title"><i data-lucide="star"></i>Introdução</h2>
+            <p class="content-text">
+                Inequações são expressões matemáticas que, diferentemente das equações (que usam o sinal de igualdade <code class="math-formula">=</code>), utilizam sinais de desigualdade para comparar grandezas. Elas são fundamentais para modelar situações onde existe uma relação de "maior que", "menor que", "maior ou igual a" ou "menor ou igual a".
+            </p>
+            <h3 class="subsection-title">Sinais de Desigualdade:</h3>
+            <ul class="list-disc list-inside content-text pl-4">
+                <li><code class="math-formula">&gt;</code> : Maior que</li>
+                <li><code class="math-formula">&lt;</code> : Menor que</li>
+                <li><code class="math-formula">&ge;</code> : Maior ou igual a (<code class="math-formula">&geq;</code>)</li>
+                <li><code class="math-formula">&le;</code> : Menor ou igual a (<code class="math-formula">&leq;</code>)</li>
+            </ul>
+            <p class="content-text">
+                Resolver uma inequação significa encontrar o conjunto de todos os valores (conjunto solução) que tornam a desigualdade verdadeira.
+            </p>
+        </section>
+
+        <!-- Inequações do 1º Grau Card -->
+        <section class="card">
+            <h2 class="card-title"><i data-lucide="trending-up"></i>Inequações do 1º Grau</h2>
+            <p class="content-text">
+                São inequações que podem ser reduzidas à forma:
+            </p>
+            <ul class="list-disc list-inside content-text pl-4">
+                <li><code class="math-formula">ax + b > 0</code></li>
+                <li><code class="math-formula">ax + b < 0</code></li>
+                <li><code class="math-formula">ax + b &ge; 0</code></li>
+                <li><code class="math-formula">ax + b &le; 0</code></li>
+            </ul>
+            <p class="content-text">
+                Onde <code class="math-formula">a</code> e <code class="math-formula">b</code> são números reais (<code class="math-formula">&reals;</code>) e <code class="math-formula highlight">a &ne; 0</code>.
+            </p>
+
+            <h3 class="subsection-title">📝 Como Resolver:</h3>
+            <ol class="list-decimal list-inside content-text pl-4">
+                <li><strong>Isolar a incógnita (<code class="math-formula">x</code>):</strong> Utilize as mesmas técnicas de resolução de equações do 1º grau (operações inversas).</li>
+                <li><strong>Atenção ao sinal de <code class="math-formula">a</code>:</strong>
+                    <ul class="list-disc list-inside ml-6">
+                        <li>Se você multiplicar ou dividir ambos os lados da inequação por um <strong class="text-[var(--concenal-red)]">número negativo</strong>, o sinal da desigualdade <strong class="text-[var(--concenal-red)]">deve ser invertido</strong>.
+                            <button class="gemini-button" data-gemini-prompt-key="explicar_inversao_sinal" data-button-text="Explique este conceito">
+                                <i data-lucide="sparkles" class="w-4 h-4"></i>Explique este conceito
+                            </button>
+                        </li>
+                    </ul>
+                </li>
+            </ol>
+
+            <h3 class="subsection-title">Exemplo:</h3>
+            <p class="content-text">Resolver <code class="math-formula">2x - 6 > 0</code></p>
+            <ol class="list-decimal list-inside content-text pl-4">
+                <li>Adicionar 6 aos dois lados:
+                    <div class="code-block">2x - 6 + 6 > 0 + 6<br>2x > 6</div>
+                </li>
+                <li>Dividir os dois lados por 2 (número positivo, não inverte o sinal):
+                    <div class="code-block">2x / 2 > 6 / 2<br>x > 3</div>
+                </li>
+            </ol>
+            <div class="solution-box">
+                <strong>Conjunto Solução (S):</strong> <code class="math-formula">S = {x &isin; &reals; | x > 3}</code>
+            </div>
+
+            <h3 class="subsection-title">📏 Representação Gráfica (Reta Numérica):</h3>
+            <p class="content-text">Para <code class="math-formula">x > 3</code>:</p>
+            <div class="code-block">
+      (---------->
+&lt;------|----------|------>
+       3          x
+ (Intervalo aberto em 3)
+            </div>
+            <p class="content-text">Para <code class="math-formula">x &le; -1</code>:</p>
+            <div class="code-block">
+&lt;----------]
+&lt;------|----------|------>
+       x         -1
+ (Intervalo fechado em -1)
+            </div>
+            <button class="gemini-button mt-4" data-gemini-prompt-key="problema_pratico_1grau" data-button-text="Gere um problema prático">
+                <i data-lucide="lightbulb" class="w-4 h-4"></i>Gere um problema prático
+            </button>
+        </section>
+
+        <!-- Inequações do 2º Grau Card -->
+        <section class="card">
+            <h2 class="card-title"><i data-lucide="trending-down"></i>Inequações do 2º Grau</h2>
+            <p class="content-text">
+                São inequações que podem ser reduzidas à forma:
+            </p>
+            <ul class="list-disc list-inside content-text pl-4">
+                <li><code class="math-formula">ax<sup>2</sup> + bx + c > 0</code></li>
+                <li><code class="math-formula">ax<sup>2</sup> + bx + c < 0</code></li>
+                <li><code class="math-formula">ax<sup>2</sup> + bx + c &ge; 0</code></li>
+                <li><code class="math-formula">ax<sup>2</sup> + bx + c &le; 0</code></li>
+            </ul>
+            <p class="content-text">
+                Onde <code class="math-formula">a</code>, <code class="math-formula">b</code> e <code class="math-formula">c</code> são números reais (<code class="math-formula">&reals;</code>) e <code class="math-formula highlight">a &ne; 0</code>.
+            </p>
+
+            <h3 class="subsection-title">📝 Como Resolver:</h3>
+            <ol class="list-decimal list-inside content-text pl-4">
+                <li><strong>Encontrar as raízes da equação quadrática:</strong> Resolva <code class="math-formula">ax<sup>2</sup> + bx + c = 0</code> para encontrar as raízes <code class="math-formula">x<sub>1</sub></code> e <code class="math-formula">x<sub>2</sub></code> (usando a fórmula de Bhaskara: <code class="math-formula">x = (-b &pm; &radic;&Delta;) / (2a)</code>, onde <code class="math-formula">&Delta; = b<sup>2</sup> - 4ac</code>).</li>
+                <li><strong>Analisar a concavidade da parábola:</strong>
+                    <ul class="list-disc list-inside ml-6">
+                        <li>Se <code class="math-formula">a > 0</code>: A parábola tem concavidade para cima (<i data-lucide="smile" class="inline-icon text-[var(--concenal-green-medium)]"></i>).</li>
+                        <li>Se <code class="math-formula">a < 0</code>: A parábola tem concavidade para baixo (<i data-lucide="frown" class="inline-icon text-[var(--concenal-red)]"></i>).</li>
+                    </ul>
+                     <button class="gemini-button" data-gemini-prompt-key="explicar_concavidade" data-button-text="Explique este conceito">
+                        <i data-lucide="sparkles" class="w-4 h-4"></i>Explique este conceito
+                    </button>
+                </li>
+                <li><strong>Esboçar o gráfico da função quadrática:</strong> Marque as raízes no eixo x e desenhe a parábola de acordo com a concavidade.</li>
+                <li><strong>Identificar os intervalos:</strong> Analise no esboço do gráfico os intervalos onde a função é positiva (<code class="math-formula">> 0</code>), negativa (<code class="math-formula">< 0</code>), não negativa (<code class="math-formula">&ge; 0</code>) ou não positiva (<code class="math-formula">&le; 0</code>), conforme a inequação original.</li>
+            </ol>
+
+            <h3 class="subsection-title">🔍 Casos de acordo com o Discriminante (<code class="math-formula">&Delta;</code>):</h3>
+            
+            <div class="subsection-title mt-6"><code class="math-formula">&Delta; > 0</code> (Duas raízes reais e distintas: <code class="math-formula">x<sub>1</sub></code> e <code class="math-formula">x<sub>2</sub></code>)</div>
+            <div class="grid md:grid-cols-2 gap-6">
+                <div>
+                    <p class="content-text font-semibold"><code class="math-formula">a > 0</code> (Concavidade para cima):</p>
+                    <ul class="list-disc list-inside content-text pl-4">
+                        <li><code class="math-formula">ax<sup>2</sup> + bx + c > 0</code>  &rArr; <code class="math-formula">x < x<sub>1</sub></code> ou <code class="math-formula">x > x<sub>2</sub></code></li>
+                        <li><code class="math-formula">ax<sup>2</sup> + bx + c < 0</code>  &rArr; <code class="math-formula">x<sub>1</sub> < x < x<sub>2</sub></code></li>
+                    </ul>
+                </div>
+                <div>
+                    <p class="content-text font-semibold"><code class="math-formula">a < 0</code> (Concavidade para baixo):</p>
+                    <ul class="list-disc list-inside content-text pl-4">
+                        <li><code class="math-formula">ax<sup>2</sup> + bx + c > 0</code>  &rArr; <code class="math-formula">x<sub>1</sub> < x < x<sub>2</sub></code></li>
+                        <li><code class="math-formula">ax<sup>2</sup> + bx + c < 0</code>  &rArr; <code class="math-formula">x < x<sub>1</sub></code> ou <code class="math-formula">x > x<sub>2</sub></code></li>
+                    </ul>
+                </div>
+            </div>
+            <p class="content-text mt-2 font-semibold">Exemplo Visual (<code class="math-formula">a > 0</code>):</p>
+            <div class="code-block">
+      +     |     +
+     /      |      \\
+    /       |       \\
+---(x₁)----(0)----(x₂)---  Eixo x
+            |
+            - (entre x₁ e x₂)
+            </div>
+
+            <div class="subsection-title mt-6"><code class="math-formula">&Delta; = 0</code> (Uma raiz real dupla: <code class="math-formula">x<sub>1</sub> = x<sub>2</sub> = x<sub>0</sub></code>)</div>
+             <div class="grid md:grid-cols-2 gap-6">
+                <div>
+                    <p class="content-text font-semibold"><code class="math-formula">a > 0</code> (Concavidade para cima):</p>
+                    <ul class="list-disc list-inside content-text pl-4">
+                        <li><code class="math-formula">ax<sup>2</sup> + bx + c > 0</code>  &rArr; <code class="math-formula">x &ne; x<sub>0</sub></code></li>
+                        <li><code class="math-formula">ax<sup>2</sup> + bx + c < 0</code>  &rArr; Não existe solução (<code class="math-formula">&empty;</code>)</li>
+                        <li><code class="math-formula">ax<sup>2</sup> + bx + c &ge; 0</code>  &rArr; <code class="math-formula">x &isin; &reals;</code> (Todos os reais)</li>
+                        <li><code class="math-formula">ax<sup>2</sup> + bx + c &le; 0</code>  &rArr; <code class="math-formula">x = x<sub>0</sub></code></li>
+                    </ul>
+                </div>
+                <div>
+                    <p class="content-text font-semibold"><code class="math-formula">a < 0</code> (Concavidade para baixo):</p>
+                    <ul class="list-disc list-inside content-text pl-4">
+                        <li><code class="math-formula">ax<sup>2</sup> + bx + c > 0</code>  &rArr; Não existe solução (<code class="math-formula">&empty;</code>)</li>
+                        <li><code class="math-formula">ax<sup>2</sup> + bx + c < 0</code>  &rArr; <code class="math-formula">x &ne; x<sub>0</sub></code></li>
+                        <li><code class="math-formula">ax<sup>2</sup> + bx + c &ge; 0</code>  &rArr; <code class="math-formula">x = x<sub>0</sub></code></li>
+                        <li><code class="math-formula">ax<sup>2</sup> + bx + c &le; 0</code>  &rArr; <code class="math-formula">x &isin; &reals;</code> (Todos os reais)</li>
+                    </ul>
+                </div>
+            </div>
+            <p class="content-text mt-2 font-semibold">Exemplo Visual (<code class="math-formula">a > 0</code>):</p>
+            <div class="code-block">
+      +     |     +
+     /      |      \\
+    /       |       \\
+---------(x₀)---------  Eixo x (parábola toca o eixo)
+            </div>
+
+            <div class="subsection-title mt-6"><code class="math-formula">&Delta; < 0</code> (Nenhuma raiz real)</div>
+            <div class="grid md:grid-cols-2 gap-6">
+                <div>
+                    <p class="content-text font-semibold"><code class="math-formula">a > 0</code> (Concavidade para cima):</p>
+                    <ul class="list-disc list-inside content-text pl-4">
+                        <li><code class="math-formula">ax<sup>2</sup> + bx + c > 0</code>  &rArr; <code class="math-formula">x &isin; &reals;</code> (Todos os reais)</li>
+                        <li><code class="math-formula">ax<sup>2</sup> + bx + c < 0</code>  &rArr; Não existe solução (<code class="math-formula">&empty;</code>)</li>
+                    </ul>
+                </div>
+                <div>
+                    <p class="content-text font-semibold"><code class="math-formula">a < 0</code> (Concavidade para baixo):</p>
+                    <ul class="list-disc list-inside content-text pl-4">
+                        <li><code class="math-formula">ax<sup>2</sup> + bx + c > 0</code>  &rArr; Não existe solução (<code class="math-formula">&empty;</code>)</li>
+                        <li><code class="math-formula">ax<sup>2</sup> + bx + c < 0</code>  &rArr; <code class="math-formula">x &isin; &reals;</code> (Todos os reais)</li>
+                    </ul>
+                </div>
+            </div>
+            <p class="content-text mt-2 font-semibold">Exemplo Visual (<code class="math-formula">a > 0</code>):</p>
+            <div class="code-block">
+      + + + + + + +
+     /             \\
+    /               \\   (parábola não toca o eixo x,
+-----------------------  Eixo x   toda acima do eixo)
+            </div>
+
+            <h3 class="subsection-title">Exemplo:</h3>
+            <p class="content-text">Resolver <code class="math-formula">x<sup>2</sup> - 5x + 6 > 0</code></p>
+            <ol class="list-decimal list-inside content-text pl-4">
+                <li><strong>Raízes de <code class="math-formula">x<sup>2</sup> - 5x + 6 = 0</code>:</strong>
+                    <div class="code-block">&Delta; = (-5)<sup>2</sup> - 4 &middot; 1 &middot; 6 = 25 - 24 = 1<br>
+                    x = (5 &pm; &radic;1) / (2 &middot; 1)<br>
+                    x<sub>1</sub> = (5 - 1) / 2 = 2<br>
+                    x<sub>2</sub> = (5 + 1) / 2 = 3</div>
+                </li>
+                <li><strong>Concavidade:</strong> <code class="math-formula">a = 1</code> (positivo), então a concavidade é para cima (<i data-lucide="smile" class="inline-icon text-[var(--concenal-green-medium)]"></i>).</li>
+                <li><strong>Esboço e Análise:</strong>
+                    <div class="code-block">
+          +     |     +
+         /      |      \\
+        /       |       \\
+    ---(2)----(0)----(3)---  Eixo x
+                |
+                - (entre 2 e 3)
+                    </div>
+                    <p class="content-text">A inequação é <code class="math-formula">> 0</code> (positiva). Pelo esboço, a função é positiva quando <code class="math-formula">x < 2</code> ou <code class="math-formula">x > 3</code>.</p>
+                </li>
+            </ol>
+            <div class="solution-box">
+                <strong>Conjunto Solução (S):</strong> <code class="math-formula">S = {x &isin; &reals; | x < 2 \text{ ou } x > 3}</code>
+            </div>
+            <button class="gemini-button mt-4" data-gemini-prompt-key="problema_pratico_2grau" data-button-text="Gere um problema prático">
+                <i data-lucide="lightbulb" class="w-4 h-4"></i>Gere um problema prático
+            </button>
+        </section>
+
+        <!-- Sistemas de Inequações Card -->
+        <section class="card">
+            <h2 class="card-title"><i data-lucide="link-2"></i>Sistemas de Inequações</h2>
+            <p class="content-text">
+                Um sistema de inequações é um conjunto de duas ou mais inequações que devem ser satisfeitas simultaneamente.
+            </p>
+            <h3 class="subsection-title">📝 Como Resolver:</h3>
+            <ol class="list-decimal list-inside content-text pl-4">
+                <li>Resolva cada inequação do sistema separadamente.</li>
+                <li>Encontre a <strong>interseção</strong> (<code class="math-formula">&cap;</code>) dos conjuntos solução de cada inequação. A interseção pode ser visualizada comparando as representações gráficas (retas numéricas) das soluções individuais.</li>
+            </ol>
+
+            <h3 class="subsection-title">Exemplo:</h3>
+            <p class="content-text">Resolver o sistema:</p>
+            <ol class="list-decimal list-inside content-text pl-4">
+                <li><code class="math-formula">2x - 4 > 0</code></li>
+                <li><code class="math-formula">-x + 3 &ge; 0</code></li>
+            </ol>
+
+            <p class="content-text mt-4">Resolvendo (1):</p>
+            <div class="code-block">2x > 4<br>x > 2</div>
+            <p class="content-text"><code class="math-formula">S<sub>1</sub></code>:</p>
+            <div class="code-block">
+      (---------->
+&lt;------|----------|------>
+       2
+            </div>
+
+            <p class="content-text mt-4">Resolvendo (2):</p>
+            <div class="code-block">-x &ge; -3  (Multiplicando por -1, inverte o sinal)<br>x &le; 3</div>
+            <p class="content-text"><code class="math-formula">S<sub>2</sub></code>:</p>
+            <div class="code-block">
+&lt;----------]
+&lt;------|----------|------>
+             3
+            </div>
+
+            <p class="content-text mt-4 font-semibold">Interseção <code class="math-formula">S<sub>1</sub> &cap; S<sub>2</sub></code>:</p>
+            <div class="code-block">
+S₁:        (------------------>
+      &lt;---|----|----|----|----|--->
+           0    1    2    3    4
+
+S₂:   &lt;------------------]
+      &lt;---|----|----|----|----|--->
+           0    1    2    3    4
+
+S₁&cap;S₂:     (----------]
+      &lt;---|----|----|----|----|--->
+           0    1    2    3    4
+            </div>
+            <div class="solution-box">
+                <strong>Conjunto Solução (S):</strong> <code class="math-formula">S = {x &isin; &reals; | 2 < x &le; 3}</code>
+            </div>
+        </section>
+
+        <!-- Inequação Produto e Quociente Card -->
+        <section class="card">
+            <h2 class="card-title"><i data-lucide="divide-circle"></i>Inequação Produto e Inequação Quociente</h2>
+            
+            <h3 class="subsection-title">Inequação Produto:</h3>
+            <p class="content-text">Forma: <code class="math-formula">f(x) &middot; g(x) > 0</code> (ou <code class="math-formula"><, &ge;, &le;</code>)</p>
+
+            <h3 class="subsection-title">Inequação Quociente:</h3>
+            <p class="content-text">Forma: <code class="math-formula">f(x) / g(x) > 0</code> (ou <code class="math-formula"><, &ge;, &le;</code>)</p>
+            <p class="content-text"><strong class="text-[var(--concenal-red)]">Importante:</strong> Para inequação quociente, <code class="math-formula highlight">g(x) &ne; 0</code>.</p>
+
+            <h3 class="subsection-title">📝 Como Resolver (Estudo de Sinais / "Varal de Sinais"):
+                <button class="gemini-button ml-2" data-gemini-prompt-key="explicar_varal_sinais" data-button-text="Explique este conceito">
+                    <i data-lucide="sparkles" class="w-4 h-4"></i>Explique este conceito
+                </button>
+            </h3>
+            <ol class="list-decimal list-inside content-text pl-4">
+                <li><strong>Encontrar as raízes de cada função:</strong> Determine os valores de <code class="math-formula">x</code> para os quais <code class="math-formula">f(x) = 0</code> e <code class="math-formula">g(x) = 0</code>.</li>
+                <li><strong>Estudar o sinal de cada função separadamente:</strong> Analise os intervalos onde <code class="math-formula">f(x)</code> e <code class="math-formula">g(x)</code> são positivas ou negativas.</li>
+                <li><strong>Construir a tabela de sinais (varal):</strong>
+                    <ul class="list-disc list-inside ml-6">
+                        <li>Coloque as raízes encontradas em ordem crescente.</li>
+                        <li>Indique os sinais de <code class="math-formula">f(x)</code> e <code class="math-formula">g(x)</code> em cada intervalo.</li>
+                        <li>Determine o sinal do produto <code class="math-formula">f(x) &middot; g(x)</code> ou do quociente <code class="math-formula">f(x) / g(x)</code> em cada intervalo usando a regra de sinais.</li>
+                    </ul>
+                </li>
+                <li><strong>Identificar a solução:</strong> Selecione os intervalos que satisfazem a desigualdade original.
+                    <ul class="list-disc list-inside ml-6">
+                        <li><strong class="text-[var(--concenal-red)]">Atenção:</strong> Para inequações quociente, os valores de <code class="math-formula">x</code> que tornam o denominador <code class="math-formula">g(x)</code> igual a zero <strong class="text-[var(--concenal-red)]">NÃO</strong> fazem parte da solução.</li>
+                    </ul>
+                </li>
+            </ol>
+
+            <h3 class="subsection-title">Exemplo (Inequação Produto):</h3>
+            <p class="content-text">Resolver <code class="math-formula">(x - 1)(x + 2) &ge; 0</code></p>
+            <ol class="list-decimal list-inside content-text pl-4">
+                <li>Raízes:
+                    <ul class="list-disc list-inside ml-6">
+                        <li><code class="math-formula">x - 1 = 0  &rArr; x = 1</code></li>
+                        <li><code class="math-formula">x + 2 = 0  &rArr; x = -2</code></li>
+                    </ul>
+                </li>
+                <li>Estudo de sinais:
+                    <ul class="list-disc list-inside ml-6">
+                        <li><code class="math-formula">f(x) = x - 1</code>: (função do 1º grau, <code class="math-formula">a=1 > 0</code>, crescente)
+                            <ul class="list-circle list-inside ml-6">
+                                <li><code class="math-formula">x - 1 > 0  &rArr; x > 1</code> (positiva)</li>
+                                <li><code class="math-formula">x - 1 < 0  &rArr; x < 1</code> (negativa)</li>
+                            </ul>
+                        </li>
+                        <li><code class="math-formula">g(x) = x + 2</code>: (função do 1º grau, <code class="math-formula">a=1 > 0</code>, crescente)
+                            <ul class="list-circle list-inside ml-6">
+                                <li><code class="math-formula">x + 2 > 0  &rArr; x > -2</code> (positiva)</li>
+                                <li><code class="math-formula">x + 2 < 0  &rArr; x < -2</code> (negativa)</li>
+                            </ul>
+                        </li>
+                    </ul>
+                </li>
+                <li>Tabela de Sinais:
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Intervalo</th>
+                                    <th><code class="math-formula">(-&infin;, -2)</code></th>
+                                    <th><code class="math-formula">-2</code></th>
+                                    <th><code class="math-formula">(-2, 1)</code></th>
+                                    <th><code class="math-formula">1</code></th>
+                                    <th><code class="math-formula">(1, +&infin;)</code></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><code class="math-formula">f(x) = x-1</code></td>
+                                    <td>-</td>
+                                    <td>-</td>
+                                    <td>-</td>
+                                    <td>0</td>
+                                    <td>+</td>
+                                </tr>
+                                <tr>
+                                    <td><code class="math-formula">g(x) = x+2</code></td>
+                                    <td>-</td>
+                                    <td>0</td>
+                                    <td>+</td>
+                                    <td>+</td>
+                                    <td>+</td>
+                                </tr>
+                                <tr>
+                                    <td class="font-semibold"><code class="math-formula">f(x)g(x)</code></td>
+                                    <td class="font-semibold text-[var(--concenal-green-medium)]">+</td>
+                                    <td class="font-semibold">0</td>
+                                    <td class="font-semibold text-[var(--concenal-red)]">-</td>
+                                    <td class="font-semibold">0</td>
+                                    <td class="font-semibold text-[var(--concenal-green-medium)]">+</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                     <p class="content-text text-sm text-gray-600">(Regra: (-) &middot; (-) = (+); (-) &middot; (+) = (-); (+) &middot; (+) = (+))</p>
+                </li>
+                <li>Solução: Queremos <code class="math-formula">(x - 1)(x + 2) &ge; 0</code> (positivo ou zero).
+                    <p class="content-text">Pela tabela, isso ocorre quando <code class="math-formula">x &le; -2</code> ou <code class="math-formula">x &ge; 1</code>.</p>
+                </li>
+            </ol>
+            <div class="solution-box">
+                <strong>Conjunto Solução (S):</strong> <code class="math-formula">S = {x &isin; &reals; | x &le; -2 \text{ ou } x &ge; 1}</code>
+            </div>
+        </section>
+
+        <!-- Dicas Importantes Card -->
+        <section class="card">
+            <h2 class="card-title"><i data-lucide="lightbulb"></i>Dicas Importantes e Pontos de Atenção</h2>
+            <ul class="list-disc list-inside content-text pl-4 space-y-3">
+                <li>
+                    <strong>Símbolos e Intervalos:</strong>
+                    <ul class="list-circle list-inside ml-6">
+                        <li><code class="math-formula">></code> ou <code class="math-formula"><</code> : Intervalos abertos <code class="math-formula">( )</code> ou bolinha aberta <code class="math-formula">○</code> na reta.</li>
+                        <li><code class="math-formula">&ge;</code> ou <code class="math-formula">&le;</code> : Intervalos fechados <code class="math-formula">[ ]</code> ou bolinha fechada <code class="math-formula">●</code> na reta.</li>
+                    </ul>
+                </li>
+                <li>
+                    <strong>Multiplicação/Divisão por Negativo:</strong> Lembre-se <strong class="text-[var(--concenal-red)]">SEMPRE</strong> de inverter o sinal da desigualdade ao multiplicar ou dividir ambos os membros por um número negativo.
+                    <div class="code-block mt-2">Ex: -2x < 4  &rArr;  x > -2  (dividiu por -2, inverteu < para >)</div>
+                </li>
+                <li>
+                    <strong>Denominador Diferente de Zero:</strong> Em inequações quociente <code class="math-formula">f(x)/g(x)</code>, a condição de existência é <code class="math-formula highlight">g(x) &ne; 0</code>. Os valores de <code class="math-formula">x</code> que zeram o denominador <strong class="text-[var(--concenal-red)]">nunca</strong> farão parte da solução.
+                </li>
+                <li>
+                    <strong>Estudo do Sinal da Função Quadrática:</strong> A análise da parábola (concavidade e raízes) é a chave para resolver inequações do 2º grau. Um esboço rápido sempre ajuda!
+                </li>
+                <li>
+                    <strong>Organização:</strong> Ao resolver sistemas ou inequações produto/quociente, a organização com tabelas de sinais é crucial para evitar erros.
+                </li>
+            </ul>
+        </section>
+
+        <footer class="text-center py-8 text-gray-600">
+            <p>Criado por Profº. Kelvin Radimak
+            <p>Bons estudos e ótimas aulas! <i data-lucide="rocket" class="inline-block text-[var(--concenal-green-medium)]"></i></p>
+        </footer>
+
+    </div>
+
+    <!-- Modal para exibir respostas da API Gemini -->
+    <div id="geminiModal" class="modal-overlay">
+        <div class="modal-content">
+            <h3 id="geminiModalTitle" class="modal-title"><i data-lucide="brain-circuit"></i>Resposta da IA</h3>
+            <div id="geminiModalBody" class="modal-body">
+                <!-- Conteúdo será preenchido via JS -->
+            </div>
+            <button id="geminiModalCloseButton" class="modal-close-button">Fechar</button>
+        </div>
+    </div>
+
+    <script>
+        // Espera o DOM estar completamente carregado
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- Inicialização dos Ícones Lucide ---
+            function initLucideIcons() {
+                if (typeof lucide !== 'undefined' && typeof lucide.createIcons === 'function') {
+                    try {
+                        lucide.createIcons();
+                        console.log('Lucide icons initialized successfully.');
+                    } catch (error) {
+                        console.error('Error calling lucide.createIcons():', error);
+                    }
+                } else {
+                    console.warn('Lucide library not immediately available. Retrying in 100ms...');
+                    setTimeout(initLucideIcons, 100);
+                }
+            }
+            initLucideIcons(); // Chamar imediatamente
+
+            // --- Animação dos Cards ---
+            const cards = document.querySelectorAll('.card');
+            cards.forEach((card, index) => {
+                setTimeout(() => {
+                    card.classList.add('card-visible');
+                }, index * 150 + 150); // Delay base para animação
+            });
+
+            // --- Funcionalidade do Modal Gemini ---
+            const geminiModal = document.getElementById('geminiModal');
+            const geminiModalTitleElement = document.getElementById('geminiModalTitle');
+            const geminiModalBody = document.getElementById('geminiModalBody');
+            const geminiModalCloseButton = document.getElementById('geminiModalCloseButton');
+
+            function openGeminiModal(titleText) {
+                geminiModalTitleElement.innerHTML = `<i data-lucide="brain-circuit" class="text-[var(--concenal-red)]"></i> ${titleText} ✨`;
+                if (typeof lucide !== 'undefined' && lucide.createIcons) { 
+                    lucide.createIcons();
+                } else {
+                    console.warn("Lucide not ready for modal title icon.");
+                }
+                geminiModalBody.innerHTML = `
+                    <div class="loading-spinner-container">
+                        <div class="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-[var(--concenal-green-medium)] loading-spinner"></div>
+                        <span class="ml-3 mt-3 text-lg text-gray-700">Processando seu pedido...</span>
+                    </div>`;
+                geminiModal.classList.add('active');
+            }
+
+            function closeGeminiModal() {
+                geminiModal.classList.remove('active');
+            }
+
+            geminiModalCloseButton.addEventListener('click', closeGeminiModal);
+            geminiModal.addEventListener('click', (event) => {
+                if (event.target === geminiModal) {
+                    closeGeminiModal();
+                }
+            });
+
+            // --- Lógica da API Gemini ---
+            const geminiPrompts = {
+                explicar_inversao_sinal: "Explique de forma simples e didática por que devemos inverter o sinal da desigualdade ao multiplicar ou dividir ambos os lados de uma inequação por um número negativo. Dê um exemplo prático e claro.",
+                explicar_concavidade: "Explique o que é a concavidade de uma parábola (função quadrática) e como o sinal do coeficiente 'a' (em ax²+bx+c) determina se a concavidade é para cima ou para baixo. Como isso afeta a análise de sinais da função? Use uma linguagem acessível.",
+                explicar_varal_sinais: "Explique o método do 'varal de sinais' (ou tabela de sinais) usado para resolver inequações produto e inequações quociente. Descreva os passos de forma clara e detalhada, e explique por que este método funciona para determinar os intervalos de solução.",
+                problema_pratico_1grau: "Crie um problema prático do cotidiano que pode ser modelado e resolvido usando uma inequação do primeiro grau. Apresente o problema de forma interessante e, se possível, indique como seria a inequação correspondente (sem resolvê-la).",
+                problema_pratico_2grau: "Crie um problema prático do cotidiano que pode ser modelado e resolvido usando uma inequação do segundo grau. Apresente o problema de forma interessante e, se possível, indique como seria a inequação correspondente (sem resolvê-la)."
+            };
+
+            async function callGeminiApi(prompt, button) {
+                const buttonText = button.dataset.buttonText || "Processando";
+                const modalTitle = buttonText.startsWith("Gere") ? "Problema Prático da IA" : "Explicação da IA";
+                openGeminiModal(modalTitle);
+
+                button.disabled = true;
+                button.innerHTML = '<i data-lucide="loader-2" class="animate-spin w-4 h-4"></i> Processando...';
+                if (typeof lucide !== 'undefined' && lucide.createIcons) { 
+                    lucide.createIcons();
+                } else {
+                    console.warn("Lucide not ready for loader icon in button.");
+                }
+                
+
+                const apiKey = "AIzaSyDxcxVmGPBbg7mJ6_cmMDkHrDpbx3Lspik";
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+                
+                let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
+                const payload = { contents: chatHistory };
+
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        const errorBody = await response.text();
+                        console.error(`HTTP error! status: ${response.status}, body: ${errorBody}`);
+                        throw new Error(`Erro na API: ${response.status}. Verifique o console.`);
+                    }
+
+                    const result = await response.json();
+
+                    if (result.candidates && result.candidates.length > 0 &&
+                        result.candidates[0].content && result.candidates[0].content.parts &&
+                        result.candidates[0].content.parts.length > 0) {
+                        let text = result.candidates[0].content.parts[0].text;
+                        // Remover os asteriscos triplos (***)
+                        text = text.replace(/\*\*\*/g, '');
+                        // Remover asteriscos simples (*) usados para ênfase/negrito, se desejado, mas mantendo listas
+                        // Para remover apenas asteriscos de ênfase e não de listas:
+                        text = text.replace(/(?<!\n\s*)\*(.*?)\*(?!\s*\n)/g, '$1'); // Remove *palavra*
+                        text = text.replace(/(?<!\n\s*)\*\*(.*?)\*\*(?!\s*\n)/g, '$1'); // Remove **palavra**
+                        
+                        geminiModalBody.textContent = text;
+                    } else {
+                        console.error("Resposta da API Gemini não contém o texto esperado:", result);
+                        geminiModalBody.textContent = "Desculpe, não consegui obter uma resposta da IA. A estrutura da resposta foi inesperada.";
+                    }
+                } catch (error) {
+                    console.error('Erro ao chamar a API Gemini:', error);
+                    geminiModalBody.textContent = `Ocorreu um erro ao tentar obter a explicação: ${error.message}. Verifique o console para mais detalhes. Pode ser um problema com a chave da API ou com a conexão.`;
+                } finally {
+                    button.disabled = false;
+                    const originalIconKey = button.dataset.geminiPromptKey.startsWith('problema_pratico') ? 'lightbulb' : 'sparkles';
+                    button.innerHTML = `<i data-lucide="${originalIconKey}" class="w-4 h-4"></i> ${buttonText}`;
+                    if (typeof lucide !== 'undefined' && lucide.createIcons) { 
+                        lucide.createIcons();
+                    } else {
+                        console.warn("Lucide not ready for restoring button icon.");
+                    }
+                }
+            }
+
+            document.querySelectorAll('.gemini-button').forEach(button => {
+                button.dataset.buttonText = button.textContent.trim(); 
+
+                button.addEventListener('click', () => {
+                    const promptKey = button.dataset.geminiPromptKey;
+                    const prompt = geminiPrompts[promptKey];
+                    if (prompt) {
+                        callGeminiApi(prompt, button);
+                    } else {
+                        console.error("Chave de prompt não encontrada:", promptKey);
+                        geminiModalBody.textContent = "Desculpe, houve um erro ao preparar sua solicitação (chave de prompt inválida).";
+                        openGeminiModal("Erro Interno");
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
