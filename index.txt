@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PIBID 2025 - Operações Básicas</title>
+    
+    <!-- Carregando o Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Carregando a fonte Inter do Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+        }
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { 
+            -webkit-appearance: none; 
+            margin: 0; 
+        }
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-100 to-purple-200">
+
+    <div class="flex flex-col h-screen w-screen p-4 sm:p-6 md:p-8 text-center">
+        
+        <header class="w-full max-w-6xl mx-auto mb-4">
+            <h1 class="text-3xl sm:text-4xl md:text-5xl font-extrabold text-gray-800">PIBID 2025 - Operações Básicas</h1>
+            <p class="text-gray-600 mt-2 text-base sm:text-lg">Resolva os problemas do dia a dia para pontuar!</p>
+        </header>
+
+        <!-- Área principal do Jogo -->
+        <main id="game-area" class="flex-grow w-full max-w-6xl mx-auto flex flex-col lg:flex-row items-center justify-center lg:gap-12">
+            
+            <!-- Coluna Esquerda (Problema) -->
+            <div class="w-full lg:w-7/12">
+                <div id="problem-box" class="bg-white/70 backdrop-blur-sm p-6 rounded-lg shadow-lg min-h-[200px] w-full flex items-center justify-center">
+                    <p id="problem-text" class="text-xl sm:text-2xl md:text-3xl text-gray-900 leading-relaxed font-medium"></p>
+                </div>
+            </div>
+
+            <!-- Coluna Direita (Interação) -->
+            <div class="w-full max-w-md lg:w-5/12 flex flex-col gap-4 mt-6 lg:mt-0">
+                <div class="w-full flex justify-around items-center gap-4">
+                    <div class="bg-white/50 backdrop-blur-sm rounded-xl p-3 shadow-md text-center flex-1">
+                        <span class="text-sm font-medium text-gray-700 uppercase tracking-wider">Pontuação</span>
+                        <span id="score" class="block text-4xl font-bold text-teal-600">0</span>
+                    </div>
+                     <div class="bg-white/50 backdrop-blur-sm rounded-xl p-3 shadow-md text-center flex-1">
+                        <span class="text-sm font-medium text-gray-700 uppercase tracking-wider">Questão</span>
+                        <span id="question-counter" class="block text-4xl font-bold text-purple-600">1 / 20</span>
+                    </div>
+                </div>
+                
+                <div id="calculation" class="h-8 text-2xl font-bold text-gray-700 transition-opacity duration-300"></div>
+                <input type="number" id="answer-input" placeholder="Digite o resultado aqui" class="w-full p-4 text-center text-2xl border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-4 focus:ring-teal-200 transition-all duration-300 shadow-sm">
+                <div id="message" class="h-8 text-xl font-bold transition-opacity duration-300"></div>
+                
+                <!-- Caixa da Explicação (visível apenas no erro) -->
+                <div id="explanation-box" class="hidden text-left">
+                    <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-r-lg">
+                        <p class="font-bold">Vamos ver como resolver:</p>
+                        <p id="explanation-text" class="mt-1"></p>
+                    </div>
+                </div>
+
+                <button id="submit-btn" class="w-full flex items-center justify-center p-4 text-lg font-bold text-white bg-teal-500 rounded-lg hover:bg-teal-600 active:scale-95 transition-all duration-150 shadow-lg hover:shadow-xl">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
+                    Verificar
+                </button>
+            </div>
+        </main>
+        
+        <!-- Tela de Fim de Rodada -->
+        <div id="end-round-screen" class="hidden flex-grow flex flex-col justify-center items-center w-full max-w-4xl mx-auto">
+            <div class="bg-white/80 backdrop-blur-lg p-8 rounded-2xl shadow-2xl text-center">
+                <h2 class="text-4xl font-bold text-gray-800 mb-2">Fim de Rodada!</h2>
+                <p id="final-score-text" class="text-2xl text-gray-600 mb-6">Você acertou X de 20 questões!</p>
+                <button id="new-round-btn" class="w-full flex items-center justify-center p-4 text-lg font-bold text-white bg-purple-600 rounded-lg hover:bg-purple-700 active:scale-95 transition-all duration-150 shadow-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h5M20 20v-5h-5" /><path stroke-linecap="round" stroke-linejoin="round" d="M4 9a9 9 0 0114.13-6.36M20 15a9 9 0 01-14.13 6.36" /></svg>
+                    Iniciar Nova Rodada
+                </button>
+            </div>
+        </div>
+
+        <footer class="w-full text-center mt-4">
+            <button id="clear-history-btn" class="text-xs text-gray-500 hover:text-gray-700 underline">Limpar histórico de questões</button>
+        </footer>
+    </div>
+
+    <script>
+        // --- SELEÇÃO DOS ELEMENTOS DO HTML ---
+        const gameArea = document.getElementById('game-area');
+        const endRoundScreen = document.getElementById('end-round-screen');
+        const problemTextElement = document.getElementById('problem-text');
+        const calculationElement = document.getElementById('calculation');
+        const answerInput = document.getElementById('answer-input');
+        const submitBtn = document.getElementById('submit-btn');
+        const newRoundBtn = document.getElementById('new-round-btn');
+        const clearHistoryBtn = document.getElementById('clear-history-btn');
+        const messageElement = document.getElementById('message');
+        const scoreElement = document.getElementById('score');
+        const questionCounterElement = document.getElementById('question-counter');
+        const finalScoreTextElement = document.getElementById('final-score-text');
+        const explanationBox = document.getElementById('explanation-box');
+        const explanationText = document.getElementById('explanation-text');
+
+        // --- BANCO DE ENUNCIADOS ---
+        const problemTemplates = {
+            '+': ["Você comprou {num1} pães e depois comprou mais {num2}. Quantos pães você tem agora?", "Joana trabalhou {num1} horas extras em uma semana e {num2} na outra. Quantas horas extras ela fez no total?", "Um pedreiro assentou {num1} tijolos de manhã e {num2} à tarde. Quantos tijolos ele assentou no dia?", "Numa festa, havia {num1} salgados de queijo e {num2} de carne. Qual o total de salgados?", "Carlos tinha R$ {num1} e ganhou R$ {num2} de seu pai. Com quanto ele ficou?"],
+            '-': ["Você tinha R$ {num1} e gastou R$ {num2} no mercado. Quanto dinheiro sobrou?", "Uma caixa tinha {num1} parafusos. Você usou {num2}. Quantos parafusos restaram?", "A passagem de ônibus custa R$ {num2}. Se você pagar com uma nota de R$ {num1}, qual será o seu troco?", "De um saco com {num1} kg de arroz, foram usados {num2} kg. Quanto arroz ainda resta no saco?", "Um reservatório tinha {num1} litros de água e foram gastos {num2} litros. Quantos litros sobraram?"],
+            '*': ["Se uma caixa de leite custa R$ {num1}, quanto custarão {num2} caixas?", "Um trabalhador ganha R$ {num1} por hora. Se ele trabalhar {num2} horas, quanto ele receberá?", "Uma parede tem {num2} fileiras com {num1} tijolos cada. Quantos tijolos há na parede?", "Se você compra {num2} pacotes de bolacha, e cada um vem com {num1} unidades, qual o total de bolachas?", "Para uma receita, você precisa de {num1} ovos. Se for fazer a receita {num2} vezes, de quantos ovos precisará?"],
+            '/': ["Uma conta de R$ {num1} será dividida igualmente entre {num2} amigos. Quanto cada um vai pagar?", "Um pacote com {num1} balas será dividido entre {num2} crianças. Quantas balas cada uma ganha?", "Você precisa guardar {num1} latas em caixas que comportam {num2} latas cada. Quantas caixas você vai usar?", "Um carro percorreu {num1} km com {num2} litros de gasolina. Quantos km ele fez por litro?", "Um prêmio de R$ {num1} foi dividido para {num2} ganhadores. Quanto cada um recebeu?"]
+        };
+
+        // --- VARIÁVEIS DE ESTADO DO JOGO ---
+        let score = 0;
+        let currentQuestion = 1;
+        const totalQuestions = 20;
+        let correctAnswer;
+        let currentProblem = {};
+        let generatedProblems = new Set();
+        const HISTORY_KEY = 'pibidMathHistory';
+
+        // --- FUNÇÕES DO JOGO ---
+        function startNewRound() {
+            score = 0;
+            currentQuestion = 1;
+            scoreElement.textContent = score;
+            questionCounterElement.textContent = `${currentQuestion} / ${totalQuestions}`;
+            endRoundScreen.classList.add('hidden');
+            gameArea.classList.remove('hidden');
+            generateProblem();
+        }
+
+        function generateProblem() {
+            if (currentQuestion > totalQuestions) {
+                endRound();
+                return;
+            }
+            questionCounterElement.textContent = `${currentQuestion} / ${totalQuestions}`;
+            answerInput.value = '';
+            messageElement.textContent = '';
+            calculationElement.textContent = '';
+            explanationBox.classList.add('hidden');
+            messageElement.className = 'h-8 text-xl font-bold transition-opacity duration-300';
+            answerInput.focus();
+            submitBtn.disabled = false;
+            answerInput.disabled = false;
+
+            let num1, num2, operator, template, problemKey;
+            let attempts = 0;
+
+            do {
+                const operators = ['+', '-', '*', '/'];
+                operator = operators[Math.floor(Math.random() * 4)];
+                const templates = problemTemplates[operator];
+                template = templates[Math.floor(Math.random() * templates.length)];
+
+                switch (operator) {
+                    case '+': num1 = Math.floor(Math.random() * 20) + 5; num2 = Math.floor(Math.random() * 20) + 5; correctAnswer = num1 + num2; break;
+                    case '-': num2 = Math.floor(Math.random() * 20) + 5; num1 = num2 + Math.floor(Math.random() * 20) + 5; correctAnswer = num1 - num2; break;
+                    case '*': num1 = Math.floor(Math.random() * 9) + 2; num2 = Math.floor(Math.random() * 9) + 2; correctAnswer = num1 * num2; break;
+                    case '/': num2 = Math.floor(Math.random() * 9) + 2; const result = Math.floor(Math.random() * 9) + 2; num1 = num2 * result; correctAnswer = result; break;
+                }
+                
+                problemKey = `${template}-${num1}-${num2}`;
+                attempts++;
+                if (attempts > 500) { clearHistory(false); }
+            } while (generatedProblems.has(problemKey));
+
+            generatedProblems.add(problemKey);
+            localStorage.setItem(HISTORY_KEY, JSON.stringify(Array.from(generatedProblems)));
+            currentProblem = { num1, num2, operator };
+            const problemString = template.replace('{num1}', `<strong class="text-teal-700">${num1}</strong>`).replace('{num2}', `<strong class="text-teal-700">${num2}</strong>`);
+            problemTextElement.innerHTML = problemString;
+        }
+
+        function generateExplanation(problem, answer) {
+            const { num1, num2, operator } = problem;
+            switch (operator) {
+                case '+': return `Para somar, juntamos as duas quantidades. Se você tem ${num1} e adiciona ${num2}, o total é ${answer}.`;
+                case '-': return `A subtração é a diferença entre os valores. Começando com ${num1} e tirando ${num2}, o resultado que sobra é ${answer}.`;
+                case '*': return `Multiplicar ${num1} por ${num2} é o mesmo que somar o número ${num1} por ${num2} vezes. O resultado dessa soma é ${answer}.`;
+                case '/': return `Dividir ${num1} por ${num2} é descobrir quantas vezes o ${num2} cabe dentro do ${num1}. Neste caso, a resposta é ${answer}.`;
+                default: return '';
+            }
+        }
+
+        function checkAnswer() {
+            const userAnswer = parseInt(answerInput.value, 10);
+            if (isNaN(userAnswer)) {
+                messageElement.textContent = 'Digite um número!';
+                messageElement.classList.add('text-yellow-600');
+                return;
+            }
+            submitBtn.disabled = true;
+            answerInput.disabled = true;
+            const { num1, num2, operator } = currentProblem;
+            calculationElement.textContent = `${num1} ${operator} ${num2} = ${correctAnswer}`;
+            
+            let nextProblemDelay = 2500; // Tempo padrão para a próxima questão
+
+            if (userAnswer === correctAnswer) {
+                score++;
+                messageElement.textContent = 'Correto! 🎉';
+                messageElement.classList.add('text-green-600');
+            } else {
+                messageElement.textContent = 'Errado!';
+                messageElement.classList.add('text-red-500');
+                
+                // Gera e exibe a explicação
+                const explanation = generateExplanation(currentProblem, correctAnswer);
+                explanationText.textContent = explanation;
+                explanationBox.classList.remove('hidden');
+                nextProblemDelay = 6000; // Mais tempo para ler a explicação
+            }
+            scoreElement.textContent = score;
+            currentQuestion++;
+            setTimeout(generateProblem, nextProblemDelay);
+        }
+
+        function endRound() {
+            gameArea.classList.add('hidden');
+            endRoundScreen.classList.remove('hidden');
+            finalScoreTextElement.textContent = `Você acertou ${score} de ${totalQuestions} questões!`;
+        }
+        
+        function clearHistory(showConfirmation = true) {
+            generatedProblems.clear();
+            localStorage.removeItem(HISTORY_KEY);
+            if (showConfirmation) {
+                const originalMessage = messageElement.textContent;
+                const originalClasses = messageElement.className;
+                messageElement.textContent = 'Histórico de questões apagado!';
+                messageElement.className = 'h-8 text-xl font-bold transition-opacity duration-300 text-blue-600';
+                setTimeout(() => {
+                    messageElement.textContent = originalMessage;
+                    messageElement.className = originalClasses;
+                }, 2500);
+            }
+        }
+
+        // --- EVENT LISTENERS ---
+        submitBtn.addEventListener('click', checkAnswer);
+        answerInput.addEventListener('keydown', (event) => { if (event.key === 'Enter') { checkAnswer(); } });
+        newRoundBtn.addEventListener('click', startNewRound);
+        clearHistoryBtn.addEventListener('click', () => clearHistory(true));
+
+        // --- INICIALIZAÇÃO DO JOGO ---
+        window.onload = () => {
+            const savedHistory = localStorage.getItem(HISTORY_KEY);
+            if (savedHistory) {
+                generatedProblems = new Set(JSON.parse(savedHistory));
+            }
+            startNewRound();
+        };
+    </script>
+</body>
+</html>
