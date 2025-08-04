@@ -3,2055 +3,269 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jornada Matemática Interativa CONCENAL</title>
+    <title>PIBID 2025 - Operações Básicas</title>
+    
+    <!-- Carregando o Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Carregando a fonte Inter do Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap" rel="stylesheet">
+    
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f0f4f8; /* Cinza claro de fundo */
-            scroll-behavior: smooth;
+            overflow: hidden;
         }
-        /* Cores CONCENAL */
-        :root {
-            --concenal-green-dark: #005940; /* Verde escuro principal do logo */
-            --concenal-green-medium: #007350; /* Um tom de verde para variações */
-            --concenal-red: #D9252E; /* Vermelho do logo */
-            --concenal-text-primary: #2c3e50; /* Cinza escuro para texto principal */
-            --concenal-text-secondary: #4a5568; /* Cinza médio para texto secundário */
-            --concenal-bg-light: #f7fafc; /* Fundo muito claro, quase branco */
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { 
+            -webkit-appearance: none; 
+            margin: 0; 
         }
-
-        .main-nav-button {
-            transition: all 0.3s ease;
-            color: white;
+        input[type=number] {
+            -moz-appearance: textfield;
         }
-        .main-nav-button.active {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-        }
-        .topic-list-item {
-            transition: all 0.2s ease-in-out;
-        }
-        .topic-list-item:hover {
-            transform: translateX(5px);
-            background-color: var(--concenal-bg-light); 
-        }
-        .floating-ai-btn {
-            position: fixed;
-            bottom: 2rem;
-            right: 2rem;
-            z-index: 1000;
-            transition: transform 0.3s ease;
-            background-color: var(--concenal-green-dark);
-        }
-        .floating-ai-btn:hover {
-            transform: scale(1.1);
-            background-color: var(--concenal-green-medium);
-        }
-        .ai-chat-modal {
-            position: fixed;
-            bottom: 6rem; 
-            right: 2rem;
-            width: 350px;
-            max-height: 450px;
-            z-index: 999;
-            transition: opacity 0.3s ease, transform 0.3s ease;
-            transform-origin: bottom right;
-        }
-        .ai-chat-modal.hidden {
-            opacity: 0;
-            transform: scale(0.9) translateY(10px);
-            pointer-events: none;
-        }
-        .generated-question-item, .ai-challenge-item { 
-            border: 1px solid #e2e8f0; 
-            padding: 1.25rem;
-            margin-bottom: 1.25rem;
-            border-radius: 0.5rem;
-            background-color: #ffffff;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        }
-        .solution-container {
-            background-color: var(--concenal-bg-light); 
-            border-left: 3px solid var(--concenal-green-medium); 
-        }
-        
-        /* Cores por ano adaptadas à paleta CONCENAL */
-        .ano6-bg, .ano1EM-bg { background-color: var(--concenal-green-dark); } 
-        .ano6-text, .ano1EM-text { color: var(--concenal-green-dark); } 
-        .ano6-border, .ano1EM-border { border-color: var(--concenal-green-dark); }
-
-        .ano7-bg { background-color: #00796b; } 
-        .ano7-text { color: #00796b; } 
-        .ano7-border { border-color: #00796b; }
-
-        .ano8-bg { background-color: var(--concenal-green-medium); } 
-        .ano8-text { color: var(--concenal-green-medium); } 
-        .ano8-border { border-color: var(--concenal-green-medium); }
-        
-        .ano9-bg { background-color: #004d40; } 
-        .ano9-text { color: #004d40; } 
-        .ano9-border { border-color: #004d40; }
-
-        .gerador-bg { background-color: var(--concenal-red); } 
-        .gerador-text { color: var(--concenal-red); }
-        .gerador-btn-action { background-color: var(--concenal-red); } 
-        .gerador-btn-action:hover { background-color: #a51e24; }
-
-        #ai-chat-history div:nth-child(odd) { background-color: #f3f4f6; } 
-        #ai-chat-history div:nth-child(even) { background-color: #e0f2fe; } 
-
-        .content-section, #app-view, .topic-detail-view { display: none; }
-        .content-section.active, #app-view.active, .topic-detail-view.active { display: block; }
-        [id$="-topics-list"] { display: none; } 
-        [id$="-topics-list"].active { display: block; } 
-
-        .ai-explanation-box, .ai-examples-box, .ai-connections-box, .ai-realworld-box, .ai-challenge-box {
-            margin-top: 1rem;
-            padding: 1rem;
-            border-radius: 0.375rem;
-            background-color: #e8f5e9; 
-            border: 1px solid #a5d6a7; 
-            color: #1b5e20; 
-        }
-        .ai-feature-btn {
-            display: inline-flex;
-            align-items: center;
-            padding: 0.5rem 1rem;
-            border-radius: 0.375rem; 
-            font-semibold;
-            text-sm;
-            color: white;
-            transition: background-color 0.2s;
-            margin-top: 0.75rem; 
-        }
-        .ai-feature-btn i {
-            margin-right: 0.5rem; 
-        }
-        .ai-feature-btn:disabled {
-            opacity: 0.7;
-            cursor: not-allowed;
-        }
-        #auth-view {
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background-color: var(--concenal-green-dark); 
-        }
-        #initial-message-area {
-            text-align: center;
-            padding: 2rem;
-            color: var(--concenal-text-secondary);
-        }
-        .action-btn {
-            background-color: var(--concenal-green-medium);
-            color: white;
-        }
-        .action-btn:hover {
-            background-color: var(--concenal-green-dark);
+        .hidden {
+            display: none;
         }
     </style>
 </head>
-<body class="text-gray-800">
+<body class="bg-gradient-to-br from-blue-100 to-purple-200">
 
-    <div id="auth-view" class="bg-gradient-to-br from-green-500 to-green-700 p-4 md:p-8">
-        <div class="bg-white p-8 md:p-12 rounded-xl shadow-2xl w-full max-w-md">
-            <div class="text-center mb-6">
-                 <img src="https://i.ibb.co/7tcrxzXy/1742263907113.png" alt="Logótipo CONCENAL" class="h-24 w-auto mx-auto"> 
-            </div>
-            <h2 id="auth-title" class="text-3xl font-bold text-center text-gray-700 mb-8">Login</h2>
-            <div id="auth-message" class="mb-4 text-sm text-center"></div>
+    <div class="flex flex-col h-screen w-screen p-4 sm:p-6 md:p-8 text-center">
+        
+        <header class="w-full max-w-6xl mx-auto mb-4">
+            <h1 class="text-3xl sm:text-4xl md:text-5xl font-extrabold text-gray-800">PIBID 2025 - Operações Básicas</h1>
+            <p class="text-gray-600 mt-2 text-base sm:text-lg">Resolva os problemas do dia a dia para pontuar!</p>
+        </header>
+
+        <!-- Área principal do Jogo -->
+        <main id="game-area" class="flex-grow w-full max-w-6xl mx-auto flex flex-col lg:flex-row items-center justify-center lg:gap-12">
             
-            <form id="login-form" class="space-y-6">
-                <div>
-                    <label for="login-email" class="block text-sm font-medium text-gray-700">Email</label>
-                    <input type="email" id="login-email" name="email" autocomplete="email" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm">
+            <!-- Coluna Esquerda (Problema) -->
+            <div class="w-full lg:w-7/12">
+                <div id="problem-box" class="bg-white/70 backdrop-blur-sm p-6 rounded-lg shadow-lg min-h-[200px] w-full flex items-center justify-center">
+                    <p id="problem-text" class="text-xl sm:text-2xl md:text-3xl text-gray-900 leading-relaxed font-medium"></p>
                 </div>
-                <div>
-                    <div class="flex justify-between">
-                        <label for="login-password" class="block text-sm font-medium text-gray-700">Senha</label>
-                        <button type="button" id="forgot-password-btn" class="text-xs text-green-700 hover:text-green-600" style="color: var(--concenal-green-medium);">Esqueceu a senha?</button>
+            </div>
+
+            <!-- Coluna Direita (Interação) -->
+            <div class="w-full max-w-md lg:w-5/12 flex flex-col gap-4 mt-6 lg:mt-0">
+                <div class="w-full flex justify-around items-center gap-4">
+                    <div class="bg-white/50 backdrop-blur-sm rounded-xl p-3 shadow-md text-center flex-1">
+                        <span class="text-sm font-medium text-gray-700 uppercase tracking-wider">Pontuação</span>
+                        <span id="score" class="block text-4xl font-bold text-teal-600">0</span>
                     </div>
-                    <input type="password" id="login-password" name="password" autocomplete="current-password" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm">
+                     <div class="bg-white/50 backdrop-blur-sm rounded-xl p-3 shadow-md text-center flex-1">
+                        <span class="text-sm font-medium text-gray-700 uppercase tracking-wider">Questão</span>
+                        <span id="question-counter" class="block text-4xl font-bold text-purple-600">1 / 20</span>
+                    </div>
                 </div>
-                <button type="submit" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500" style="background-color: var(--concenal-green-dark);">
-                    Entrar
-                </button>
-            </form>
+                
+                <div id="calculation" class="h-8 text-2xl font-bold text-gray-700 transition-opacity duration-300"></div>
+                <input type="number" id="answer-input" placeholder="Digite o resultado aqui" class="w-full p-4 text-center text-2xl border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-4 focus:ring-teal-200 transition-all duration-300 shadow-sm">
+                <div id="message" class="h-8 text-xl font-bold transition-opacity duration-300"></div>
+                
+                <!-- Caixa da Explicação (visível apenas no erro) -->
+                <div id="explanation-box" class="hidden text-left">
+                    <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-r-lg">
+                        <p class="font-bold">Vamos ver como resolver:</p>
+                        <p id="explanation-text" class="mt-1"></p>
+                    </div>
+                </div>
 
-            <form id="register-form" class="space-y-6 hidden">
-                 <div>
-                    <label for="register-name" class="block text-sm font-medium text-gray-700">Nome de Utilizador</label>
-                    <input type="text" id="register-name" name="username" autocomplete="username" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm">
-                </div>
-                <div>
-                    <label for="register-email" class="block text-sm font-medium text-gray-700">Email</label>
-                    <input type="email" id="register-email" name="email" autocomplete="email" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm">
-                </div>
-                <div>
-                    <label for="register-password" class="block text-sm font-medium text-gray-700">Senha (mínimo 6 caracteres)</label>
-                    <input type="password" id="register-password" name="new-password" autocomplete="new-password" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm">
-                </div>
-                <button type="submit" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500" style="background-color: var(--concenal-red);">
-                    Registrar
+                <button id="submit-btn" class="w-full flex items-center justify-center p-4 text-lg font-bold text-white bg-teal-500 rounded-lg hover:bg-teal-600 active:scale-95 transition-all duration-150 shadow-lg hover:shadow-xl">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
+                    Verificar
                 </button>
-            </form>
-
-            <p class="mt-8 text-center text-sm text-gray-600">
-                <span id="auth-toggle-text">Não tem uma conta?</span>
-                <button id="toggle-auth-mode-btn" class="font-medium text-green-700 hover:text-green-600" style="color: var(--concenal-green-dark);">
-                    Registre-se aqui.
+            </div>
+        </main>
+        
+        <!-- Tela de Fim de Rodada -->
+        <div id="end-round-screen" class="hidden flex-grow flex flex-col justify-center items-center w-full max-w-4xl mx-auto">
+            <div class="bg-white/80 backdrop-blur-lg p-8 rounded-2xl shadow-2xl text-center">
+                <h2 class="text-4xl font-bold text-gray-800 mb-2">Fim de Rodada!</h2>
+                <p id="final-score-text" class="text-2xl text-gray-600 mb-6">Você acertou X de 20 questões!</p>
+                <button id="new-round-btn" class="w-full flex items-center justify-center p-4 text-lg font-bold text-white bg-purple-600 rounded-lg hover:bg-purple-700 active:scale-95 transition-all duration-150 shadow-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h5M20 20v-5h-5" /><path stroke-linecap="round" stroke-linejoin="round" d="M4 9a9 9 0 0114.13-6.36M20 15a9 9 0 01-14.13 6.36" /></svg>
+                    Iniciar Nova Rodada
                 </button>
-            </p>
+            </div>
         </div>
+
+        <footer class="w-full text-center mt-4">
+            <button id="clear-history-btn" class="text-xs text-gray-500 hover:text-gray-700 underline">Limpar histórico de questões</button>
+        </footer>
     </div>
 
-    <div id="app-view" class="hidden"> 
-        <div class="container mx-auto max-w-7xl p-4 md:p-8">
-            <header class="mb-10 md:mb-12 relative">
-                <div id="user-info" class="absolute top-0 right-0 mt-2 mr-2 md:mt-0 md:mr-0 text-right space-y-1 z-20">
-                    </div>
-                <div class="flex flex-col items-center text-center pt-8"> 
-                    <img src="https://i.ibb.co/7tcrxzXy/1742263907113.png" alt="Logótipo CONCENAL" class="h-20 w-auto mb-4"> 
-                    <h1 class="text-3xl md:text-4xl font-bold text-gray-800">
-                        Jornada Matemática
-                    </h1>
-                    <p class="text-lg text-gray-600 mt-2" style="color: var(--concenal-text-secondary);">Explore, Aprenda e Pratique</p>
-                </div>
-            </header>
+    <script>
+        // --- SELEÇÃO DOS ELEMENTOS DO HTML ---
+        const gameArea = document.getElementById('game-area');
+        const endRoundScreen = document.getElementById('end-round-screen');
+        const problemTextElement = document.getElementById('problem-text');
+        const calculationElement = document.getElementById('calculation');
+        const answerInput = document.getElementById('answer-input');
+        const submitBtn = document.getElementById('submit-btn');
+        const newRoundBtn = document.getElementById('new-round-btn');
+        const clearHistoryBtn = document.getElementById('clear-history-btn');
+        const messageElement = document.getElementById('message');
+        const scoreElement = document.getElementById('score');
+        const questionCounterElement = document.getElementById('question-counter');
+        const finalScoreTextElement = document.getElementById('final-score-text');
+        const explanationBox = document.getElementById('explanation-box');
+        const explanationText = document.getElementById('explanation-text');
 
-            <nav class="mb-10 sticky top-0 bg-white/90 backdrop-blur-md py-4 z-50 shadow-md rounded-lg">
-                <ul class="flex flex-wrap justify-center gap-2 md:gap-4">
-                    <li><button data-year="ano6" class="main-nav-button ano6-bg text-white py-2.5 px-5 md:py-3 md:px-7 rounded-lg font-semibold shadow-md text-base">6º Ano</button></li>
-                    <li><button data-year="ano7" class="main-nav-button ano7-bg text-white py-2.5 px-5 md:py-3 md:px-7 rounded-lg font-semibold shadow-md text-base">7º Ano</button></li>
-                    <li><button data-year="ano8" class="main-nav-button ano8-bg text-white py-2.5 px-5 md:py-3 md:px-7 rounded-lg font-semibold shadow-md text-base">8º Ano</button></li>
-                    <li><button data-year="ano9" class="main-nav-button ano9-bg text-white py-2.5 px-5 md:py-3 md:px-7 rounded-lg font-semibold shadow-md text-base">9º Ano</button></li>
-                    <li><button data-year="ano1EM" class="main-nav-button ano1EM-bg text-white py-2.5 px-5 md:py-3 md:px-7 rounded-lg font-semibold shadow-md text-base">1º Ano E.M.</button></li>
-                    <li><button data-year="gerador" class="main-nav-button gerador-bg text-white py-2.5 px-5 md:py-3 md:px-7 rounded-lg font-semibold shadow-md text-base">Gerador de Atividades</button></li>
-                    <li><button data-year="provas" class="main-nav-button provas-bg text-white py-2.5 px-5 md:py-3 md:px-7 rounded-lg font-semibold shadow-md text-base">Gerador de Provas</button></li>
-                </ul>
-            </nav>
-
-            <main id="main-content-area" class="bg-white p-6 md:p-8 rounded-lg shadow-xl min-h-[60vh]">
-                <div id="initial-message-area" class="text-center p-8">
-                    <h2 class="text-2xl font-semibold text-gray-700 mb-4">Bem-vindo(a) à Jornada Matemática CONCENAL!</h2>
-                    <p class="text-gray-600">Selecione uma turma acima para começar a explorar os conteúdos.</p>
-                </div>
-                <section id="ano6" class="content-section">
-                    <h2 class="text-3xl md:text-4xl font-bold ano6-text mb-8 text-center">Conteúdos do 6º Ano</h2>
-                    <div id="ano6-topics-list" class="space-y-4"></div>
-                    <div id="ano6-topic-detail" class="topic-detail-view"></div>
-                </section>
-                <section id="ano7" class="content-section">
-                    <h2 class="text-3xl md:text-4xl font-bold ano7-text mb-8 text-center">Conteúdos do 7º Ano</h2>
-                    <div id="ano7-topics-list" class="space-y-4"></div>
-                    <div id="ano7-topic-detail" class="topic-detail-view"></div>
-                </section>
-                <section id="ano8" class="content-section">
-                    <h2 class="text-3xl md:text-4xl font-bold ano8-text mb-8 text-center">Conteúdos do 8º Ano</h2>
-                    <div id="ano8-topics-list" class="space-y-4"></div>
-                    <div id="ano8-topic-detail" class="topic-detail-view"></div>
-                </section>
-                <section id="ano9" class="content-section">
-                    <h2 class="text-3xl md:text-4xl font-bold ano9-text mb-8 text-center">Conteúdos do 9º Ano</h2>
-                    <div id="ano9-topics-list" class="space-y-4"></div>
-                    <div id="ano9-topic-detail" class="topic-detail-view"></div>
-                </section>
-                 <section id="ano1EM" class="content-section">
-                    <h2 class="text-3xl md:text-4xl font-bold ano1EM-text mb-8 text-center">Conteúdos do 1º Ano do Ensino Médio</h2>
-                    <div id="ano1EM-topics-list" class="space-y-4"></div>
-                    <div id="ano1EM-topic-detail" class="topic-detail-view"></div>
-                </section>
-                <section id="gerador" class="content-section">
-                    <div class="bg-red-50 p-6 md:p-10 rounded-xl shadow-xl border-t-4 border-red-600" style="background-color: #fee2e2; border-color: var(--concenal-red);">
-                        <h2 class="text-3xl md:text-4xl font-bold gerador-text mb-8 text-center">
-                            <i data-lucide="lightbulb" class="inline-block mr-3"></i>✨ Pratique Mais com IA! ✨
-                        </h2>
-                        <p class="text-gray-700 text-center mb-8 text-lg" style="color: var(--concenal-text-secondary);">
-                            Selecione os critérios abaixo e a nossa IA irá gerar atividades personalizadas para si!
-                        </p>
-                
-                        <div class="mb-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-end">
-                            <div>
-                                <label for="seletorAnoGerador" class="block text-base font-medium text-gray-700 mb-1">Ano/Turma:</label>
-                                <select id="seletorAnoGerador" name="seletorAnoGerador" class="mt-1 block w-full pl-3 pr-10 py-2.5 text-base border-gray-300 focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm rounded-md shadow-sm">
-                                    <option value="ano6" selected>6º Ano</option>
-                                    <option value="ano7">7º Ano</option>
-                                    <option value="ano8">8º Ano</option>
-                                    <option value="ano9">9º Ano</option>
-                                    <option value="ano1EM">1º Ano E.M.</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label for="seletorTopicoGerador" class="block text-base font-medium text-gray-700 mb-1">Conteúdo Específico (Opcional):</label>
-                                <select id="seletorTopicoGerador" name="seletorTopicoGerador" class="mt-1 block w-full pl-3 pr-10 py-2.5 text-base border-gray-300 focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm rounded-md shadow-sm">
-                                    <option value="">Todos os tópicos do ano</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label for="seletorNumQuestoes" class="block text-base font-medium text-gray-700 mb-1">Número de Questões:</label>
-                                <select id="seletorNumQuestoes" name="seletorNumQuestoes" class="mt-1 block w-full pl-3 pr-10 py-2.5 text-base border-gray-300 focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm rounded-md shadow-sm">
-                                    <option value="5">5 Questões</option>
-                                    <option value="10" selected>10 Questões</option>
-                                    <option value="15">15 Questões</option>
-                                </select>
-                            </div>
-                             <div>
-                                <label for="seletorTipoQuestao" class="block text-base font-medium text-gray-700 mb-1">Tipo de Questão:</label>
-                                <select id="seletorTipoQuestao" name="seletorTipoQuestao" class="mt-1 block w-full pl-3 pr-10 py-2.5 text-base border-gray-300 focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm rounded-md shadow-sm">
-                                    <option value="ambas" selected>Ambas (Objetivas e Subjetivas)</option>
-                                    <option value="objetivas">Apenas Objetivas (Múltipla Escolha)</option>
-                                    <option value="subjetivas">Apenas Subjetivas (Abertas)</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label for="seletorNivelDificuldade" class="block text-base font-medium text-gray-700 mb-1">Nível de Dificuldade:</label>
-                                <select id="seletorNivelDificuldade" name="seletorNivelDificuldade" class="mt-1 block w-full pl-3 pr-10 py-2.5 text-base border-gray-300 focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm rounded-md shadow-sm">
-                                    <option value="medio" selected>Médio</option>
-                                    <option value="facil">Fácil</option>
-                                    <option value="dificil">Difícil</option>
-                                </select>
-                            </div>
-                        </div>
-                         <div class="mt-8 text-center">
-                            <button id="gerarAtividadeBtn" class="gerador-btn-action py-3 px-8 rounded-lg font-semibold text-lg shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-300 text-white">
-                                <i data-lucide="sparkles" class="inline-block mr-2"></i>Gerar Questões
-                            </button>
-                        </div>
-                
-                        <div id="loadingGerador" class="text-center my-6" style="display: none;">
-                            <div class="inline-flex items-center bg-red-100 text-red-700 px-6 py-3 rounded-lg text-lg">
-                                <svg class="animate-spin -ml-1 mr-3 h-6 w-6 text-red-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                </svg>
-                                A gerar atividades com IA... Por favor, aguarde.
-                            </div>
-                        </div>
-                
-                        <div id="erroGerador" class="text-center my-6 p-4 bg-red-100 text-red-700 rounded-lg text-lg" style="display: none;">
-                            Ocorreu um erro ao gerar as atividades. Verifique a consola para mais detalhes e tente novamente.
-                        </div>
-
-                        <div id="botoesAcaoQuestoes" class="mt-6 text-center space-x-3" style="display: none;">
-                            <button id="copiarQuestoesBtn" class="action-btn py-2 px-4 rounded-md font-semibold text-sm inline-flex items-center">
-                                <i data-lucide="copy" class="w-4 h-4 mr-2"></i>Copiar Questões e Soluções
-                            </button>
-                            <button id="downloadDocxBtnPlaceholder" class="action-btn py-2 px-4 rounded-md font-semibold text-sm inline-flex items-center">
-                                <i data-lucide="file-text" class="w-4 h-4 mr-2"></i>Baixar .docx (Simulado)
-                            </button>
-                            <button id="downloadPdfBtnPlaceholder" class="action-btn py-2 px-4 rounded-md font-semibold text-sm inline-flex items-center">
-                                <i data-lucide="file-text" class="w-4 h-4 mr-2"></i>Baixar .pdf (Simulado)
-                            </button>
-                        </div>
-                
-                        <div id="atividadesGeradasContainer" class="mt-8 space-y-6">
-                            </div>
-                    </div>
-                </section>
-                 <section id="provas" class="content-section">
-                    <div class="bg-blue-50 p-6 md:p-10 rounded-xl shadow-xl border-t-4 border-blue-600">
-                        <h2 class="text-3xl md:text-4xl font-bold text-blue-700 mb-8 text-center">
-                            <i data-lucide="file-check-2" class="inline-block mr-3"></i> Gerador de Provas (IA)
-                        </h2>
-                        <p class="text-center text-gray-600 mb-8">Esta funcionalidade permite criar avaliações personalizadas. Selecione o ano, os conteúdos e os parâmetros da prova.</p>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <label for="seletorAnoProva" class="block text-base font-medium text-gray-700 mb-1">1. Selecione o Ano/Turma:</label>
-                                <select id="seletorAnoProva" class="mt-1 block w-full pl-3 pr-10 py-2.5 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md shadow-sm">
-                                    <option value="ano6" selected>6º Ano</option>
-                                    <option value="ano7">7º Ano</option>
-                                    <option value="ano8">8º Ano</option>
-                                    <option value="ano9">9º Ano</option>
-                                    <option value="ano1EM">1º Ano E.M.</option>
-                                </select>
-                            </div>
-                             <div>
-                                <label for="seletorDificuldadeProva" class="block text-base font-medium text-gray-700 mb-1">3. Nível de Dificuldade:</label>
-                                <select id="seletorDificuldadeProva" class="mt-1 block w-full pl-3 pr-10 py-2.5 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md shadow-sm">
-                                    <option value="Fácil">Fácil</option>
-                                    <option value="Médio" selected>Médio</option>
-                                    <option value="Difícil">Difícil</option>
-                                </select>
-                            </div>
-                             <div>
-                                <label for="seletorNumQuestoesProva" class="block text-base font-medium text-gray-700 mb-1">4. Número Total de Questões:</label>
-                                <input type="number" id="seletorNumQuestoesProva" value="10" min="1" max="20" class="mt-1 block w-full pl-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md shadow-sm">
-                            </div>
-                             <div>
-                                <label for="seletorNumObjetivasProva" class="block text-base font-medium text-gray-700 mb-1">5. Quantas Questões Objetivas?</label>
-                                <input type="number" id="seletorNumObjetivasProva" value="5" min="0" max="20" class="mt-1 block w-full pl-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md shadow-sm">
-                            </div>
-                            <div class="md:col-span-2">
-                                <label class="block text-base font-medium text-gray-700 mb-1">2. Selecione os Conteúdos:</label>
-                                <div id="seletorTopicosProva" class="multi-select-container bg-white p-2">
-                                    <!-- Conteúdos carregados dinamicamente -->
-                                </div>
-                            </div>
-                        </div>
-                        <div class="mt-8 text-center">
-                            <button id="gerarProvaBtn" class="provas-bg text-white py-3 px-8 rounded-lg font-semibold text-lg shadow-md hover:opacity-90 transform hover:scale-105 transition-all duration-300">
-                                <i data-lucide="file-plus-2" class="inline-block mr-2"></i>Gerar Prova Completa
-                            </button>
-                        </div>
-                         <div id="loadingProva" class="text-center my-6" style="display: none;">
-                            <div class="inline-flex items-center bg-blue-100 text-blue-700 px-6 py-3 rounded-lg text-lg">
-                                <svg class="animate-spin -ml-1 mr-3 h-6 w-6 text-blue-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                </svg>
-                                A IA está a criar a sua prova... Isto pode demorar um pouco.
-                            </div>
-                        </div>
-                        <div id="erroProva" class="text-center my-6 p-4 bg-red-100 text-red-700 rounded-lg text-lg" style="display: none;"></div>
-                        <div id="provaGeradaContainer" class="mt-8 p-6 bg-white rounded-md shadow-inner" style="display: none;">
-                            <!-- Prova e gabarito gerados aqui -->
-                        </div>
-                    </div>
-                </section>
-            </main>
-
-            <footer class="text-center mt-12 pt-8 border-t border-gray-200">
-                <button id="suggest-improvement-btn" class="mb-4 text-sm text-green-700 hover:text-green-600 font-semibold" style="color: var(--concenal-green-dark);">
-                    <i data-lucide="edit-3" class="inline-block mr-1 w-4 h-4"></i>Sugerir Melhorias
-                </button>
-                <p class="text-sm text-gray-500">Criado por Profº Kelvin Radimak - <span id="currentYear"></span></p>
-            </footer>
-        </div>
-
-        <button id="floating-ai-btn" title="Assistente IA" class="floating-ai-btn text-white p-4 rounded-full shadow-xl hidden">
-            <i data-lucide="message-circle" class="w-8 h-8"></i>
-        </button>
-
-        <div id="ai-chat-modal" class="ai-chat-modal hidden bg-white rounded-lg shadow-2xl border border-gray-200 flex flex-col overflow-hidden">
-            <div class="p-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
-                <h3 class="text-lg font-semibold text-gray-700">Assistente IA CONCENAL</h3>
-                <button id="close-ai-chat-btn" class="text-gray-500 hover:text-gray-700">
-                    <i data-lucide="x" class="w-6 h-6"></i>
-                </button>
-            </div>
-            <div id="ai-chat-history" class="flex-grow p-4 space-y-3 overflow-y-auto text-sm">
-                <div class="p-2 rounded-md bg-green-50 text-green-700" style="background-color: #e8f5e9; color: var(--concenal-green-dark);">Olá! Como posso ajudar com seus estudos de matemática hoje?</div>
-            </div>
-            <div id="ai-chat-loading" class="p-4 text-center text-sm text-gray-500" style="display: none;">
-                <i data-lucide="loader-2" class="animate-spin inline-block mr-2"></i> Pensando...
-            </div>
-            <div class="p-3 border-t border-gray-200 bg-gray-50">
-                <div class="flex gap-2">
-                    <input type="text" id="ai-chat-input" placeholder="Pergunte sobre matemática..." class="flex-grow p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none text-sm">
-                    <button id="ai-chat-send-btn" class="text-white p-2 rounded-md hover:opacity-80 disabled:opacity-50" style="background-color: var(--concenal-green-dark);">
-                        <i data-lucide="send" class="w-5 h-5"></i>
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script type="module">
-        // Import the functions you need from the SDKs you need
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
-        import { 
-            getAuth, 
-            createUserWithEmailAndPassword, 
-            signInWithEmailAndPassword, 
-            onAuthStateChanged, 
-            signOut,
-            updateProfile,
-            sendPasswordResetEmail
-        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-
-
-        // Your web app's Firebase configuration
-        const firebaseConfig = {
-          apiKey: "AIzaSyBOrzU01DWanKV6YbvdCX-IJqmJY-zS808",
-          authDomain: "gemini-api-609db.firebaseapp.com",
-          projectId: "gemini-api-609db",
-          storageBucket: "gemini-api-609db.appspot.com",
-          messagingSenderId: "582858271153",
-          appId: "1:582858271153:web:0f3c79fa6f856f83d1f590",
-          measurementId: "G-P2SF9FTF85"
+        // --- BANCO DE ENUNCIADOS ---
+        const problemTemplates = {
+            '+': ["Você comprou {num1} pães e depois comprou mais {num2}. Quantos pães você tem agora?", "Joana trabalhou {num1} horas extras em uma semana e {num2} na outra. Quantas horas extras ela fez no total?", "Um pedreiro assentou {num1} tijolos de manhã e {num2} à tarde. Quantos tijolos ele assentou no dia?", "Numa festa, havia {num1} salgados de queijo e {num2} de carne. Qual o total de salgados?", "Carlos tinha R$ {num1} e ganhou R$ {num2} de seu pai. Com quanto ele ficou?"],
+            '-': ["Você tinha R$ {num1} e gastou R$ {num2} no mercado. Quanto dinheiro sobrou?", "Uma caixa tinha {num1} parafusos. Você usou {num2}. Quantos parafusos restaram?", "A passagem de ônibus custa R$ {num2}. Se você pagar com uma nota de R$ {num1}, qual será o seu troco?", "De um saco com {num1} kg de arroz, foram usados {num2} kg. Quanto arroz ainda resta no saco?", "Um reservatório tinha {num1} litros de água e foram gastos {num2} litros. Quantos litros sobraram?"],
+            '*': ["Se uma caixa de leite custa R$ {num1}, quanto custarão {num2} caixas?", "Um trabalhador ganha R$ {num1} por hora. Se ele trabalhar {num2} horas, quanto ele receberá?", "Uma parede tem {num2} fileiras com {num1} tijolos cada. Quantos tijolos há na parede?", "Se você compra {num2} pacotes de bolacha, e cada um vem com {num1} unidades, qual o total de bolachas?", "Para uma receita, você precisa de {num1} ovos. Se for fazer a receita {num2} vezes, de quantos ovos precisará?"],
+            '/': ["Uma conta de R$ {num1} será dividida igualmente entre {num2} amigos. Quanto cada um vai pagar?", "Um pacote com {num1} balas será dividido entre {num2} crianças. Quantas balas cada uma ganha?", "Você precisa guardar {num1} latas em caixas que comportam {num2} latas cada. Quantas caixas você vai usar?", "Um carro percorreu {num1} km com {num2} litros de gasolina. Quantos km ele fez por litro?", "Um prêmio de R$ {num1} foi dividido para {num2} ganhadores. Quanto cada um recebeu?"]
         };
 
-        // Initialize Firebase
-        const appFirebase = initializeApp(firebaseConfig); 
-        const analytics = getAnalytics(appFirebase);
-        const auth = getAuth(appFirebase);
-        console.log("Firebase Inicializado com Auth e Analytics.");
+        // --- VARIÁVEIS DE ESTADO DO JOGO ---
+        let score = 0;
+        let currentQuestion = 1;
+        const totalQuestions = 20;
+        let correctAnswer;
+        let currentProblem = {};
+        let generatedProblems = new Set();
+        const HISTORY_KEY = 'pibidMathHistory';
 
-        const detailedContents = { 
-    ano6: [
-        {
-            id: "n6-sistema-numeracao-decimal",
-            title: "Sistema de Numeração Decimal e Outros Sistemas",
-            axisIcon: "hash",
-            content: {
-                definitions: "Sistema de Numeração Decimal: É um sistema posicional de base 10, que utiliza os algarismos 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 para representar todos os números. O valor de um algarismo depende da sua posição no número (ordens e classes).\nOutros Sistemas de Numeração (breve introdução): Egípcio (não posicional, aditivo, com símbolos para potências de 10), Romano (parcialmente posicional, aditivo e subtrativo, com sete símbolos principais: I, V, X, L, C, D, M), Maia (posicional, base 20, com símbolo para o zero).",
-                concepts: "Ordens e Classes: Cada algarismo ocupa uma ordem (unidades, dezenas, centenas). A cada três ordens (da direita para a esquerda), temos uma classe (classe das unidades simples, classe dos milhares, classe dos milhões, etc.).\nValor Absoluto e Valor Relativo (Posicional): Valor absoluto de um algarismo é o seu valor independentemente da posição. Valor relativo é o valor que o algarismo representa dependendo da sua posição no número.\nLeitura e Escrita de Números Naturais: Por extenso e com algarismos.\nComparação e Ordenação de Números Naturais: Utilizando os sinais >, < ou =. Reta numérica como ferramenta de visualização.",
-                theorems: "Princípio da Base 10: Cada 10 unidades de uma ordem formam 1 unidade da ordem imediatamente superior à esquerda.",
-                examples: "Número 2.305.147: Lê-se 'dois milhões, trezentos e cinco mil, cento e quarenta e sete'.\nNo número 8.692: O algarismo 6 está na ordem das centenas e representa 600 unidades (valor relativo). Seu valor absoluto é 6.\nSistema Romano: MMXIV = 1000 + 1000 + 10 + (5-1) = 2014.",
-                figuresPlaceholder: true
-            }
-        },
-        {
-            id: "n6-operacoes-naturais",
-            title: "Operações com Números Naturais",
-            axisIcon: "hash",
-            content: {
-                definitions: "Adição: Ideias de juntar quantidades ou acrescentar uma quantidade a outra. Termos: parcelas, soma ou total.\nSubtração: Ideias de tirar uma quantidade de outra, comparar quantidades (quanto falta?, quanto a mais?), completar uma quantidade. Termos: minuendo, subtraendo, resto ou diferença. A subtração é a operação inversa da adição.\nMultiplicação: Ideia de adição de parcelas iguais, organização retangular (linhas por colunas), combinatória. Termos: fatores, produto.\nDivisão Euclidiana: Ideia de repartir uma quantidade em partes iguais ou verificar quantas vezes uma quantidade cabe em outra. Termos: dividendo (D), divisor (d), quociente (q), resto (r). Relação fundamental: D = d × q + r, com 0 ≤ r < d. A divisão é a operação inversa da multiplicação (quando exata).\nPotenciação: Multiplicação de fatores iguais. Base (fator que se repete), expoente (indica quantas vezes a base se repete), potência (resultado). Casos particulares: expoente 1 (a¹=a), expoente 0 (a⁰=1, para a≠0).\nRadiciação (Raiz Quadrada Exata): Operação inversa da potenciação com expoente 2. Encontrar o número que, elevado ao quadrado, resulta no radicando. Símbolo: √.",
-                concepts: "Propriedades da Adição: Comutativa (a+b = b+a), Associativa ((a+b)+c = a+(b+c)), Elemento Neutro (zero: a+0=a).\nPropriedades da Multiplicação: Comutativa (a×b = b×a), Associativa ((a×b)×c = a×(b×c)), Elemento Neutro (um: a×1=a), Distributiva em relação à adição/subtração (a×(b+c) = a×b + a×c).\nDivisão Exata: Resto é zero. Divisão Não Exata: Resto é diferente de zero.\nLeitura de potências: a² (a ao quadrado), a³ (a ao cubo), a⁴ (a à quarta potência).\nExpressões Numéricas: Sequência de números e operações. Ordem de resolução: 1º Potenciação e Radiciação; 2º Multiplicação e Divisão (na ordem em que aparecem); 3º Adição e Subtração (na ordem em que aparecem). Sinais de associação (parênteses ( ), colchetes [ ], chaves { }) indicam prioridade.",
-                theorems: "Relação Fundamental da Divisão Euclidiana: D = d × q + r.",
-                examples: "Divisão: 47 ÷ 6. Quociente = 7, Resto = 5. (47 = 6 × 7 + 5).\nPotenciação: 5³ = 5×5×5 = 125.\nRaiz Quadrada: √81 = 9, pois 9² = 81.\nExpressão: 20 – [ (10 – 4 × 2) + 3² ] = 20 – [ (10 – 8) + 9 ] = 20 – [ 2 + 9 ] = 20 – 11 = 9.",
-                figuresPlaceholder: true
-            }
-        },
-        {
-            id: "n6-divisibilidade",
-            title: "Divisibilidade, Múltiplos e Divisores",
-            axisIcon: "hash",
-            content: {
-                definitions: "Múltiplo de um número natural 'a': É o produto de 'a' por um número natural qualquer 'n' (M = a × n). O conjunto dos múltiplos de 'a' é infinito, exceto M(0)={0}.\nDivisor de um número natural 'a': Um número natural 'b' (diferente de zero) é divisor de 'a' se a divisão de 'a' por 'b' for exata (resto zero). 'a' é dito divisível por 'b'.",
-                concepts: "Critérios de Divisibilidade:\n- Por 2: Se o número é par.\n- Por 3: Se a soma dos seus algarismos é divisível por 3.\n- Por 4: Se o número formado pelos seus dois últimos algarismos é divisível por 4, ou se termina em 00.\n- Por 5: Se o número termina em 0 ou 5.\n- Por 6: Se é divisível por 2 e por 3 ao mesmo tempo.\n- Por 9: Se a soma dos seus algarismos é divisível por 9.\n- Por 10: Se o número termina em 0.\nNúmeros Primos: Naturais maiores que 1 que possuem exatamente dois divisores distintos: o número 1 e ele mesmo.\nNúmeros Compostos: Naturais maiores que 1 que possuem mais de dois divisores.\nDecomposição em Fatores Primos (Fatoração): Todo número composto pode ser escrito de forma única como um produto de números primos.\nMínimo Múltiplo Comum (MMC): O menor múltiplo comum (diferente de zero) a dois ou mais números.\nMáximo Divisor Comum (MDC): O maior divisor comum a dois ou mais números.",
-                theorems: "Teorema Fundamental da Aritmética: Todo número natural composto pode ser decomposto de forma única (a menos da ordem dos fatores) como um produto de números primos.",
-                examples: "M(6) = {0, 6, 12, 18, ...}\nD(18) = {1, 2, 3, 6, 9, 18}\nFatoração de 90: 90 = 2 × 3² × 5.\nMMC(10, 12): 10=2×5; 12=2²×3. MMC = 2²×3×5 = 60.\nMDC(24, 36): 24=2³×3; 36=2²×3². MDC = 2²×3 = 12.",
-                figuresPlaceholder: true
-            }
-        },
-        {
-            id: "n6-fracoes-conceitos",
-            title: "Frações: Conceitos, Tipos e Comparação",
-            axisIcon: "hash",
-            content: {
-                definitions: "Fração: Representa uma ou mais partes de um todo que foi dividido em partes iguais. Também pode representar o quociente de uma divisão (a/b = a ÷ b).\nTermos da Fração: Numerador (quantas partes são consideradas) e Denominador (em quantas partes o todo foi dividido; deve ser diferente de zero).",
-                concepts: "Leitura de Frações.\nTipos de Frações:\n- Própria: Numerador menor que o denominador (ex: 3/7).\n- Imprópria: Numerador maior ou igual ao denominador (ex: 9/4).\n- Aparente: Numerador é múltiplo do denominador (ex: 10/2 = 5).\nNúmero Misto: Forma de representar frações impróprias (ex: 2 1/4 = 9/4).\nFrações Equivalentes: Representam a mesma quantidade (ex: 1/2 = 2/4).\nSimplificação de Frações: Tornar uma fração irredutível (MDC(num,den)=1).\nComparação de Frações: Mesmo denominador (maior numerador), mesmo numerador (menor denominador), diferentes (reduzir ao mesmo denominador via MMC).",
-                theorems: "Propriedade Fundamental das Frações Equivalentes.",
-                examples: "Transformar 3 2/5 em fração imprópria: (3×5+2)/5 = 17/5.\nSimplificar 30/42: MDC(30,42)=6. (30÷6)/(42÷6) = 5/7.\nComparar 4/7 e 5/8: MMC(7,8)=56. 4/7 = 32/56; 5/8 = 35/56. Logo, 5/8 > 4/7.",
-                figuresPlaceholder: true
-            }
-        },
-        {
-            id: "n6-fracoes-operacoes",
-            title: "Operações com Frações",
-            axisIcon: "hash",
-            content: {
-                definitions: "Operações fundamentais aplicadas a números fracionários.",
-                concepts: "Adição e Subtração:\n- Com denominadores iguais: Somam-se/subtraem-se os numeradores, conserva-se o denominador.\n- Com denominadores diferentes: Encontra-se o MMC, obtêm-se frações equivalentes, opera-se.\nMultiplicação: Numerador × numerador e denominador × denominador. Simplificar antes, se possível.\nDivisão: Multiplica-se a primeira pelo inverso da segunda.\nPotenciação de Frações: (a/b)ⁿ = aⁿ/bⁿ.\nRadiciação de Frações (Raiz Quadrada): √(a/b) = √a/√b.",
-                theorems: "",
-                examples: "Adição: 1/5 + 2/3. MMC(5,3)=15. (3/15) + (10/15) = 13/15.\nMultiplicação: (4/7) × (14/5) = (4/1) × (2/5) = 8/5 (após simplificar 7 e 14).\nDivisão: (5/6) ÷ (2/3) = (5/6) × (3/2) = 15/12 = 5/4.\nPotenciação: (3/4)² = 3²/4² = 9/16.",
-                figuresPlaceholder: true
-            }
-        },
-        {
-            id: "n6-decimais-conceitos-operacoes",
-            title: "Números Decimais: Conceitos e Operações",
-            axisIcon: "hash",
-            content: {
-                definitions: "Números Decimais: Representação de frações decimais (denominadores 10, 100, 1000...). Parte inteira e parte decimal separadas por vírgula.",
-                concepts: "Leitura de Decimais (décimos, centésimos, milésimos...). Transformação entre Fração Decimal e Número Decimal.\nComparação de Números Decimais.\nOperações com Números Decimais:\n- Adição/Subtração: Vírgula debaixo de vírgula.\n- Multiplicação: Multiplica-se como inteiros, soma-se o número de casas decimais dos fatores para o resultado.\n- Divisão: Iguala-se as casas decimais, eliminam-se as vírgulas, divide-se como inteiros.",
-                theorems: "",
-                examples: "Leitura: 5,027 (cinco inteiros e vinte e sete milésimos).\nTransformação: 3,45 = 345/100.\nSubtração: 15,2 - 3,18 = 12,02 (15,20 - 03,18).\nMultiplicação: 3,12 × 0,4 = 1,248 (3 casas decimais).\nDivisão: 12,6 ÷ 0,03 = 1260 ÷ 3 = 420.",
-                figuresPlaceholder: true
-            }
-        },
-        {
-            id: "n6-porcentagem-introducao",
-            title: "Porcentagem (Introdução)",
-            axisIcon: "hash",
-            content: {
-                definitions: "Porcentagem (%): Razão com denominador 100. 'Por cento'.",
-                concepts: "Representações: Percentual (50%), Fracionária (50/100), Decimal (0,50).\nCálculo de x% de um valor: Multiplicar a taxa (decimal ou fracionária) pelo valor.",
-                theorems: "",
-                examples: "30% de 200 = 0,30 × 200 = 60. Ou (30/100) × 200 = 6000/100 = 60.\nSe 5% de um valor é 10, qual o valor? 0,05 × V = 10 => V = 10/0,05 = 200.",
-                figuresPlaceholder: true
-            }
-        },
-        {
-            id: "g6-elementos",
-            title: "Elementos Geométricos Fundamentais",
-            axisIcon: "rulers",
-            content: {
-                definitions: "Ponto (adimensional, indica posição), Reta (infinita, unidimensional), Plano (infinito, bidimensional).\nSemirreta (origem, infinita numa direção). Segmento de Reta (limitado por dois pontos).",
-                concepts: "Postulados básicos (existência e determinação).\nPosições relativas de duas retas no plano: Paralelas (distintas ou coincidentes), Concorrentes (oblíquas ou perpendiculares - formam 90°).",
-                theorems: "",
-                examples: "Representação de ponto (letra maiúscula), reta (letra minúscula), plano (letra grega).\nIdentificar retas paralelas e perpendiculares em mapas ou objetos.",
-                figuresPlaceholder: true
-            }
-        },
-        {
-            id: "g6-poligonos-angulos",
-            title: "Polígonos e Ângulos",
-            axisIcon: "rulers",
-            content: {
-                definitions: "Polígono: Figura plana fechada formada por segmentos de reta (lados) que não se cruzam. Vértices são os encontros dos lados.\nÂngulo: Região do plano delimitada por duas semirretas de mesma origem (vértice).",
-                concepts: "Elementos de um polígono: Lados, Vértices, Ângulos Internos/Externos, Diagonais.\nClassificação de polígonos (quanto ao nº de lados): Triângulo (3), Quadrilátero (4), Pentágono (5), Hexágono (6), etc.\nPolígono Convexo e Não Convexo.\nMedida de Ângulos (grau °). Tipos: Agudo (<90°), Reto (=90°), Obtuso (>90°, <180°), Raso (=180°), Giro Completo (360°).\nÂngulos Consecutivos, Adjacentes, Opostos pelo Vértice (OPV - são congruentes). Bissetriz de um ângulo.",
-                theorems: "Ângulos OPV são congruentes (possuem a mesma medida).",
-                examples: "Um quadrado é um quadrilátero. Um ângulo de 45° é agudo.\nDesenhar a bissetriz de um ângulo de 60°, obtendo dois de 30°.",
-                figuresPlaceholder: true
-            }
-        },
-        {
-            id: "g6-triangulos-quadrilateros",
-            title: "Triângulos e Quadriláteros (Classificação e Propriedades)",
-            axisIcon: "rulers",
-            content: {
-                definitions: "Triângulo: Polígono de 3 lados. Quadrilátero: Polígono de 4 lados.",
-                concepts: "Classificação de Triângulos:\n- Quanto aos lados: Equilátero (3 lados iguais), Isósceles (2 lados iguais), Escaleno (3 lados diferentes).\n- Quanto aos ângulos: Acutângulo (3 ângulos agudos), Retângulo (1 ângulo reto), Obtusângulo (1 ângulo obtuso).\nSoma dos ângulos internos de um triângulo: Sempre 180°.\nQuadriláteros Notáveis:\n- Paralelogramos: Lados opostos paralelos e congruentes. Ângulos opostos congruentes. Diagonais se cruzam no ponto médio. (Retângulo, Quadrado, Losango são tipos especiais).\n- Trapézios: Apenas um par de lados paralelos (bases). (Isósceles, Retângulo, Escaleno).",
-                theorems: "A soma dos ângulos internos de um triângulo é 180°. A soma dos ângulos internos de um quadrilátero convexo é 360°.",
-                examples: "Um triângulo com lados 5cm, 5cm, 7cm é isósceles.\nUm retângulo possui 4 ângulos retos.",
-                figuresPlaceholder: true
-            }
-        },
-        {
-            id: "g6-solidos-geometricos",
-            title: "Sólidos Geométricos (Planificações e Vistas)",
-            axisIcon: "rulers",
-            content: {
-                definitions: "Sólidos Geométricos: Figuras tridimensionais.\nPoliedros: Limitados por polígonos (faces). Elementos: faces, arestas, vértices.\nCorpos Redondos: Superfícies curvas (cilindro, cone, esfera).",
-                concepts: "Classificação de Poliedros: Prismas (2 bases poligonais congruentes/paralelas, faces laterais paralelogramos) e Pirâmides (1 base poligonal, faces laterais triângulos com vértice comum).\nNomenclatura (prisma triangular, pirâmide quadrangular...). Planificação. Vistas (frontal, superior, lateral).",
-                theorems: "Relação de Euler (opcional): V - A + F = 2.",
-                examples: "Cubo, paralelepípedo, cilindro. Planificação de uma caixa de leite (prisma).",
-                figuresPlaceholder: true
-            }
-        },
-        {
-            id: "gm6-unidades",
-            title: "Unidades de Medida (Comprimento, Massa, Capacidade, Tempo, Superfície, Volume)",
-            axisIcon: "ruler",
-            content: {
-                definitions: "Grandeza: Tudo que pode ser medido. Medir: Comparar com uma unidade padrão.",
-                concepts: "Comprimento (metro-m; km, cm, mm). Massa (quilograma-kg; g, mg, tonelada-t).\nCapacidade (litro-L; mL). Tempo (segundo-s; min, h, dia).\nSuperfície (metro quadrado-m²; cm², km²). Are e Hectare.\nVolume (metro cúbico-m³; cm³, dm³). Relação 1dm³ = 1L; 1cm³ = 1mL.\nConversões entre unidades do mesmo sistema e entre sistemas (ex: polegada, pé).",
-                theorems: "",
-                examples: "3,5 km = 3500 m. 2500 g = 2,5 kg. 1h 15min = 75 minutos.\nUma piscina de 50m³ tem capacidade para 50.000 L.",
-                figuresPlaceholder: false
-            }
-        },
-        {
-            id: "gm6-perimetro-poligonos",
-            title: "Perímetro de Polígonos",
-            axisIcon: "ruler",
-            content: {
-                definitions: "Perímetro (P): Soma das medidas dos lados de um polígono.",
-                concepts: "Cálculo do perímetro de figuras planas. Unidades de comprimento.",
-                theorems: "",
-                examples: "Perímetro de um pentágono regular de lado 4cm é 5 × 4cm = 20cm.",
-                figuresPlaceholder: true
-            }
-        },
-        {
-            id: "gm6-area-quadrados-retangulos",
-            title: "Área de Quadrados e Retângulos",
-            axisIcon: "ruler",
-            content: {
-                definitions: "Área (A): Medida da superfície de uma figura plana.",
-                concepts: "Unidade de área (m², cm²). Cálculo da área do quadrado (A = l²) e do retângulo (A = c × l). Decomposição de figuras para cálculo de área.",
-                theorems: "",
-                examples: "Área de um terreno retangular de 12m por 20m é 12 × 20 = 240m².",
-                figuresPlaceholder: true
-            }
-        },
-        {
-            id: "gm6-volume-blocos",
-            title: "Volume de Blocos Retangulares e Cubos",
-            axisIcon: "ruler",
-            content: {
-                definitions: "Volume (V): Medida do espaço ocupado por um sólido.",
-                concepts: "Unidade de volume (m³, cm³). Cálculo do volume do bloco retangular (V = c × l × h) e do cubo (V = a³).",
-                theorems: "",
-                examples: "Volume de um aquário de 50cm x 30cm x 40cm é 50×30×40 = 60000cm³ = 60dm³ = 60L.",
-                figuresPlaceholder: true
-            }
-        },
-        {
-            id: "pe6-tabelas-graficos",
-            title: "Tratamento da Informação: Tabelas e Gráficos",
-            axisIcon: "bar-chart-2",
-            content: {
-                definitions: "Dados, Pesquisa, Tabela, Gráfico.",
-                concepts: "Coleta, organização e representação de dados. Leitura e interpretação de informações em tabelas (simples e de dupla entrada) e gráficos (colunas, barras simples/múltiplas, setores e linhas simples).\nConstrução de gráficos a partir de tabelas.",
-                theorems: "",
-                examples: "Analisar um gráfico de barras com as cores preferidas da turma.\nConstruir uma tabela com o tipo de lanche e a quantidade vendida na cantina.",
-                figuresPlaceholder: true
-            }
-        }
-    ],
-    ano7: [
-        {
-            id: "n7-inteiros",
-            title: "Números Inteiros (ℤ): Operações e Propriedades",
-            axisIcon: "hash",
-            content: {
-                definitions: "Conjunto dos números inteiros (ℤ) = {..., -3, -2, -1, 0, 1, 2, 3, ...}. Inclui os naturais, o zero e os opostos dos naturais.",
-                concepts: "Reta numérica inteira. Módulo ou valor absoluto (|n|). Números opostos ou simétricos.\nComparação de inteiros.\nOperações: Adição (regras de sinais), Subtração (soma com o oposto), Multiplicação e Divisão (regras de sinais), Potenciação (base negativa com expoente par/ímpar), Raiz quadrada exata de inteiros positivos (quando possível).",
-                theorems: "Propriedades das operações (comutatividade, associatividade, elemento neutro, distributividade para inteiros).",
-                examples: "(-12) + (+5) = -7.  (+8) - (-3) = +8 + (+3) = +11.\n(-7) × (+4) = -28.  (-30) ÷ (-6) = +5.\n(-3)² = 9; (-3)³ = -27. √36 = 6.",
-                figuresPlaceholder: true
-            }
-        },
-        {
-            id: "n7-racionais",
-            title: "Números Racionais (ℚ): Representações e Operações",
-            axisIcon: "hash",
-            content: {
-                definitions: "Números Racionais (ℚ): Podem ser escritos como a/b (a,b ∈ ℤ, b≠0). Inclui inteiros, frações, decimais exatos, dízimas periódicas.",
-                concepts: "Representação fracionária, decimal e percentual. Transformações entre elas.\nFração geratriz de dízimas periódicas simples.\nComparação e ordenação na reta numérica.\nOperações com racionais (em todas as formas): Adição, Subtração, Multiplicação, Divisão, Potenciação (expoente inteiro), Raiz quadrada exata.",
-                theorems: "O conjunto ℚ é denso.",
-                examples: "0,75 = 3/4 = 75%. Dízima 0,444... = 4/9.\n(-2/3) + 0,5 = (-2/3) + (1/2) = (-4+3)/6 = -1/6.\n(0,2)³ = 0,008. √(1,44) = 1,2.",
-                figuresPlaceholder: true
-            }
-        },
-        {
-            id: "a7-linguagem-algebrica",
-            title: "Linguagem Algébrica e Valor Numérico",
-            axisIcon: "variable",
-            content: {
-                definitions: "Variável/Incógnita (letra representando um número). Expressão Algébrica (combinação de números, letras e operações). Termo algébrico.",
-                concepts: "Tradução de sentenças da linguagem comum para a linguagem algébrica e vice-versa.\nCálculo do valor numérico de uma expressão algébrica (substituir variáveis por valores).",
-                theorems: "",
-                examples: "'A soma do dobro de um número com 5' -> 2x + 5.\nValor de 3a - b² para a=4, b=-2: 3(4) - (-2)² = 12 - 4 = 8.",
-                figuresPlaceholder: false
-            }
-        },
-        {
-            id: "a7-equacoes-1grau",
-            title: "Equações Polinomiais do 1º Grau com uma Incógnita",
-            axisIcon: "variable",
-            content: {
-                definitions: "Equação (igualdade com incógnita). Raiz (solução da equação). Membros da equação.",
-                concepts: "Princípios de equivalência (aditivo e multiplicativo) para resolução.\nResolução de equações do tipo ax + b = c ou ax + b = cx + d.\nResolução de problemas envolvendo equações do 1º grau.",
-                theorems: "",
-                examples: "Resolver 5x - 8 = 2x + 7:  5x - 2x = 7 + 8  =>  3x = 15  => x = 5.",
-                figuresPlaceholder: true
-            }
-        },
-        {
-            id: "a7-inequacoes-1grau",
-            title: "Inequações Polinomiais do 1º Grau com uma Incógnita",
-            axisIcon: "variable",
-            content: {
-                definitions: "Inequação (desigualdade com incógnita: >, <, ≥, ≤).",
-                concepts: "Princípios de equivalência para inequações (atenção ao multiplicar/dividir por número negativo - inverte o sinal da desigualdade).\nRepresentação do conjunto solução na reta real e como conjunto.",
-                theorems: "",
-                examples: "Resolver 2x - 3 > 7: 2x > 10 => x > 5. Solução: {x ∈ ℝ | x > 5}.\nResolver -3x + 6 ≤ 0: -3x ≤ -6 => 3x ≥ 6 => x ≥ 2.",
-                figuresPlaceholder: true
-            }
-        },
-        {
-            id: "g7-angulos-propriedades",
-            title: "Ângulos: Propriedades, Bissetriz e Retas Paralelas",
-            axisIcon: "rulers",
-            content: {
-                definitions: "Ângulos complementares (soma 90°), suplementares (soma 180°), replementares (soma 360°), opostos pelo vértice (OPV).\nBissetriz de um ângulo (divide ao meio).",
-                concepts: "Ângulos formados por duas retas paralelas cortadas por uma transversal: correspondentes, alternos (internos/externos), colaterais (internos/externos) e suas propriedades de congruência ou suplementaridade.",
-                theorems: "Ângulos OPV são congruentes. Propriedades dos ângulos com retas paralelas.",
-                examples: "Se um ângulo mede 70°, seu suplemento é 110°.\nCálculo de ângulos desconhecidos usando as propriedades.",
-                figuresPlaceholder: true
-            }
-        },
-        {
-            id: "g7-triangulos-quadrilateros-propriedades",
-            title: "Triângulos e Quadriláteros: Soma dos Ângulos e Propriedades",
-            axisIcon: "rulers",
-            content: {
-                definitions: "Revisão da classificação de triângulos e quadriláteros.",
-                concepts: "Soma dos ângulos internos de um triângulo (180°). Teorema do ângulo externo de um triângulo.\nSoma dos ângulos internos de um polígono convexo qualquer: Si = (n-2)×180°.\nPropriedades específicas dos paralelogramos (lados opostos, ângulos opostos, diagonais) e trapézios.",
-                theorems: "Soma dos ângulos internos de um triângulo é 180°.",
-                examples: "Calcular o terceiro ângulo de um triângulo conhecendo dois.\nCalcular a soma dos ângulos internos de um hexágono: (6-2)×180° = 720°.",
-                figuresPlaceholder: true
-            }
-        },
-        {
-            id: "g7-circunferencia-elementos",
-            title: "Circunferência: Elementos e Ângulos",
-            axisIcon: "rulers",
-            content: {
-                definitions: "Circunferência (conjunto de pontos equidistantes do centro). Círculo (circunferência + interior).\nElementos: Centro, Raio (r), Diâmetro (d=2r), Corda, Arco.",
-                concepts: "Ângulo Central (medida igual ao arco). Ângulo Inscrito (medida metade do arco).\nPosições relativas: ponto e circunferência; reta e circunferência (externa, tangente, secante); duas circunferências.",
-                theorems: "A medida de um ângulo inscrito é metade da medida do ângulo central correspondente.",
-                examples: "Se um arco mede 80°, o ângulo central correspondente mede 80° e o ângulo inscrito correspondente mede 40°.",
-                figuresPlaceholder: true
-            }
-        },
-        {
-            id: "gm7-area-figuras-planas",
-            title: "Área de Figuras Planas (Triângulos, Quadriláteros e Círculo)",
-            axisIcon: "ruler",
-            content: {
-                definitions: "Área como medida de superfície.",
-                concepts: "Área do triângulo (A = b.h/2). Área de quadriláteros: Retângulo (A=b.h), Quadrado (A=l²), Paralelogramo (A=b.h), Losango (A=D.d/2), Trapézio (A=(B+b).h/2).\nÁrea do círculo (A = πr²). Comprimento da circunferência (C = 2πr).",
-                theorems: "",
-                examples: "Área de um trapézio com bases 10cm e 6cm e altura 5cm: A = (10+6)×5 / 2 = 16×5 / 2 = 40cm².\nÁrea de um círculo de raio 3m: A = π × 3² = 9π m².",
-                figuresPlaceholder: true
-            }
-        },
-        {
-            id: "gm7-razao-proporcao-regra3",
-            title: "Razão, Proporção e Regra de Três Simples",
-            axisIcon: "ruler",
-            content: {
-                definitions: "Razão (quociente entre duas grandezas). Proporção (igualdade de razões).",
-                concepts: "Propriedade fundamental da proporção (produto dos meios = produto dos extremos).\nGrandezas Diretamente Proporcionais (GDP) e Inversamente Proporcionais (GIP).\nRegra de Três Simples: Método para resolver problemas com 3 valores conhecidos e 1 desconhecido, envolvendo grandezas proporcionais.",
-                theorems: "",
-                examples: "Escala 1:100 (1cm no desenho representa 100cm no real).\nSe 5 canetas custam R$12, quanto custarão 8 canetas? (GDP) 5/8 = 12/x => 5x = 96 => x = R$19,20.",
-                figuresPlaceholder: false
-            }
-        },
-        {
-            id: "gm7-porcentagem-juros-simples",
-            title: "Porcentagem e Juros Simples",
-            axisIcon: "ruler",
-            content: {
-                definitions: "Porcentagem (revisão). Juros Simples (remuneração sobre o capital inicial).",
-                concepts: "Cálculo de porcentagens, aumentos e descontos sucessivos.\nJuros Simples: J = C.i.t (Capital, taxa, tempo). Montante: M = C + J.",
-                theorems: "",
-                examples: "Um produto de R$80 teve um aumento de 10% e depois um desconto de 10% sobre o novo preço. Preço final? Aumento: 80+8=88. Desconto: 88 - 8,80 = R$79,20.\nCapital de R$500 aplicado a 2% a.m. por 4 meses (juros simples): J = 500 × 0,02 × 4 = R$40.",
-                figuresPlaceholder: false
-            }
-        },
-        {
-            id: "pe7-estatistica-probabilidade-basica",
-            title: "Estatística e Probabilidade (Básica)",
-            axisIcon: "bar-chart-2",
-            content: {
-                definitions: "Pesquisa estatística (população, amostra, variável). Frequência (absoluta, relativa).",
-                concepts: "Organização de dados em tabelas. Gráficos (colunas, barras, setores, linhas) - leitura e interpretação.\nMedidas de tendência central: Média aritmética simples e ponderada. Moda. Mediana.\nProbabilidade de um evento: P(E) = (nº de casos favoráveis) / (nº de casos possíveis). Espaço amostral e evento.",
-                theorems: "",
-                examples: "Notas: {5,7,7,8,10}. Média=7,4. Moda=7. Mediana=7.\nProbabilidade de sair 'cara' ao lançar uma moeda: 1/2.",
-                figuresPlaceholder: true
-            }
-        }
-    ],
-    ano8: [
-        {
-            id: "n8-reais-introducao",
-            title: "Conjunto dos Números Reais (ℝ)",
-            axisIcon: "hash",
-            content: {
-                definitions: "Números Irracionais (I): Decimais infinitos e não periódicos (ex: π, √2, √3).\nConjunto dos Números Reais (ℝ): União dos racionais (ℚ) com os irracionais (I). ℝ = ℚ ∪ I.",
-                concepts: "Reta Real (cada ponto corresponde a um número real). Densidade dos reais.\nComparação e ordenação. Intervalos reais (aberto, fechado, semiaberto, infinitos) e sua representação.",
-                theorems: "",
-                examples: "√7 é irracional. -3/4 é racional e real. Representar o intervalo [-2, 5) na reta.",
-                figuresPlaceholder: true
-            }
-        },
-        {
-            id: "n8-potenciacao-radiciacao-reais",
-            title: "Potenciação e Radiciação com Reais (Expoentes Inteiros)",
-            axisIcon: "hash",
-            content: {
-                definitions: "Potenciação (aⁿ, a∈ℝ, n∈ℤ). Radiciação (ⁿ√a, a≥0 se n par).",
-                concepts: "Propriedades da potenciação e radiciação (produto/quociente de potências de mesma base, potência de potência, etc.).\nNotação Científica: Representação de números muito grandes ou pequenos.\nSimplificação de radicais (extrair fatores, radicais semelhantes). Operações com radicais (adição, subtração, multiplicação, divisão).",
-                theorems: "",
-                examples: "(√5)² = 5. (2³)⁻² = 2⁻⁶ = 1/64.  3,12 × 10⁴ = 31200.\n√48 = √(16×3) = 4√3.  (2√3) × (5√2) = 10√6.",
-                figuresPlaceholder: true
-            }
-        },
-        {
-            id: "a8-calculo-algebrico",
-            title: "Cálculo Algébrico: Monômios, Polinômios, Produtos Notáveis e Fatoração",
-            axisIcon: "variable",
-            content: {
-                definitions: "Monômio (coeficiente, parte literal, grau). Polinômio (soma de monômios, grau).\nValor numérico.",
-                concepts: "Operações com monômios e polinômios (adição, subtração, multiplicação, divisão de polinômio por monômio).\nProdutos Notáveis: (a+b)², (a-b)², (a+b)(a-b).\nFatoração: Fator comum, agrupamento, trinômio quadrado perfeito, diferença de dois quadrados.",
-                theorems: "",
-                examples: "(2x²y) + (5x²y) = 7x²y.\n(x-3)(x+5) = x² + 2x - 15.\n(2m+n)² = 4m² + 4mn + n².\nFatorar: 3ax + 6ay = 3a(x+2y).  x² - 10x + 25 = (x-5)².",
-                figuresPlaceholder: true
-            }
-        },
-        {
-            id: "a8-equacoes-1grau-sistemas",
-            title: "Equações Polinomiais do 1º Grau com Duas Incógnitas e Sistemas",
-            axisIcon: "variable",
-            content: {
-                definitions: "Equação linear com duas incógnitas (ax + by = c). Solução (par ordenado).\nSistema de equações lineares (duas equações, duas incógnitas).",
-                concepts: "Representação gráfica de uma equação linear (reta).\nMétodos de resolução de sistemas: Substituição, Adição, Comparação.\nClassificação de sistemas: Possível Determinado (SPD - solução única), Possível Indeterminado (SPI - infinitas soluções), Impossível (SI - nenhuma solução). Interpretação geométrica (retas concorrentes, coincidentes, paralelas).",
-                theorems: "",
-                examples: "Sistema: {x + 2y = 7; 3x - y = 0}. Resolvendo por substituição: y=3x. x + 2(3x) = 7 => x + 6x = 7 => 7x = 7 => x=1. y = 3(1) = 3. Sol: (1,3).",
-                figuresPlaceholder: true
-            }
-        },
-        {
-            id: "g8-segmentos-proporcionais-tales",
-            title: "Segmentos Proporcionais e Teorema de Tales",
-            axisIcon: "rulers",
-            content: {
-                definitions: "Razão entre segmentos. Segmentos proporcionais.\nTeorema de Tales: Feixe de retas paralelas cortadas por transversais determina segmentos proporcionais.",
-                concepts: "Aplicações do Teorema de Tales. Divisão de segmento em partes proporcionais. Semelhança de triângulos como consequência (caso particular).",
-                theorems: "Teorema de Tales.",
-                examples: "Cálculo de medidas desconhecidas usando a proporcionalidade em figuras com retas paralelas.",
-                figuresPlaceholder: true
-            }
-        },
-        {
-            id: "g8-semelhanca-figuras-planas",
-            title: "Semelhança de Figuras Planas (Foco em Triângulos)",
-            axisIcon: "rulers",
-            content: {
-                definitions: "Figuras semelhantes (mesma forma, tamanhos podem diferir). Razão de semelhança (k).",
-                concepts: "Polígonos semelhantes (ângulos correspondentes congruentes, lados correspondentes proporcionais).\nCasos de Semelhança de Triângulos: AA (Ângulo-Ângulo), LLL (Lado-Lado-Lado), LAL (Lado-Ângulo-Lado).\nRazão entre perímetros (k) e áreas (k²) de figuras semelhantes.",
-                theorems: "Teorema Fundamental da Semelhança.",
-                examples: "Calcular lados de triângulos semelhantes. Problemas de alturas inacessíveis.",
-                figuresPlaceholder: true
-            }
-        },
-        {
-            id: "g8-teorema-pitagoras",
-            title: "Teorema de Pitágoras e Aplicações",
-            axisIcon: "rulers",
-            content: {
-                definitions: "Triângulo retângulo (catetos, hipotenusa).",
-                concepts: "Enunciado: a² = b² + c². Aplicações: cálculo de lados, diagonal do quadrado/retângulo, altura do triângulo equilátero.",
-                theorems: "Teorema de Pitágoras e sua recíproca.",
-                examples: "Catetos 5 e 12, hipotenusa = √(5²+12²) = √169 = 13.",
-                figuresPlaceholder: true
-            }
-        },
-        {
-            id: "g8-trigonometria-triangulo-retangulo",
-            title: "Trigonometria no Triângulo Retângulo (Seno, Cosseno, Tangente)",
-            axisIcon: "rulers",
-            content: {
-                definitions: "Seno (cat.oposto/hip.), Cosseno (cat.adjacente/hip.), Tangente (cat.oposto/cat.adjacente).",
-                concepts: "Ângulos notáveis (30°, 45°, 60°) e seus valores trigonométricos.\nResolução de triângulos retângulos (encontrar lados/ângulos desconhecidos). Tabela trigonométrica.",
-                theorems: "Relação Fundamental: sen²α + cos²α = 1. tgα = senα/cosα.",
-                examples: "Num triângulo retângulo, hipotenusa=10, ângulo=30°. Cat.oposto = 10.sen(30°) = 10.(1/2) = 5.",
-                figuresPlaceholder: true
-            }
-        },
-        {
-            id: "g8-circunferencia-circulo-elementos",
-            title: "Circunferência e Círculo: Elementos e Comprimento",
-            axisIcon: "rulers",
-            content: {
-                definitions: "Circunferência, Círculo. Elementos: centro, raio, diâmetro, corda, arco.",
-                concepts: "Comprimento da circunferência (C = 2πr ou C = πd). Número π (pi).\nPosições relativas entre ponto/reta e circunferência. Ângulo central e ângulo inscrito (relação).",
-                theorems: "Medida do ângulo inscrito é metade do central correspondente.",
-                examples: "Cálculo do comprimento da circunferência. Relação entre arco e ângulo central.",
-                figuresPlaceholder: true
-            }
-        },
-        {
-            id: "gm8-volume-blocos-cilindros",
-            title: "Volume de Blocos Retangulares e Cilindros (Introdução)",
-            axisIcon: "ruler",
-            content: {
-                definitions: "Volume.",
-                concepts: "Unidades de volume. Volume do bloco retangular (V=abc). Volume do cubo (V=a³).\nIntrodução ao volume do cilindro (V = Área da base × altura = πr²h).",
-                theorems: "",
-                examples: "Cálculo de volumes de caixas, piscinas (aproximação), latas.",
-                figuresPlaceholder: true
-            }
-        },
-        {
-            id: "pe8-estatistica-medidas-centrais",
-            title: "Estatística: Organização de Dados e Medidas de Tendência Central",
-            axisIcon: "bar-chart-2",
-            content: {
-                definitions: "População, amostra, variável (qualitativa/quantitativa). Rol. Frequência (absoluta, relativa, acumulada).",
-                concepts: "Tabelas de distribuição de frequências (dados não agrupados e agrupados em classes).\nGráficos (histograma, polígono de frequência, ogiva - para dados agrupados). Leitura e interpretação.\nMedidas de Tendência Central: Média (aritmética simples e ponderada), Moda, Mediana.",
-                theorems: "",
-                examples: "Cálculo e interpretação das medidas para conjuntos de dados. Análise de gráficos.",
-                figuresPlaceholder: true
-            }
-        },
-        {
-            id: "pe8-probabilidade-espaco-amostral",
-            title: "Probabilidade: Espaço Amostral e Cálculo de Probabilidades Simples",
-            axisIcon: "bar-chart-2",
-            content: {
-                definitions: "Experimento aleatório. Espaço amostral (Ω). Evento (E).",
-                concepts: "Evento certo, evento impossível, evento complementar.\nCálculo da probabilidade P(E) = n(E)/n(Ω). Probabilidade varia de 0 a 1 (ou 0% a 100%).\nPrincípio multiplicativo da contagem (introdução para cálculo de casos possíveis).",
-                theorems: "",
-                examples: "Lançar um dado: P(sair número par) = 3/6 = 1/2.\nRetirar uma bola de uma urna. Combinações simples em problemas de probabilidade.",
-                figuresPlaceholder: false
-            }
-        }
-    ],
-    ano9: [
-        {
-            id: "n9-potenciacao-radiciacao-aprofundamento",
-            title: "Potenciação e Radiciação (Expoentes Racionais e Racionalização)",
-            axisIcon: "hash",
-            content: {
-                definitions: "Potência com Expoente Racional (a^(m/n) = ⁿ√(aᵐ), a>0).\nRadicais (revisão).",
-                concepts: "Propriedades da potenciação com expoente racional.\nPropriedades dos radicais (produto, quociente, potência, radical de radical, simplificação).\nRacionalização de denominadores (casos com √b, a±√b, √a±√b no denominador).",
-                theorems: "",
-                examples: "16^(3/4) = ⁴√(16³) = (⁴√16)³ = 2³ = 8.\nSimplificar: ³√54 = ³√(27×2) = 3³√2.\nRacionalizar 5/(√7-√2) = 5(√7+√2) / ((√7)²-(√2)²) = 5(√7+√2) / (7-2) = √7+√2.",
-                figuresPlaceholder: true
-            }
-        },
-        {
-            id: "a9-equacoes-2grau",
-            title: "Equações Polinomiais do 2º Grau com uma Incógnita",
-            axisIcon: "variable",
-            content: {
-                definitions: "Forma ax² + bx + c = 0 (a≠0). Completa e incompleta.",
-                concepts: "Resolução de incompletas (ax²+c=0; ax²+bx=0).\nFórmula de Bhaskara: x = [-b ± √Δ] / 2a, onde Δ = b² - 4ac (discriminante).\nAnálise do discriminante (Δ>0 duas raízes reais distintas; Δ=0 uma raiz real dupla; Δ<0 não há raízes reais).\nSoma (S=-b/a) e Produto (P=c/a) das raízes (Relações de Girard).\nComposição da equação (x² - Sx + P = 0).\nResolução de problemas. Equações biquadradas (y=x²). Equações irracionais simples.",
-                theorems: "",
-                examples: "x² - 3x - 10 = 0. Δ=49. x₁=5, x₂=-2. S=3, P=-10.\nResolver (x²-1)² - (x²-1) - 2 = 0. Fazendo y=x²-1, temos y²-y-2=0.",
-                figuresPlaceholder: false
-            }
-        },
-        {
-            id: "a9-funcoes-afim-quadratica",
-            title: "Funções: Noção, Função Afim e Função Quadrática",
-            axisIcon: "variable",
-            content: {
-                definitions: "Função (relação entre domínio e contradomínio, f:A→B). Domínio, contradomínio, imagem.\nFunção Afim (f(x)=ax+b, a≠0). Função Quadrática (f(x)=ax²+bx+c, a≠0).",
-                concepts: "Gráfico (plano cartesiano).\nFunção Afim: Gráfico (reta), coef. angular (a), coef. linear (b), raiz (x=-b/a), crescente (a>0), decrescente (a<0).\nFunção Quadrática: Gráfico (parábola), concavidade (sinal de 'a'), raízes (Bhaskara, Δ), vértice (Xv=-b/2a, Yv=-Δ/4a), ponto de máx/mín, intersecção com eixo y (0,c), eixo de simetria.\nEstudo do sinal da função afim e quadrática.",
-                theorems: "",
-                examples: "f(x)=-3x+9. Raiz x=3. Decrescente. Corta y em 9.\ng(x)=x²-6x+5. Raízes x=1,x=5. Vértice (3,-4). Concavidade para cima.",
-                figuresPlaceholder: true
-            }
-        },
-        {
-            id: "a9-sistemas-equacoes-nao-lineares",
-            title: "Sistemas de Equações (Não Lineares Simples)",
-            axisIcon: "variable",
-            content: {
-                definitions: "Sistemas envolvendo uma equação do 1º grau e uma do 2º grau, ou duas do 2º grau em casos simples.",
-                concepts: "Método da substituição como principal estratégia.\nInterpretação geométrica (intersecção de reta com parábola, ou de duas cônicas simples).",
-                theorems: "",
-                examples: "Resolver {x + y = 7; xy = 12}.  Isolando y=7-x na primeira e substituindo na segunda: x(7-x)=12 => 7x-x²=12 => x²-7x+12=0. Raízes x=3 ou x=4. Se x=3, y=4. Se x=4, y=3. Soluções: (3,4) e (4,3).",
-                figuresPlaceholder: true
-            }
-        },
-        {
-            id: "g9-semelhanca-tales",
-            title: "Semelhança de Triângulos e Teorema de Tales",
-            axisIcon: "rulers",
-            content: {
-                definitions: "Figuras semelhantes. Razão de semelhança (k).\nTeorema de Tales.",
-                concepts: "Casos de Semelhança de Triângulos (AA, LLL, LAL).\nAplicações. Razão entre perímetros (k) e áreas (k²).",
-                theorems: "Teorema de Tales. Teorema Fundamental da Semelhança.",
-                examples: "Cálculo de alturas inacessíveis usando semelhança.",
-                figuresPlaceholder: true
-            }
-        },
-        {
-            id: "g9-relacoes-metricas-triangulo-retangulo",
-            title: "Relações Métricas no Triângulo Retângulo (Incluindo Trigonometria)",
-            axisIcon: "rulers",
-            content: {
-                definitions: "Revisão: Catetos, hipotenusa, altura relativa à hipotenusa (h), projeções dos catetos (m, n).",
-                concepts: "Teorema de Pitágoras (a²=b²+c²).\nRelações Métricas: b²=an, c²=am, h²=mn, ah=bc.\nTrigonometria: Seno, Cosseno, Tangente dos ângulos agudos. Ângulos notáveis (30°,45°,60°). Resolução de triângulos. Lei dos Senos e Lei dos Cossenos (introdução ou menção, dependendo do aprofundamento do material).",
-                theorems: "Teorema de Pitágoras. Relações métricas. Lei dos Senos. Lei dos Cossenos.",
-                examples: "Dado um triângulo retângulo e algumas medidas, encontrar as demais.",
-                figuresPlaceholder: true
-            }
-        },
-        {
-            id: "g9-relacoes-metricas-circunferencia",
-            title: "Relações Métricas na Circunferência e Ângulos",
-            axisIcon: "rulers",
-            content: {
-                definitions: "Ângulo central, inscrito, de segmento.",
-                concepts: "Relações entre cordas (PA⋅PB = PC⋅PD).\nRelações entre secantes (PA⋅PB = PC⋅PD).\nRelação entre secante e tangente (PT² = PA⋅PB).\nPotência de ponto (opcional).\nQuadrilátero inscritível (ângulos opostos suplementares) e circunscritível (somas dos lados opostos iguais - Teorema de Pitot).",
-                theorems: "Teoremas dos ângulos na circunferência. Teoremas das cordas, secantes, tangente-secante.",
-                examples: "Cálculo de segmentos e ângulos em configurações com circunferências.",
-                figuresPlaceholder: true
-            }
-        },
-        {
-            id: "gm9-areas-figuras-planas-circulo",
-            title: "Áreas de Figuras Planas e do Círculo (Aprofundamento)",
-            axisIcon: "ruler",
-            content: {
-                definitions: "Revisão de área.",
-                concepts: "Áreas de polígonos regulares (A = semiperímetro × apótema).\nÁrea do círculo (A = πr²). Área do setor circular (A = (θ/360)πr² ou A = Lr/2).\nÁrea da coroa circular (A = π(R²-r²)). Área de segmentos circulares (opcional).",
-                theorems: "",
-                examples: "Cálculo de áreas de figuras compostas.",
-                figuresPlaceholder: true
-            }
-        },
-        {
-            id: "gm9-juros-simples-compostos",
-            title: "Matemática Financeira: Juros Simples e Compostos",
-            axisIcon: "ruler",
-            content: {
-                definitions: "Juro (J), Capital (C), Taxa (i), Tempo (t), Montante (M).",
-                concepts: "Juros Simples: J=Cit, M=C(1+it).\nJuros Compostos: M=C(1+i)ᵗ, J=M-C.\nComparação. Problemas de aumentos/descontos sucessivos e taxas equivalentes (introdução).",
-                theorems: "",
-                examples: "Calcular montante em diferentes regimes de juros.",
-                figuresPlaceholder: true
-            }
-        },
-        {
-            id: "pe9-estatistica-medidas-dispersao",
-            title: "Estatística: Medidas de Tendência Central e de Dispersão",
-            axisIcon: "bar-chart-2",
-            content: {
-                definitions: "Revisão de população, amostra, variável, frequências.",
-                concepts: "Medidas de Tendência Central (Média, Moda, Mediana) - cálculo e interpretação para dados agrupados e não agrupados.\nMedidas de Dispersão: Amplitude total. Desvio Médio Absoluto. Variância (σ² ou s²). Desvio Padrão (σ ou s). Coeficiente de Variação (CV) - introdução.\nInterpretação da dispersão dos dados.",
-                theorems: "",
-                examples: "Calcular e comparar o desvio padrão de dois conjuntos de dados.",
-                figuresPlaceholder: true
-            }
-        },
-        {
-            id: "pe9-probabilidade-eventos-dependentes-independentes",
-            title: "Probabilidade: Eventos Dependentes e Independentes, Probabilidade Condicional (Introdução)",
-            axisIcon: "bar-chart-2",
-            content: {
-                definitions: "Revisão de espaço amostral e evento. União e Intersecção de eventos.",
-                concepts: "Eventos Independentes: P(A∩B) = P(A)⋅P(B).\nEventos Dependentes. Probabilidade Condicional: P(A|B) = P(A∩B) / P(B) (Probabilidade de A ocorrer dado que B ocorreu - introdução).\nDiagrama de árvore para visualização de probabilidades compostas.",
-                theorems: "",
-                examples: "Probabilidade de retirar duas bolas de uma cor específica de uma urna, com e sem reposição.\nProbabilidade de obter duas caras em dois lançamentos de moeda.",
-                figuresPlaceholder: true
-            }
-        }
-    ],
-    ano1EM: [ 
-        {
-            id: "em1-conjuntos", title: "Conjuntos Numéricos", axisIcon: "hash", content: {
-                definitions: "Definição de conjunto, elemento, pertinência (∈, ∉), inclusão (⊂, ⊄, ⊃, ⊅).\nConjuntos numéricos: Naturais (ℕ), Inteiros (ℤ), Racionais (ℚ), Irracionais (I), Reais (ℝ).",
-                concepts: "Operações com conjuntos: União (∪), Intersecção (∩), Diferença (-), Complementar.\nRepresentação de conjuntos: Listagem, Propriedade, Diagrama de Venn.\nIntervalos reais: Representação e operações.",
-                theorems: "Propriedades das operações com conjuntos.",
-                examples: "A = {1,2,3}, B = {3,4,5}. A∪B = {1,2,3,4,5}. A∩B = {3}.\nIntervalo [2, 5) = {x ∈ ℝ | 2 ≤ x < 5}.",
-                figuresPlaceholder: true 
-            }
-        },
-        {
-            id: "em1-funcao-afim", title: "Função Afim (Função Polinomial do 1º Grau)", axisIcon: "activity", content: { 
-                definitions: "Definição de função (relação entre duas grandezas variáveis, domínio, contradomínio, imagem).\nFunção Afim: f(x) = ax + b, com a,b ∈ ℝ e a ≠ 0.",
-                concepts: "Coeficiente angular 'a' (taxa de variação, inclinação da reta).\nCoeficiente linear 'b' (ordenada na origem, onde o gráfico corta o eixo y).\nGráfico da função afim (uma reta).\nZero ou raiz da função afim (valor de x para f(x)=0).\nFunção crescente (a>0) e decrescente (a<0).\nFunção Linear (f(x)=ax, caso particular com b=0).\nFunção Constante (f(x)=b, caso particular com a=0 - não é estritamente afim).",
-                theorems: "",
-                examples: "f(x) = 2x - 4. Coef. angular = 2, Coef. linear = -4. Raiz: 2x-4=0 => x=2.\nGráfico de g(x) = -x + 3.",
-                figuresPlaceholder: true 
-            }
-        },
-        {
-            id: "em1-funcao-quadratica", title: "Função Quadrática (Função Polinomial do 2º Grau)", axisIcon: "activity", content: {
-                definitions: "Função Quadrática: f(x) = ax² + bx + c, com a,b,c ∈ ℝ e a ≠ 0.",
-                concepts: "Gráfico da função quadrática (uma parábola).\nConcavidade da parábola (sinal do coeficiente 'a').\nZeros ou raízes da função quadrática (onde f(x)=0, fórmula de Bhaskara).\nVértice da parábola (Xv = -b/2a, Yv = -Δ/4a). Ponto de máximo ou mínimo.\nEixo de simetria da parábola. Intersecção com o eixo y (ponto (0,c)).\nEstudo do sinal da função quadrática. Imagem da função.",
-                theorems: "",
-                examples: "f(x) = x² - 5x + 6. Raízes: x=2, x=3. Vértice: (2.5, -0.25). Concavidade para cima.\nConstruir o gráfico de g(x) = -x² + 2x + 3.",
-                figuresPlaceholder: true 
-            }
-        },
-        {
-            id: "em1-progressoes", title: "Progressões (PA e PG)", axisIcon: "trending-up", content: { 
-                definitions: "Sequência numérica.\nProgressão Aritmética (PA): Sequência onde cada termo, a partir do segundo, é a soma do anterior com uma constante (razão 'r').\nProgressão Geométrica (PG): Sequência onde cada termo, a partir do segundo, é o produto do anterior por uma constante (razão 'q').",
-                concepts: "Termo geral da PA: an = a1 + (n-1)r.\nSoma dos n primeiros termos da PA: Sn = (a1 + an)n / 2.\nTermo geral da PG: an = a1 ⋅ q^(n-1).\nSoma dos n primeiros termos da PG finita: Sn = a1(qⁿ - 1) / (q - 1), para q≠1.\nSoma dos termos de uma PG infinita convergente (|q|<1): S = a1 / (1-q).",
-                theorems: "",
-                examples: "PA: (2, 5, 8, 11, ...). a1=2, r=3. a10 = 2 + (10-1)3 = 2 + 27 = 29.\nPG: (3, 6, 12, 24, ...). a1=3, q=2. S5 = 3(2⁵ - 1) / (2-1) = 3(31) = 93.",
-                figuresPlaceholder: false
-            }
-        },
-        {
-            id: "em1-matematica-financeira", title: "Matemática Financeira (Porcentagem e Juros)", axisIcon: "dollar-sign", content: {
-                definitions: "Porcentagem (revisão e aprofundamento).\nAumentos e Descontos (simples e sucessivos).\nJuros Simples e Juros Compostos.",
-                concepts: "Fator de aumento e fator de desconto.\nTaxa de juros (i), Capital (C), Tempo (t), Montante (M).\nJuros Simples: J = Cit; M = C(1+it).\nJuros Compostos: M = C(1+i)ᵗ.",
-                theorems: "",
-                examples: "Um produto custava R$120 e teve um aumento de 15%. Novo preço = 120 × 1,15 = R$138.\nR$1000 aplicados a 1% a.m. por 1 ano a juros compostos: M = 1000(1,01)¹².",
-                figuresPlaceholder: true 
-            }
-        },
-         {
-            id: "em1-trigonometria-triangulo", title: "Trigonometria no Triângulo Retângulo", axisIcon: "compass", content: { 
-                definitions: "Revisão de Seno, Cosseno e Tangente de ângulos agudos.",
-                concepts: "Relações trigonométricas fundamentais: sen²α + cos²α = 1; tgα = senα/cosα.\nÂngulos notáveis (30°, 45°, 60°) e seus valores.\nResolução de problemas envolvendo triângulos retângulos.",
-                theorems: "Teorema de Pitágoras.",
-                examples: "Calcular a altura de um prédio dada a distância e o ângulo de elevação.",
-                figuresPlaceholder: true 
-            }
-        }
-    ]
-};
-
-        // --- SCRIPT PRINCIPAL ---
-        const authView = document.getElementById('auth-view');
-        const appView = document.getElementById('app-view');
-        const loginForm = document.getElementById('login-form');
-        const registerForm = document.getElementById('register-form');
-        const toggleAuthModeBtn = document.getElementById('toggle-auth-mode-btn');
-        const authTitle = document.getElementById('auth-title');
-        const authToggleText = document.getElementById('auth-toggle-text');
-        const authMessage = document.getElementById('auth-message');
-        const userInfoDiv = document.getElementById('user-info');
-        const initialMessageArea = document.getElementById('initial-message-area');
-        const forgotPasswordBtn = document.getElementById('forgot-password-btn');
-        const suggestImprovementBtn = document.getElementById('suggest-improvement-btn');
-
-
-        const mainContentArea = document.getElementById('main-content-area');
-        const mainNavButtons = document.querySelectorAll('.main-nav-button');
-        const contentAreaSections = document.querySelectorAll('#main-content-area > section:not(#initial-message-area)'); // Exclui a mensagem inicial da lógica de ocultar/mostrar seções de conteúdo
-
-        const gerarAtividadeBtn = document.getElementById('gerarAtividadeBtn');
-        const loadingGerador = document.getElementById('loadingGerador');
-        const erroGerador = document.getElementById('erroGerador');
-        const atividadesGeradasContainer = document.getElementById('atividadesGeradasContainer');
-        const seletorAnoGerador = document.getElementById('seletorAnoGerador');
-        const seletorNumQuestoes = document.getElementById('seletorNumQuestoes');
-        const seletorTopicoGerador = document.getElementById('seletorTopicoGerador');
-        const seletorTipoQuestao = document.getElementById('seletorTipoQuestao');
-        const seletorNivelDificuldade = document.getElementById('seletorNivelDificuldade');
-        const botoesAcaoQuestoes = document.getElementById('botoesAcaoQuestoes');
-        const copiarQuestoesBtn = document.getElementById('copiarQuestoesBtn');
-
-        
-        const floatingAiBtn = document.getElementById('floating-ai-btn');
-        const aiChatModal = document.getElementById('ai-chat-modal');
-        const closeAiChatBtn = document.getElementById('close-ai-chat-btn');
-        const aiChatHistory = document.getElementById('ai-chat-history');
-        const aiChatInput = document.getElementById('ai-chat-input');
-        const aiChatSendBtn = document.getElementById('ai-chat-send-btn');
-        const aiChatLoading = document.getElementById('ai-chat-loading');
-
-        let currentYear = 'ano6'; 
-        let currentTopic = null; 
-        let currentUser = null;
-
-        // --- LÓGICA DE AUTENTICAÇÃO ---
-        function displayAuthMessage(message, isError = false, isSuccess = false) {
-            authMessage.textContent = message;
-            authMessage.className = `mb-4 text-sm text-center ${isError ? 'text-red-600' : (isSuccess ? 'text-green-600' : 'text-gray-600')}`;
+        // --- FUNÇÕES DO JOGO ---
+        function startNewRound() {
+            score = 0;
+            currentQuestion = 1;
+            scoreElement.textContent = score;
+            questionCounterElement.textContent = `${currentQuestion} / ${totalQuestions}`;
+            endRoundScreen.classList.add('hidden');
+            gameArea.classList.remove('hidden');
+            generateProblem();
         }
 
-
-        loginForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const email = document.getElementById('login-email').value;
-            const password = document.getElementById('login-password').value;
-            try {
-                await signInWithEmailAndPassword(auth, email, password);
-                displayAuthMessage('Login bem-sucedido! A carregar conteúdos...', false, true);
-            } catch (error) {
-                console.error("Erro de Login:", error);
-                displayAuthMessage(`Erro ao fazer login: ${error.message}`, true);
-            }
-        });
-
-        registerForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const name = document.getElementById('register-name').value.trim();
-            const email = document.getElementById('register-email').value;
-            const password = document.getElementById('register-password').value;
-            
-            if (!name) {
-                displayAuthMessage('Por favor, insira um nome de utilizador.', true);
+        function generateProblem() {
+            if (currentQuestion > totalQuestions) {
+                endRound();
                 return;
             }
-            if (password.length < 6) {
-                displayAuthMessage('A senha deve ter pelo menos 6 caracteres.', true);
-                return;
-            }
-            try {
-                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-                await updateProfile(userCredential.user, { displayName: name });
-                displayAuthMessage('Registo bem-sucedido! A fazer login...', false, true);
-            } catch (error) {
-                console.error("Erro de Registo:", error);
-                displayAuthMessage(`Erro ao registar: ${error.message}`, true);
-            }
-        });
+            questionCounterElement.textContent = `${currentQuestion} / ${totalQuestions}`;
+            answerInput.value = '';
+            messageElement.textContent = '';
+            calculationElement.textContent = '';
+            explanationBox.classList.add('hidden');
+            messageElement.className = 'h-8 text-xl font-bold transition-opacity duration-300';
+            answerInput.focus();
+            submitBtn.disabled = false;
+            answerInput.disabled = false;
 
-        toggleAuthModeBtn.addEventListener('click', () => {
-            const isLoginFormVisible = !loginForm.classList.contains('hidden');
-            loginForm.classList.toggle('hidden', !isLoginFormVisible);
-            registerForm.classList.toggle('hidden', isLoginFormVisible);
-            authTitle.textContent = isLoginFormVisible ? 'Registrar nova conta' : 'Login'; 
-            authToggleText.textContent = isLoginFormVisible ? 'Já tem uma conta?' : 'Não tem uma conta?';
-            toggleAuthModeBtn.textContent = isLoginFormVisible ? 'Faça login aqui.' : 'Registre-se aqui.'; 
-            authMessage.textContent = ''; 
-        });
+            let num1, num2, operator, template, problemKey;
+            let attempts = 0;
 
-        forgotPasswordBtn.addEventListener('click', async () => {
-            const email = document.getElementById('login-email').value;
-            if (!email) {
-                displayAuthMessage('Por favor, insira o seu email no campo de login para restaurar a senha.', true);
-                return;
-            }
-            try {
-                await sendPasswordResetEmail(auth, email);
-                displayAuthMessage('Email de restauração de senha enviado! Verifique a sua caixa de entrada.', false, true);
-            } catch (error) {
-                console.error("Erro ao enviar email de restauração:", error);
-                displayAuthMessage(`Erro ao enviar email: ${error.message}`, true);
-            }
-        });
+            do {
+                const operators = ['+', '-', '*', '/'];
+                operator = operators[Math.floor(Math.random() * 4)];
+                const templates = problemTemplates[operator];
+                template = templates[Math.floor(Math.random() * templates.length)];
 
-
-        function handleLogout() {
-            signOut(auth).catch(error => {
-                console.error("Erro ao Sair:", error);
-                displayAuthMessage(`Erro ao sair: ${error.message}`, true); 
-            });
-        }
-        
-        onAuthStateChanged(auth, (user) => {
-            currentUser = user;
-            if (user) {
-                authView.style.display = 'none';
-                appView.classList.add('active');
-                floatingAiBtn.classList.remove('hidden');
-
-                const displayName = user.displayName || '';
-                const email = user.email;
-
-                userInfoDiv.innerHTML = `
-                    <p id="user-email-display" class="text-sm text-gray-600 mb-1">${displayName ? `Bem-vindo(a), ${displayName}!` : ''} (${email})</p>
-                    <div class="flex items-center justify-end gap-2 mb-1">
-                        <input type="text" id="profile-name-input" placeholder="Seu nome de perfil" value="${displayName}" class="px-2 py-1 border border-gray-300 rounded-md text-sm w-36">
-                        <button id="save-profile-name-btn" class="text-xs text-white px-2 py-1 rounded-md hover:opacity-80" style="background-color: var(--concenal-green-medium);">Salvar Nome</button>
-                    </div>
-                    <button id="logout-btn" class="text-sm font-semibold" style="color: var(--concenal-red);">Sair</button>
-                `;
-                document.getElementById('logout-btn').addEventListener('click', handleLogout);
-                document.getElementById('save-profile-name-btn')?.addEventListener('click', saveProfileName);
+                switch (operator) {
+                    case '+': num1 = Math.floor(Math.random() * 20) + 5; num2 = Math.floor(Math.random() * 20) + 5; correctAnswer = num1 + num2; break;
+                    case '-': num2 = Math.floor(Math.random() * 20) + 5; num1 = num2 + Math.floor(Math.random() * 20) + 5; correctAnswer = num1 - num2; break;
+                    case '*': num1 = Math.floor(Math.random() * 9) + 2; num2 = Math.floor(Math.random() * 9) + 2; correctAnswer = num1 * num2; break;
+                    case '/': num2 = Math.floor(Math.random() * 9) + 2; const result = Math.floor(Math.random() * 9) + 2; num1 = num2 * result; correctAnswer = result; break;
+                }
                 
-                contentAreaSections.forEach(sec => sec.classList.remove('active'));
-                if(initialMessageArea) initialMessageArea.style.display = 'block';
-                mainNavButtons.forEach(btn => btn.classList.remove('active')); 
+                problemKey = `${template}-${num1}-${num2}`;
+                attempts++;
+                if (attempts > 500) { clearHistory(false); }
+            } while (generatedProblems.has(problemKey));
 
+            generatedProblems.add(problemKey);
+            localStorage.setItem(HISTORY_KEY, JSON.stringify(Array.from(generatedProblems)));
+            currentProblem = { num1, num2, operator };
+            const problemString = template.replace('{num1}', `<strong class="text-teal-700">${num1}</strong>`).replace('{num2}', `<strong class="text-teal-700">${num2}</strong>`);
+            problemTextElement.innerHTML = problemString;
+        }
 
+        function generateExplanation(problem, answer) {
+            const { num1, num2, operator } = problem;
+            switch (operator) {
+                case '+': return `Para somar, juntamos as duas quantidades. Se você tem ${num1} e adiciona ${num2}, o total é ${answer}.`;
+                case '-': return `A subtração é a diferença entre os valores. Começando com ${num1} e tirando ${num2}, o resultado que sobra é ${answer}.`;
+                case '*': return `Multiplicar ${num1} por ${num2} é o mesmo que somar o número ${num1} por ${num2} vezes. O resultado dessa soma é ${answer}.`;
+                case '/': return `Dividir ${num1} por ${num2} é descobrir quantas vezes o ${num2} cabe dentro do ${num1}. Neste caso, a resposta é ${answer}.`;
+                default: return '';
+            }
+        }
+
+        function checkAnswer() {
+            const userAnswer = parseInt(answerInput.value, 10);
+            if (isNaN(userAnswer)) {
+                messageElement.textContent = 'Digite um número!';
+                messageElement.classList.add('text-yellow-600');
+                return;
+            }
+            submitBtn.disabled = true;
+            answerInput.disabled = true;
+            const { num1, num2, operator } = currentProblem;
+            calculationElement.textContent = `${num1} ${operator} ${num2} = ${correctAnswer}`;
+            
+            let nextProblemDelay = 2500; // Tempo padrão para a próxima questão
+
+            if (userAnswer === correctAnswer) {
+                score++;
+                messageElement.textContent = 'Correto! 🎉';
+                messageElement.classList.add('text-green-600');
             } else {
-                authView.style.display = 'flex';
-                appView.classList.remove('active');
-                floatingAiBtn.classList.add('hidden');
-                aiChatModal.classList.add('hidden'); 
-                userInfoDiv.innerHTML = '';
-                authMessage.textContent = ''; 
-                loginForm.classList.remove('hidden');
-                registerForm.classList.add('hidden');
-                authTitle.textContent = 'Login';
-                authToggleText.textContent = 'Não tem uma conta?';
-                toggleAuthModeBtn.textContent = 'Registre-se aqui.';
-                contentAreaSections.forEach(sec => sec.classList.remove('active'));
-                if(initialMessageArea) initialMessageArea.style.display = 'block';
-
-            }
-            lucide.createIcons(); 
-        });
-
-        async function saveProfileName() {
-            const nameInput = document.getElementById('profile-name-input');
-            const name = nameInput.value.trim();
-            if (!name) {
-                alert("Por favor, insira um nome para o perfil.");
-                return;
-            }
-            if (auth.currentUser) {
-                try {
-                    await updateProfile(auth.currentUser, { displayName: name });
-                    const userEmailDisplay = document.getElementById('user-email-display');
-                    if(userEmailDisplay) userEmailDisplay.textContent = `Bem-vindo(a), ${name}! (${auth.currentUser.email})`;
-                    alert("Nome do perfil salvo com sucesso!");
-                } catch (error) {
-                    console.error("Erro ao salvar nome do perfil:", error);
-                    alert("Erro ao salvar nome do perfil: " + error.message);
-                }
-            }
-        }
-
-
-        // --- LÓGICA DO INFOGRÁFICO ---
-        function cleanAIResponseText(text) {
-            if (typeof text !== 'string') return '';
-            let cleanedText = text;
-            cleanedText = cleanedText.replace(/\*\*\*(.*?)\*\*\*/g, '$1').replace(/\_\_\_(.*?)\_\_\_/g, '$1'); 
-            cleanedText = cleanedText.replace(/\*\*(.*?)\*\*/g, '$1').replace(/\_\_(.*?)\_\_/g, '$1');   
-            cleanedText = cleanedText.replace(/\*(.*?)\*/g, '$1').replace(/\_(.*?)\_/g, '$1');     
-            cleanedText = cleanedText.replace(/\~\~(.*?)\~\~/g, '$1'); 
-            cleanedText = cleanedText.replace(/^#{1,6}\s+/gm, ''); 
-            cleanedText = cleanedText.replace(/^\s*(\-{3,}|\*{3,}|\_{3,})\s*$/gm, '');
-            cleanedText = cleanedText.replace(/^\>\s+/gm, '');
-            cleanedText = cleanedText.replace(/^\s*[\*\-\+]\s+/gm, '');
-            cleanedText = cleanedText.replace(/```[\s\S]*?```/g, '').replace(/`([^`]+)`/g, '$1');
-            cleanedText = cleanedText.replace(/\*{3}/g, ''); 
-            return cleanedText.trim();
-        }
-
-
-        function createTopicListCard(topic, yearId) {
-            const card = document.createElement('div');
-            card.className = `topic-list-item p-4 rounded-md shadow hover:shadow-lg cursor-pointer border-l-4 ${yearId}-border bg-white`;
-            card.dataset.topicId = topic.id;
-            
-            const title = document.createElement('h4');
-            title.className = `text-lg font-semibold ${yearId}-text`;
-            title.textContent = topic.title;
-            card.appendChild(title);
-
-            const iconSpan = document.createElement('span');
-            iconSpan.className = "float-right text-gray-400";
-            iconSpan.innerHTML = `<i data-lucide="chevron-right" class="w-5 h-5"></i>`;
-            card.appendChild(iconSpan);
-            
-            card.addEventListener('click', () => showTopicDetail(topic, yearId));
-            return card;
-        }
-
-        function showTopicDetail(topic, yearId) {
-            currentTopic = topic; 
-            const listContainer = document.getElementById(`${yearId}-topics-list`);
-            const detailContainer = document.getElementById(`${yearId}-topic-detail`);
-
-            if (listContainer) {
-                listContainer.classList.remove('active');
-            }
-
-            if (detailContainer) {
-                detailContainer.innerHTML = `
-                    <button class="back-to-topics-btn ${yearId}-bg text-white py-2 px-4 rounded-md font-semibold mb-6 inline-flex items-center hover:opacity-80 transition-opacity">
-                        <i data-lucide="arrow-left" class="w-5 h-5 mr-2"></i>Voltar para Tópicos do ${yearId.replace('ano', '').replace('1EM','1º E.M.')}
-                    </button>
-                    <div class="topic-detail-card border-t-4 ${yearId}-border">
-                        <h3 class="text-2xl md:text-3xl font-bold ${yearId}-text mb-6">${topic.title}</h3>
-                        ${topic.content.definitions ? `<h5><i data-lucide="book-open" class="inline-block mr-2 w-5 h-5 ${yearId}-text"></i>Definições</h5><p class="text-gray-700 mb-4 whitespace-pre-wrap leading-relaxed">${topic.content.definitions}</p>` : ''}
-                        ${topic.content.concepts ? `<h5><i data-lucide="puzzle" class="inline-block mr-2 w-5 h-5 ${yearId}-text"></i>Conceitos Fundamentais</h5><p class="text-gray-700 mb-4 whitespace-pre-wrap leading-relaxed">${topic.content.concepts}</p>` : ''}
-                        ${topic.content.theorems ? `<h5><i data-lucide="sigma" class="inline-block mr-2 w-5 h-5 ${yearId}-text"></i>Propriedades / Teoremas / Axiomas</h5><p class="text-gray-700 mb-4 whitespace-pre-wrap leading-relaxed">${topic.content.theorems}</p>` : ''}
-                        ${topic.content.examples ? `<h5><i data-lucide="lightbulb" class="inline-block mr-2 w-5 h-5 ${yearId}-text"></i>Exemplos Detalhados</h5><div class="text-gray-700 bg-gray-50 p-4 rounded-md border border-gray-200 mb-4 whitespace-pre-wrap leading-relaxed">${topic.content.examples}</div>` : ''}
-                        ${topic.content.figuresPlaceholder ? `<div class="placeholder-figure text-gray-500"><i>[Espaço para Figura/Desenho Ilustrativo sobre ${topic.title}]</i></div>` : ''}
-                        
-                        <div class="mt-6 pt-4 border-t border-gray-200">
-                            <h4 class="text-lg font-semibold text-gray-700 mb-3">✨ Ferramentas com IA ✨</h4>
-                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                                <button id="explain-topic-ai-btn-${topic.id}" class="ai-feature-btn ${yearId}-bg hover:opacity-80 justify-center">
-                                    <i data-lucide="brain"></i>Explicar este tópico (IA)
-                                </button>
-                                <button id="more-examples-ai-btn-${topic.id}" class="ai-feature-btn ${yearId}-bg hover:opacity-80 justify-center">
-                                    <i data-lucide="list-plus"></i>Gerar mais exemplos (IA)
-                                </button>
-                                <button id="challenge-me-ai-btn-${topic.id}" class="ai-feature-btn ${yearId}-bg hover:opacity-80 justify-center">
-                                    <i data-lucide="swords"></i>Desafia-me! (IA)
-                                </button>
-                                <button id="connections-ai-btn-${topic.id}" class="ai-feature-btn ${yearId}-bg hover:opacity-80 justify-center">
-                                    <i data-lucide="link-2"></i>Conexões Matemáticas (IA)
-                                </button>
-                                <button id="real-world-ai-btn-${topic.id}" class="ai-feature-btn ${yearId}-bg hover:opacity-80 justify-center">
-                                    <i data-lucide="globe"></i>Aplicações no Mundo Real (IA)
-                                </button>
-                            </div>
-                            <div id="ai-explanation-container-${topic.id}" class="ai-explanation-box mt-4" style="display: none;"></div>
-                            <div id="ai-examples-container-${topic.id}" class="mt-4"></div>
-                            <div id="ai-challenge-container-${topic.id}" class="mt-4"></div>
-                            <div id="ai-connections-container-${topic.id}" class="ai-connections-box mt-4" style="display: none;"></div>
-                            <div id="ai-realworld-container-${topic.id}" class="ai-realworld-box mt-4" style="display: none;"></div>
-                        </div>
-                    </div>
-                `;
-                detailContainer.querySelector('.back-to-topics-btn').addEventListener('click', () => {
-                    detailContainer.classList.remove('active');
-                    if (listContainer) {
-                        listContainer.classList.add('active');
-                    }
-                    currentTopic = null; 
-                    lucide.createIcons();
-                });
-
-                document.getElementById(`explain-topic-ai-btn-${topic.id}`)?.addEventListener('click', () => handleExplainTopicAI(topic, yearId));
-                document.getElementById(`more-examples-ai-btn-${topic.id}`)?.addEventListener('click', () => handleMoreExamplesAI(topic, yearId));
-                document.getElementById(`challenge-me-ai-btn-${topic.id}`)?.addEventListener('click', () => handleChallengeMeAI(topic, yearId));
-                document.getElementById(`connections-ai-btn-${topic.id}`)?.addEventListener('click', () => handleConnectionsAI(topic, yearId));
-                document.getElementById(`real-world-ai-btn-${topic.id}`)?.addEventListener('click', () => handleRealWorldAI(topic, yearId));
+                messageElement.textContent = 'Errado!';
+                messageElement.classList.add('text-red-500');
                 
-                detailContainer.classList.add('active');
+                // Gera e exibe a explicação
+                const explanation = generateExplanation(currentProblem, correctAnswer);
+                explanationText.textContent = explanation;
+                explanationBox.classList.remove('hidden');
+                nextProblemDelay = 6000; // Mais tempo para ler a explicação
             }
-            lucide.createIcons();
-            window.scrollTo({ top: mainContentArea.offsetTop - 80, behavior: 'smooth' }); 
+            scoreElement.textContent = score;
+            currentQuestion++;
+            setTimeout(generateProblem, nextProblemDelay);
+        }
+
+        function endRound() {
+            gameArea.classList.add('hidden');
+            endRoundScreen.classList.remove('hidden');
+            finalScoreTextElement.textContent = `Você acertou ${score} de ${totalQuestions} questões!`;
         }
         
-        function populateTopicLists() {
-            Object.keys(detailedContents).forEach(yearId => {
-                const yearTopics = detailedContents[yearId];
-                const listContainer = document.getElementById(`${yearId}-topics-list`);
-                
-                if (listContainer && yearTopics) {
-                    listContainer.innerHTML = ''; 
-                    const axes = {};
-                    yearTopics.forEach(topic => {
-                        if (!axes[topic.axisIcon]) {
-                            axes[topic.axisIcon] = [];
-                        }
-                        axes[topic.axisIcon].push(topic);
-                    });
-
-                    for (const axisIcon in axes) {
-                        const axisTitleDiv = document.createElement('h3');
-                        let axisName = '';
-                        switch(axisIcon) {
-                            case 'hash': axisName = 'Números'; break;
-                            case 'rulers': axisName = 'Geometria'; break;
-                            case 'ruler': axisName = 'Grandezas e Medidas'; break;
-                            case 'variable': axisName = 'Álgebra'; break;
-                            case 'activity': axisName = 'Funções'; break; 
-                            case 'trending-up': axisName = 'Progressões'; break; 
-                            case 'dollar-sign': axisName = 'Matemática Financeira'; break; 
-                            case 'compass': axisName = 'Trigonometria'; break; 
-                            case 'bar-chart-2': axisName = 'Probabilidade e Estatística'; break;
-                            default: axisName = 'Tópicos Diversos'; break;
-                        }
-                        axisTitleDiv.className = `axis-title ${yearId}-text mt-6 mb-3`;
-                        axisTitleDiv.innerHTML = `<i data-lucide="${axisIcon}" class="w-7 h-7"></i>${axisName}`;
-                        listContainer.appendChild(axisTitleDiv);
-                        
-                        const topicGroupDiv = document.createElement('div');
-                        topicGroupDiv.className = "grid md:grid-cols-1 lg:grid-cols-2 gap-x-6 gap-y-3"; 
-                        axes[axisIcon].forEach(topic => {
-                            topicGroupDiv.appendChild(createTopicListCard(topic, yearId));
-                        });
-                        listContainer.appendChild(topicGroupDiv);
-                    }
-                }
-            });
-            lucide.createIcons();
-        }
-
-        mainNavButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                if (!currentUser) { 
-                    displayAuthMessage("Por favor, faça login para aceder aos conteúdos.", true);
-                    return;
-                }
-                mainNavButtons.forEach(btn => btn.classList.remove('active'));
-                contentAreaSections.forEach(sec => sec.classList.remove('active'));
-                if(initialMessageArea) initialMessageArea.style.display = 'none'; 
-
-                button.classList.add('active');
-                const targetYear = button.dataset.year;
-                currentYear = targetYear; 
-                currentTopic = null; 
-
-                const targetSection = document.getElementById(targetYear);
-                if (targetSection) {
-                    targetSection.classList.add('active');
-
-                    if (targetYear.startsWith('ano')) { 
-                        const topicsListDiv = document.getElementById(`${targetYear}-topics-list`);
-                        const topicDetailDiv = document.getElementById(`${targetYear}-topic-detail`);
-                        
-                        if (topicsListDiv) topicsListDiv.classList.add('active'); 
-                        if (topicDetailDiv) topicDetailDiv.classList.remove('active'); 
-                        
-                        seletorAnoGerador.value = targetYear; 
-                        populateTopicSelectorForGenerator(targetYear);
-                    } else if (targetYear === 'gerador') {
-                        populateTopicSelectorForGenerator(seletorAnoGerador.value); 
-                    }
-                }
-                lucide.createIcons();
-                window.scrollTo({ top: mainContentArea.offsetTop - 80, behavior: 'smooth' });
-            });
-        });
-        
-        function populateTopicSelectorForGenerator(yearId) {
-            const topicsForYear = detailedContents[yearId] || [];
-            seletorTopicoGerador.innerHTML = '<option value="">Todos os tópicos do ano</option>'; 
-            topicsForYear.forEach(topic => {
-                const option = document.createElement('option');
-                option.value = topic.id; 
-                option.textContent = topic.title;
-                seletorTopicoGerador.appendChild(option);
-            });
-        }
-
-        seletorAnoGerador.addEventListener('change', (event) => {
-            populateTopicSelectorForGenerator(event.target.value);
-        });
-
-        document.addEventListener('DOMContentLoaded', () => {
-            lucide.createIcons();
-            populateTopicLists(); 
-            document.getElementById('currentYear').textContent = new Date().getFullYear();
-        });
-
-        gerarAtividadeBtn.addEventListener('click', async () => {
-            if (!currentUser) {
-                alert("Por favor, faça login para gerar atividades."); 
-                return;
-            }
-            loadingGerador.style.display = 'flex'; 
-            erroGerador.style.display = 'none';
-            atividadesGeradasContainer.innerHTML = ''; 
-            botoesAcaoQuestoes.style.display = 'none';
-
-
-            const numQuestoes = seletorNumQuestoes.value;
-            const selectedYearIdForGenerator = seletorAnoGerador.value;
-            const qualAno = selectedYearIdForGenerator.replace('ano1EM', '1º Ano E.M.').replace('ano', '');
-            const selectedTopicId = seletorTopicoGerador.value;
-            const tipoQuestao = seletorTipoQuestao.value;
-            const nivelDificuldade = seletorNivelDificuldade.value;
-            
-            let topicsQueryPart = "";
-            let selectedTopicTitle = "Geral";
-
-            if (selectedTopicId) {
-                const selectedTopicObj = (detailedContents[selectedYearIdForGenerator] || []).find(t => t.id === selectedTopicId);
-                if (selectedTopicObj) {
-                    selectedTopicTitle = selectedTopicObj.title;
-                    topicsQueryPart = `focado especificamente no tópico: "${selectedTopicTitle}" do ${qualAno}.`;
-                } else {
-                    topicsQueryPart = `focado nos tópicos gerais do ${qualAno}.`;
-                }
-            } else {
-                const allTopicsForYear = (detailedContents[selectedYearIdForGenerator] || []).map(t => t.title);
-                if (allTopicsForYear.length > 0) {
-                    topicsQueryPart = `focado em UM OU MAIS dos seguintes tópicos do ${qualAno}: ${allTopicsForYear.join(', ')}.`;
-                } else {
-                     erroGerador.textContent = `Não foi possível encontrar tópicos para o ${qualAno}.`;
-                     erroGerador.style.display = 'block';
-                     loadingGerador.style.display = 'none';
-                     return;
-                }
-            }
-            
-            let tipoQuestaoInstrucao = "";
-            if (tipoQuestao === "objetivas") {
-                tipoQuestaoInstrucao = "As questões devem ser objetivas, de múltipla escolha, com 4 alternativas (A, B, C, D) e apenas uma correta. Indique a alternativa correta na solução.";
-            } else if (tipoQuestao === "subjetivas") {
-                tipoQuestaoInstrucao = "As questões devem ser subjetivas (abertas), exigindo desenvolvimento na resposta.";
-            } else { // ambas
-                tipoQuestaoInstrucao = "As questões podem ser uma mistura de objetivas (com 4 alternativas A, B, C, D e indicação da correta na solução) e subjetivas (abertas).";
-            }
-
-
-            const promptText = `Você é um assistente de matemática especializado em criar problemas para o ensino fundamental e médio. Crie ${numQuestoes} problemas de matemática DISTINTOS e variados, com nível de dificuldade ${nivelDificuldade}, apropriados para o ${qualAno}. ${topicsQueryPart} ${tipoQuestaoInstrucao}
-Os problemas devem ser práticos ou contextualizados, sempre que possível. Evite repetir o mesmo estilo de problema ou os mesmos números exatos.
-Formate a sua resposta EXATAMENTE da seguinte maneira, numerando cada problema e sua respectiva solução:
-
-Problema 1:
-[Texto do problema 1 aqui]
-${tipoQuestao.includes("objetivas") || tipoQuestao === "ambas" ? "A) Alternativa A\nB) Alternativa B\nC) Alternativa C\nD) Alternativa D\n" : ""}
----SOLUÇÃO 1---
-Solução 1:
-[Texto da solução 1 passo a passo aqui] ${tipoQuestao.includes("objetivas") || tipoQuestao === "ambas" ? "\nAlternativa Correta: [Letra]" : ""}
-
-Problema 2:
-... e assim por diante até o Problema ${numQuestoes} e Solução ${numQuestoes}.
-Certifique-se de que cada problema é seguido imediatamente pela sua tag ---SOLUÇÃO X--- e pela sua solução.`;
-
-            const apiKey = "AIzaSyA2oJN4I3L6HF5lErQ9h-gVgYojowIItVQ"; 
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-
-            try {
-                const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', },
-                    body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] }),
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    console.error('Erro da API Gemini:', errorData);
-                    let errorMsg = `Erro da API: ${response.statusText}.`;
-                    if (errorData && errorData.error && errorData.error.message) {
-                        errorMsg += ` Detalhes: ${errorData.error.message}`;
-                    }
-                     if (response.status === 429) { 
-                        errorMsg = "Muitas solicitações para a API. Por favor, tente novamente em alguns instantes."
-                    }
-                    throw new Error(errorMsg);
-                }
-
-                const result = await response.json();
-                
-                if (result.promptFeedback && result.promptFeedback.blockReason){
-                     console.error('Conteúdo bloqueado pela API:', result.promptFeedback);
-                     erroGerador.textContent = `A sua solicitação foi bloqueada pela API por razões de segurança: ${result.promptFeedback.blockReason}. Tente refinar os tópicos ou o ano.`;
-                     erroGerador.style.display = 'block';
-                     loadingGerador.style.display = 'none';
-                     return;
-                }
-
-                if (result.candidates && result.candidates.length > 0 &&
-                    result.candidates[0].content && result.candidates[0].content.parts &&
-                    result.candidates[0].content.parts.length > 0) {
-                    
-                    const fullText = result.candidates[0].content.parts[0].text;
-                    const problemsAndSolutions = fullText.split(/Problema \d+:/).slice(1); 
-
-                    if (problemsAndSolutions.length === 0 && !fullText.toLowerCase().includes("problema 1:")) {
-                        console.warn("Formato de resposta inesperado, tentando fallback:", fullText);
-                        const singleProblemParts = fullText.split('---SOLUÇÃO---');
-                        let problemaFallback = singleProblemParts[0].replace(/^Problema:\s*/i, '').trim();
-                        let solucaoFallback = singleProblemParts[1] ? singleProblemParts[1].replace(/^Solução:\s*/i, '').trim() : 'Solução não fornecida no formato esperado.';
-                        problemaFallback = cleanAIResponseText(problemaFallback);
-                        solucaoFallback = cleanAIResponseText(solucaoFallback);
-                        if (problemaFallback) {
-                             displayQuestion(1, problemaFallback, solucaoFallback);
-                        } else {
-                             throw new Error('Resposta da API em formato inesperado e fallback falhou.');
-                        }
-                    } else {
-                        problemsAndSolutions.forEach((psText, index) => {
-                            const problemNumber = index + 1;
-                            const parts = psText.split(new RegExp(`---SOLUÇÃO ${problemNumber}---`, 'i'));
-                            let problema = parts[0].trim();
-                            let solucao = parts[1] ? parts[1].replace(new RegExp(`^Solução ${problemNumber}:\\s*`, 'i'), '').trim() : 'Solução não fornecida ou em formato incorreto.';
-                            
-                            problema = cleanAIResponseText(problema);
-                            solucao = cleanAIResponseText(solucao);
-
-                            displayQuestion(problemNumber, problema, solucao);
-                        });
-                    }
-                    if(problemsAndSolutions.length > 0) botoesAcaoQuestoes.style.display = 'block';
-                    lucide.createIcons(); 
-                } else {
-                    console.error('Resposta da API Gemini em formato inesperado:', result);
-                    throw new Error('Resposta da API em formato inesperado.');
-                }
-
-            } catch (error) {
-                console.error('Erro ao gerar atividades:', error);
-                erroGerador.textContent = `Ocorreu um erro: ${error.message}. Tente novamente.`;
-                erroGerador.style.display = 'block';
-            } finally {
-                loadingGerador.style.display = 'none';
-            }
-        });
-
-        function displayQuestion(number, problemText, solutionText) {
-            const questionItem = document.createElement('div');
-            questionItem.className = 'generated-question-item'; 
-            
-            const problemTitle = document.createElement('h4');
-            problemTitle.className = 'text-lg font-semibold text-pink-600 mb-2';
-            problemTitle.textContent = `Questão ${number}:`;
-            questionItem.appendChild(problemTitle);
-
-            const problemDiv = document.createElement('div');
-            problemDiv.className = 'text-gray-700 mb-3 whitespace-pre-wrap leading-relaxed';
-            problemDiv.textContent = problemText;
-            questionItem.appendChild(problemDiv);
-
-            const showSolutionBtn = document.createElement('button');
-            showSolutionBtn.className = 'bg-green-500 hover:bg-green-600 text-white py-1.5 px-3 rounded-md font-semibold transition-colors duration-300 text-sm inline-flex items-center';
-            showSolutionBtn.innerHTML = '<i data-lucide="eye" class="w-4 h-4 mr-2"></i>Mostrar Solução';
-            questionItem.appendChild(showSolutionBtn);
-
-            const solutionContainer = document.createElement('div');
-            solutionContainer.className = 'solution-container mt-3 p-3 rounded-md'; 
-            solutionContainer.style.display = 'none';
-
-            const solutionTitle = document.createElement('h5');
-            solutionTitle.className = 'text-md font-semibold text-gray-700 mb-1';
-            solutionTitle.textContent = 'Solução:';
-            solutionContainer.appendChild(solutionTitle);
-            
-            const solutionDiv = document.createElement('div');
-            solutionDiv.className = 'text-gray-600 whitespace-pre-wrap leading-relaxed';
-            solutionDiv.textContent = solutionText;
-            solutionContainer.appendChild(solutionDiv);
-            questionItem.appendChild(solutionContainer);
-
-            showSolutionBtn.addEventListener('click', () => {
-                const isHidden = solutionContainer.style.display === 'none';
-                solutionContainer.style.display = isHidden ? 'block' : 'none';
-                showSolutionBtn.innerHTML = isHidden ? '<i data-lucide="eye-off" class="w-4 h-4 mr-2"></i>Ocultar Solução' : '<i data-lucide="eye" class="w-4 h-4 mr-2"></i>Mostrar Solução';
-                lucide.createIcons(); 
-            });
-            atividadesGeradasContainer.appendChild(questionItem);
-        }
-
-        floatingAiBtn.addEventListener('click', () => {
-            aiChatModal.classList.toggle('hidden');
-            if (!aiChatModal.classList.contains('hidden')) {
-                aiChatInput.focus();
-                floatingAiBtn.classList.remove('ano6-bg'); 
-                floatingAiBtn.style.backgroundColor = 'var(--concenal-red)'; 
-            } else {
-                 floatingAiBtn.style.backgroundColor = 'var(--concenal-green-dark)'; 
-            }
-        });
-
-        closeAiChatBtn.addEventListener('click', () => {
-            aiChatModal.classList.add('hidden');
-            floatingAiBtn.style.backgroundColor = 'var(--concenal-green-dark)';
-        });
-
-        async function handleAIChat(userInput) {
-            if (!currentUser) {
-                appendMessageToChat("Por favor, faça login para usar o assistente IA.", 'ia');
-                return;
-            }
-            if (!userInput.trim()) return;
-
-            appendMessageToChat(userInput, 'user');
-            aiChatInput.value = '';
-            aiChatSendBtn.disabled = true;
-            aiChatLoading.style.display = 'block';
-
-            let contextPrompt = "Você é um assistente de matemática para alunos do ensino fundamental e médio da escola CONCENAL. Responda de forma clara e didática.";
-            if (currentTopic && currentTopic.title) {
-                let yearName = currentYear.replace('ano1EM', '1º Ano E.M.').replace('ano', '');
-                contextPrompt += ` O aluno pode estar a estudar sobre "${currentTopic.title}" do ${yearName}º ano. Tente relacionar a resposta a este tópico, se apropriado.`;
-            } else if (currentYear && (currentYear.startsWith('ano') || currentYear === 'ano1EM') ) {
-                let yearName = currentYear.replace('ano1EM', '1º Ano E.M.').replace('ano', '');
-                 contextPrompt += ` O aluno pode estar a navegar pelos conteúdos do ${yearName}º ano.`;
-            }
-            
-            const fullPrompt = `${contextPrompt}\n\nPergunta do aluno: ${userInput}\n\nResposta:`;
-
-            const apiKey = "AIzaSyA2oJN4I3L6HF5lErQ9h-gVgYojowIItVQ"; 
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-
-            try {
-                const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: [{ parts: [{ text: fullPrompt }] }] })
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.error?.message || `Erro ${response.status} da API.`);
-                }
-                const result = await response.json();
-
-                if (result.candidates && result.candidates[0].content && result.candidates[0].content.parts[0]) {
-                    let aiResponse = result.candidates[0].content.parts[0].text;
-                    aiResponse = cleanAIResponseText(aiResponse); 
-                    appendMessageToChat(aiResponse, 'ia');
-                } else if (result.promptFeedback && result.promptFeedback.blockReason) {
-                     appendMessageToChat(`Desculpe, não posso responder a isso. (Motivo: ${result.promptFeedback.blockReason})`, 'ia');
-                }
-                else {
-                    appendMessageToChat('Desculpe, não consegui obter uma resposta. Tente novamente.', 'ia');
-                }
-            } catch (error) {
-                console.error("Erro no chat IA:", error);
-                appendMessageToChat(`Ocorreu um erro: ${error.message}`, 'ia');
-            } finally {
-                aiChatLoading.style.display = 'none';
-                aiChatSendBtn.disabled = false;
-                aiChatInput.focus();
+        function clearHistory(showConfirmation = true) {
+            generatedProblems.clear();
+            localStorage.removeItem(HISTORY_KEY);
+            if (showConfirmation) {
+                const originalMessage = messageElement.textContent;
+                const originalClasses = messageElement.className;
+                messageElement.textContent = 'Histórico de questões apagado!';
+                messageElement.className = 'h-8 text-xl font-bold transition-opacity duration-300 text-blue-600';
+                setTimeout(() => {
+                    messageElement.textContent = originalMessage;
+                    messageElement.className = originalClasses;
+                }, 2500);
             }
         }
 
-        aiChatSendBtn.addEventListener('click', () => handleAIChat(aiChatInput.value));
-        aiChatInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                handleAIChat(aiChatInput.value);
+        // --- EVENT LISTENERS ---
+        submitBtn.addEventListener('click', checkAnswer);
+        answerInput.addEventListener('keydown', (event) => { if (event.key === 'Enter') { checkAnswer(); } });
+        newRoundBtn.addEventListener('click', startNewRound);
+        clearHistoryBtn.addEventListener('click', () => clearHistory(true));
+
+        // --- INICIALIZAÇÃO DO JOGO ---
+        window.onload = () => {
+            const savedHistory = localStorage.getItem(HISTORY_KEY);
+            if (savedHistory) {
+                generatedProblems = new Set(JSON.parse(savedHistory));
             }
-        });
-
-        function appendMessageToChat(message, sender) {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `p-2 rounded-md max-w-[85%] ${sender === 'user' ? 'bg-gray-200 text-gray-800 self-end text-right' : 'bg-green-100 text-green-800 self-start'}`;
-            message.split('\n').forEach((line, index) => {
-                if (index > 0) messageDiv.appendChild(document.createElement('br'));
-                messageDiv.appendChild(document.createTextNode(line));
-            });
-            aiChatHistory.appendChild(messageDiv);
-            aiChatHistory.scrollTop = aiChatHistory.scrollHeight; 
-        }
-
-        async function callGeminiForTopicInteraction(prompt, outputContainerId, buttonToDisable, isChallenge = false) {
-            if (!currentUser) {
-                alert("Por favor, faça login para usar esta funcionalidade IA.");
-                return;
-            }
-            const outputContainer = document.getElementById(outputContainerId);
-            if (!outputContainer) return;
-
-            outputContainer.innerHTML = `<div class="flex items-center justify-center text-sm text-gray-600 p-3"><i data-lucide="loader-2" class="animate-spin mr-2"></i>A IA está a processar o seu pedido...</div>`;
-            outputContainer.style.display = 'block';
-            lucide.createIcons();
-            if(buttonToDisable) buttonToDisable.disabled = true;
-
-            const apiKey = "AIzaSyA2oJN4I3L6HF5lErQ9h-gVgYojowIItVQ";
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-
-            try {
-                const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-                });
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.error?.message || `Erro ${response.status} da API.`);
-                }
-                const result = await response.json();
-                if (result.candidates && result.candidates[0].content && result.candidates[0].content.parts[0]) {
-                    let aiResponse = result.candidates[0].content.parts[0].text;
-                    aiResponse = cleanAIResponseText(aiResponse); 
-                    outputContainer.innerHTML = ''; 
-                    if (isChallenge) {
-                        const parts = aiResponse.split(/---SOLUÇÃO---/i);
-                        let problema = parts[0].replace(/^Problema:\s*/i, '').trim();
-                        let solucao = parts[1] ? parts[1].replace(/^Solução:\s*/i, '').trim() : 'Solução não fornecida ou em formato incorreto.';
-                        problema = cleanAIResponseText(problema);
-                        solucao = cleanAIResponseText(solucao);
-                        displayChallengeProblem(outputContainer, problema, solucao);
-                    } else {
-                        aiResponse.split('\n').forEach((line) => {
-                            const p = document.createElement('p');
-                            p.className = "whitespace-pre-wrap leading-relaxed mb-2"; 
-                            p.textContent = line;
-                            outputContainer.appendChild(p);
-                        });
-                    }
-                } else if (result.promptFeedback && result.promptFeedback.blockReason) {
-                    outputContainer.innerHTML = `<p class="text-red-600">Desculpe, não posso processar este pedido. (Motivo: ${result.promptFeedback.blockReason})</p>`;
-                } else {
-                    outputContainer.innerHTML = `<p class="text-red-600">Desculpe, não consegui obter uma resposta. Tente novamente.</p>`;
-                }
-            } catch (error) {
-                console.error("Erro na interação IA com tópico:", error);
-                outputContainer.innerHTML = `<p class="text-red-600">Ocorreu um erro: ${error.message}</p>`;
-            } finally {
-                 if(buttonToDisable) buttonToDisable.disabled = false;
-                 lucide.createIcons();
-            }
-        }
-        
-        function displayChallengeProblem(container, problemText, solutionText) {
-            container.innerHTML = ''; 
-            const challengeItem = document.createElement('div');
-            challengeItem.className = 'ai-challenge-item'; 
-            
-            const problemTitle = document.createElement('h4');
-            problemTitle.className = 'text-lg font-semibold text-indigo-700 mb-2'; 
-            problemTitle.textContent = `Desafio Proposto pela IA:`;
-            challengeItem.appendChild(problemTitle);
-
-            const problemDiv = document.createElement('div');
-            problemDiv.className = 'text-gray-700 mb-3 whitespace-pre-wrap leading-relaxed';
-            problemDiv.textContent = problemText;
-            challengeItem.appendChild(problemDiv);
-
-            const showSolutionBtn = document.createElement('button');
-            showSolutionBtn.className = 'bg-green-500 hover:bg-green-600 text-white py-1.5 px-3 rounded-md font-semibold transition-colors duration-300 text-sm inline-flex items-center';
-            showSolutionBtn.innerHTML = '<i data-lucide="eye" class="w-4 h-4 mr-2"></i>Mostrar Solução do Desafio';
-            challengeItem.appendChild(showSolutionBtn);
-
-            const solutionContainer = document.createElement('div');
-            solutionContainer.className = 'solution-container mt-3 p-3 rounded-md'; 
-            solutionContainer.style.display = 'none';
-
-            const solutionTitle = document.createElement('h5');
-            solutionTitle.className = 'text-md font-semibold text-gray-700 mb-1';
-            solutionTitle.textContent = 'Solução do Desafio:';
-            solutionContainer.appendChild(solutionTitle);
-            
-            const solutionDiv = document.createElement('div');
-            solutionDiv.className = 'text-gray-600 whitespace-pre-wrap leading-relaxed';
-            solutionDiv.textContent = solutionText;
-            solutionContainer.appendChild(solutionDiv);
-            challengeItem.appendChild(solutionContainer);
-
-            showSolutionBtn.addEventListener('click', () => {
-                const isHidden = solutionContainer.style.display === 'none';
-                solutionContainer.style.display = isHidden ? 'block' : 'none';
-                showSolutionBtn.innerHTML = isHidden ? '<i data-lucide="eye-off" class="w-4 h-4 mr-2"></i>Ocultar Solução' : '<i data-lucide="eye" class="w-4 h-4 mr-2"></i>Mostrar Solução';
-                lucide.createIcons(); 
-            });
-            container.appendChild(challengeItem);
-        }
-
-
-        function handleExplainTopicAI(topic, yearId) {
-            const qualAno = yearId.replace('ano1EM', '1º Ano E.M.').replace('ano', '');
-            const prompt = `Você é um professor de matemática paciente e didático. Explique o tópico "${topic.title}" para um aluno do ${qualAno} de forma simples e com outras palavras, usando os seguintes conceitos como base: Definições: "${topic.content.definitions || 'Não fornecida'}". Conceitos: "${topic.content.concepts || 'Não fornecido'}". Se possível, use uma analogia ou um exemplo prático diferente dos já existentes no material do aluno. Seja conciso e direto ao ponto, mas claro. Formate a resposta com parágrafos curtos para melhor leitura.`;
-            const containerId = `ai-explanation-container-${topic.id}`;
-            const button = document.getElementById(`explain-topic-ai-btn-${topic.id}`);
-            callGeminiForTopicInteraction(prompt, containerId, button);
-        }
-
-        function handleMoreExamplesAI(topic, yearId) {
-            const qualAno = yearId.replace('ano1EM', '1º Ano E.M.').replace('ano', '');
-            const existingExamples = topic.content.examples || "Nenhum exemplo existente foi fornecido.";
-            const prompt = `Você é um criador de exemplos de matemática para o ensino fundamental e médio. Para o tópico "${topic.title}" do ${qualAno}, gere 2 ou 3 exemplos práticos e resolvidos ADICIONAIS e DIFERENTES dos seguintes exemplos já existentes: "${existingExamples}". Os novos exemplos devem ser apropriados para a faixa etária e ajudar a solidificar o entendimento do tópico. Formate cada exemplo claramente com "Exemplo X:", seguido do enunciado, e depois "Solução X:", seguido da solução passo a passo. Use parágrafos curtos.`;
-            const containerId = `ai-examples-container-${topic.id}`; 
-            const button = document.getElementById(`more-examples-ai-btn-${topic.id}`);
-            
-            let examplesOutputContainer = document.getElementById(containerId);
-            if (examplesOutputContainer) { 
-                examplesOutputContainer.innerHTML = '';
-            } else { 
-                examplesOutputContainer = document.createElement('div');
-                examplesOutputContainer.id = containerId;
-                examplesOutputContainer.className = 'ai-examples-box mt-4'; 
-                const aiToolsSection = document.querySelector(`#explain-topic-ai-btn-${topic.id}`).closest('.mt-6.pt-4');
-                if (aiToolsSection) {
-                     aiToolsSection.appendChild(examplesOutputContainer);
-                } else { 
-                    const detailCard = document.querySelector(`#${yearId}-topic-detail .topic-detail-card`);
-                    if(detailCard) detailCard.appendChild(examplesOutputContainer);
-                }
-            }
-            examplesOutputContainer.style.display = 'none'; 
-
-            callGeminiForTopicInteraction(prompt, containerId, button);
-        }
-
-        function handleChallengeMeAI(topic, yearId) {
-            const qualAno = yearId.replace('ano1EM', '1º Ano E.M.').replace('ano', '');
-            const prompt = `Crie UM problema de matemática desafiador, mas apropriado para um aluno do ${qualAno}, focado especificamente no tópico "${topic.title}". O problema deve ser prático ou contextualizado, se possível, e diferente de exemplos comuns. Formate a resposta EXATAMENTE da seguinte maneira:\nProblema:\n[Texto do problema aqui]\n---SOLUÇÃO---\nSolução:\n[Texto da solução passo a passo aqui]`;
-            const containerId = `ai-challenge-container-${topic.id}`;
-            const button = document.getElementById(`challenge-me-ai-btn-${topic.id}`);
-            callGeminiForTopicInteraction(prompt, containerId, button, true); 
-        }
-
-        function handleConnectionsAI(topic, yearId) {
-            const qualAno = yearId.replace('ano1EM', '1º Ano E.M.').replace('ano', '');
-            const prompt = `Explique para um aluno do ${qualAno} como o tópico de matemática "${topic.title}" se conecta com outros conceitos matemáticos. Mencione 2-3 conexões, explicando brevemente cada uma. Pode ser com tópicos do mesmo ano, de anos anteriores ou posteriores. O objetivo é ajudar o aluno a ver a matemática como uma disciplina interligada. Use linguagem clara e exemplos simples, se possível.`;
-            const containerId = `ai-connections-container-${topic.id}`;
-            const button = document.getElementById(`connections-ai-btn-${topic.id}`);
-            callGeminiForTopicInteraction(prompt, containerId, button);
-        }
-
-        function handleRealWorldAI(topic, yearId) {
-            const qualAno = yearId.replace('ano1EM', '1º Ano E.M.').replace('ano', '');
-            const prompt = `Apresente 2 ou 3 exemplos de como o tópico de matemática "${topic.title}" é aplicado no mundo real ou em situações do dia a dia. As aplicações devem ser compreensíveis para um aluno do ${qualAno} e mostrar a relevância do aprendizado deste tópico. Seja específico nos exemplos.`;
-            const containerId = `ai-realworld-container-${topic.id}`;
-            const button = document.getElementById(`real-world-ai-btn-${topic.id}`);
-            callGeminiForTopicInteraction(prompt, containerId, button);
-        }
-
-        copiarQuestoesBtn.addEventListener('click', () => {
-            let textoParaCopiar = "";
-            const itensDeQuestao = atividadesGeradasContainer.querySelectorAll('.generated-question-item');
-            
-            itensDeQuestao.forEach((item, index) => {
-                const tituloQuestao = item.querySelector('h4').textContent;
-                const enunciado = item.querySelector('.text-gray-700.mb-3').textContent;
-                const solucaoDiv = item.querySelector('.solution-container .text-gray-600');
-                const solucao = solucaoDiv ? solucaoDiv.textContent : "Solução não visível ou não gerada.";
-                
-                textoParaCopiar += `${tituloQuestao}\n${cleanAIResponseText(enunciado)}\n\nSolução:\n${cleanAIResponseText(solucao)}\n\n------------------------------------\n\n`;
-            });
-
-            if (textoParaCopiar) {
-                const tempTextArea = document.createElement('textarea');
-                tempTextArea.value = textoParaCopiar;
-                document.body.appendChild(tempTextArea);
-                tempTextArea.select();
-                try {
-                    document.execCommand('copy'); 
-                    alert('Questões e soluções copiadas para a área de transferência!');
-                } catch (err) {
-                    console.error('Erro ao copiar texto com execCommand: ', err);
-                    alert('Erro ao copiar. Tente manualmente (Ctrl+C / Cmd+C).');
-                }
-                document.body.removeChild(tempTextArea); 
-            } else {
-                alert('Nenhuma questão para copiar.');
-            }
-        });
-        
-        document.getElementById('downloadDocxBtnPlaceholder')?.addEventListener('click', () => {
-            alert('A funcionalidade de download direto para .docx ainda não está implementada. Por favor, utilize o botão "Copiar Questões" e cole o conteúdo no seu editor de texto preferido (Word, Google Docs, etc.) para salvar como .docx.');
-        });
-        document.getElementById('downloadPdfBtnPlaceholder')?.addEventListener('click', () => {
-             alert('A funcionalidade de download direto para .pdf ainda não está implementada. Por favor, utilize o botão "Copiar Questões" e cole o conteúdo no seu editor de texto preferido (Word, Google Docs, etc.) e depois utilize a função "Salvar como PDF" ou "Imprimir para PDF" do seu editor.');
-        });
-
-
-        suggestImprovementBtn.addEventListener('click', () => {
-            const emailDestino = "radimakkelvin@gmail.com"; 
-            const assunto = "Sugestão de Melhoria - Jornada Matemática CONCENAL";
-            window.location.href = `mailto:${emailDestino}?subject=${encodeURIComponent(assunto)}`;
-        });
-
-
+            startNewRound();
+        };
     </script>
 </body>
 </html>
