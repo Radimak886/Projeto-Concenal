@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz: PIBID 2025 - PFC</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .option-btn {
+            transition: all 0.2s ease-in-out;
+        }
+        .option-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .correct {
+            background-color: #16a34a !important; /* green-600 */
+            color: white !important;
+            border-color: #15803d !important; /* green-700 */
+        }
+        .incorrect {
+            background-color: #dc2626 !important; /* red-600 */
+            color: white !important;
+            border-color: #b91c1c !important; /* red-700 */
+        }
+        /* Animação de entrada */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out forwards;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 flex items-center justify-center min-h-screen p-4">
+
+    <div class="w-full max-w-2xl mx-auto">
+        <!-- Tela de Boas-Vindas -->
+        <div id="welcome-screen" class="bg-slate-800 text-white rounded-2xl shadow-2xl p-6 sm:p-8 text-center">
+            <h1 class="text-3xl sm:text-4xl font-extrabold text-cyan-400">PIBID 2025</h1>
+            <p class="text-lg text-slate-300 mt-2 mb-6">Quiz: Princípio Fundamental da Contagem</p>
+            <div class="mb-4">
+                <label for="name-input" class="block mb-2 text-sm font-medium text-slate-400">Digite seu nome para começar:</label>
+                <input type="text" id="name-input" class="bg-slate-700 border border-slate-600 text-white text-lg rounded-lg focus:ring-cyan-500 focus:border-cyan-500 block w-full p-3 text-center" placeholder="Seu nome aqui" required>
+            </div>
+            <button id="start-btn" class="w-full bg-cyan-500 text-slate-900 font-bold py-3 px-6 rounded-lg hover:bg-cyan-400 transition-transform transform hover:scale-105">
+                Iniciar Quiz
+            </button>
+            <p class="text-xs text-slate-500 mt-4">Criado por Kelvin Radimak</p>
+        </div>
+
+        <!-- Container do Quiz -->
+        <div id="quiz-container" class="w-full bg-slate-800 text-white rounded-2xl shadow-2xl p-6 sm:p-8 hidden">
+            <!-- Cabeçalho do Quiz -->
+            <div id="quiz-header" class="text-left border-b border-slate-700 pb-4 mb-6">
+                <!-- Info do jogador será inserida aqui -->
+            </div>
+
+            <!-- Conteúdo do Quiz -->
+            <div id="quiz-content">
+                <div id="progress-bar-container" class="w-full bg-slate-700 rounded-full h-2.5 mb-4">
+                    <div id="progress-bar" class="bg-cyan-400 h-2.5 rounded-full" style="width: 0%"></div>
+                </div>
+                <div class="flex justify-between text-sm font-semibold text-slate-300 mb-6">
+                    <span id="question-counter"></span>
+                    <span id="score-counter"></span>
+                </div>
+                
+                <h2 id="question-text" class="text-xl sm:text-2xl font-bold mb-6 min-h-[84px]">Carregando quiz...</h2>
+                
+                <div id="options-container" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
+
+                <!-- Container do Feedback -->
+                <div id="feedback-container" class="mt-6"></div>
+                 <!-- Botão de Próxima -->
+                <div class="mt-8 text-center">
+                    <button id="next-btn" class="w-full sm:w-auto bg-slate-700 text-slate-300 font-bold py-3 px-10 rounded-lg hover:bg-slate-600 transition-colors hidden">
+                        Próxima
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tela Final -->
+            <div id="result-screen" class="hidden text-center">
+                <h2 id="result-title" class="text-3xl font-bold mb-4">Quiz Finalizado!</h2>
+                <p class="text-lg text-slate-300 mb-2">Sua pontuação final foi:</p>
+                <p id="final-score" class="text-6xl font-extrabold text-cyan-400 mb-6">0 / 0</p>
+                <p id="feedback-message" class="text-lg mb-8"></p>
+                <button id="restart-btn" class="w-full bg-cyan-500 text-slate-900 font-bold py-3 px-6 rounded-lg hover:bg-cyan-400 transition-transform transform hover:scale-105">
+                    <!-- O texto será definido via JS -->
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const allQuestions = [
+            {
+                question: "Marina tem 4 blusas e 3 saias. De quantas maneiras diferentes ela pode se vestir combinando uma blusa e uma saia?",
+                options: [ { text: "7 maneiras", correct: false }, { text: "12 maneiras", correct: true }, { text: "10 maneiras", correct: false }, { text: "24 maneiras", correct: false } ],
+                explanation: "Pelo PFC, multiplicamos as opções de cada etapa: 4 blusas × 3 saias = <strong>12 maneiras</strong>."
+            },
+            {
+                question: "Uma lanchonete oferece 5 tipos de sanduíche, 4 de bebida e 2 de sobremesa. Quantos combos (sanduíche + bebida + sobremesa) são possíveis?",
+                options: [ { text: "11 combos", correct: false }, { text: "20 combos", correct: false }, { text: "40 combos", correct: true }, { text: "30 combos", correct: false } ],
+                explanation: "Multiplicamos todas as etapas da decisão: 5 sanduíches × 4 bebidas × 2 sobremesas = <strong>40 combos</strong>."
+            },
+            {
+                question: "Para ir da cidade A para a B, existem 3 estradas. Da cidade B para a C, existem 4 estradas. De quantas maneiras se pode ir de A até C, passando por B?",
+                options: [ { text: "7 maneiras", correct: false }, { text: "12 maneiras", correct: true }, { text: "9 maneiras", correct: false }, { text: "6 maneiras", correct: false } ],
+                explanation: "O número de maneiras é o produto das opções de cada trecho: 3 estradas × 4 estradas = <strong>12 maneiras</strong>."
+            },
+            {
+                question: "Quantos números de 3 algarismos DISTINTOS podem ser formados com os dígitos 1, 2, 3, 4, 5?",
+                options: [ { text: "125 números", correct: false }, { text: "15 números", correct: false }, { text: "60 números", correct: true }, { text: "20 números", correct: false } ],
+                explanation: "Para o 1º algarismo, temos 5 opções. Para o 2º, restam 4 (pois não pode repetir). Para o 3º, restam 3. Total: 5 × 4 × 3 = <strong>60 números</strong>."
+            },
+            {
+                question: "Ao lançar uma moeda e um dado de 6 faces, quantos são os resultados possíveis?",
+                options: [ { text: "8 resultados", correct: false }, { text: "12 resultados", correct: true }, { text: "6 resultados", correct: false }, { text: "2 resultados", correct: false } ],
+                explanation: "A moeda tem 2 resultados (cara/coroa) e o dado tem 6 faces (1 a 6). O total de combinações é 2 × 6 = <strong>12 resultados</strong>."
+            },
+            {
+                question: "Um cadeado tem uma senha de 2 dígitos (0 a 9). Quantas senhas são possíveis se os dígitos NÃO podem se repetir?",
+                options: [ { text: "100 senhas", correct: false }, { text: "20 senhas", correct: false }, { text: "19 senhas", correct: false }, { text: "90 senhas", correct: true } ],
+                explanation: "Temos 10 opções (0 a 9) para o primeiro dígito. Como não pode repetir, restam 9 opções para o segundo. Total: 10 × 9 = <strong>90 senhas</strong>."
+            },
+            {
+                question: "Para pintar uma bandeira com 3 listras verticais, temos 5 cores disponíveis. De quantas formas a bandeira pode ser pintada sem repetir cores?",
+                options: [ { text: "15 formas", correct: false }, { text: "125 formas", correct: false }, { text: "60 formas", correct: true }, { text: "8 formas", correct: false } ],
+                explanation: "Para a 1ª listra, temos 5 opções de cores. Para a 2ª, restam 4. Para a 3ª, restam 3. O total é 5 × 4 × 3 = <strong>60 formas</strong>."
+            },
+            {
+                question: "Uma pizzaria oferece 10 sabores e 4 tipos de borda. Quantas pizzas diferentes (1 sabor + 1 borda) um cliente pode montar?",
+                options: [ { text: "14 pizzas", correct: false }, { text: "40 pizzas", correct: true }, { text: "10 pizzas", correct: false }, { text: "20 pizzas", correct: false } ],
+                explanation: "Basta multiplicar as opções disponíveis: 10 sabores × 4 tipos de borda = <strong>40 pizzas</strong> diferentes."
+            },
+            {
+                question: "Numa corrida com 8 atletas, de quantas maneiras o pódio (1º, 2º e 3º lugar) pode ser formado?",
+                options: [ { text: "24 maneiras", correct: false }, { text: "512 maneiras", correct: false }, { text: "56 maneiras", correct: false }, { text: "336 maneiras", correct: true } ],
+                explanation: "Para o 1º lugar, há 8 atletas. Para o 2º, restam 7. Para o 3º, restam 6. O total de combinações é 8 × 7 × 6 = <strong>336 maneiras</strong>."
+            },
+            {
+                question: "Quantas senhas de 4 letras distintas podem ser formadas usando apenas as vogais (A, E, I, O, U)?",
+                options: [ { text: "625 senhas", correct: false }, { text: "20 senhas", correct: false }, { text: "120 senhas", correct: true }, { text: "25 senhas", correct: false } ],
+                explanation: "Temos 5 vogais. Para a 1ª letra, há 5 opções. Para a 2ª, restam 4. Para a 3ª, restam 3. Para a 4ª, restam 2. O total é 5 × 4 × 3 × 2 = <strong>120 senhas</strong>."
+            }
+        ];
+
+        // Elementos do DOM
+        const welcomeScreen = document.getElementById('welcome-screen');
+        const quizContainer = document.getElementById('quiz-container');
+        const nameInput = document.getElementById('name-input');
+        const startBtn = document.getElementById('start-btn');
+        
+        const quizHeader = document.getElementById('quiz-header');
+        const quizContent = document.getElementById('quiz-content');
+        const resultScreen = document.getElementById('result-screen');
+        const questionText = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        const feedbackContainer = document.getElementById('feedback-container');
+        const nextBtn = document.getElementById('next-btn');
+        const restartBtn = document.getElementById('restart-btn');
+        
+        const questionCounter = document.getElementById('question-counter');
+        const scoreCounter = document.getElementById('score-counter');
+        const resultTitle = document.getElementById('result-title');
+        const finalScore = document.getElementById('final-score');
+        const feedbackMessage = document.getElementById('feedback-message');
+        const progressBar = document.getElementById('progress-bar');
+
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let playerName = "";
+        let currentQuizQuestions = [];
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        startBtn.addEventListener('click', () => {
+            playerName = nameInput.value.trim();
+            if (playerName) {
+                welcomeScreen.style.display = 'none';
+                quizContainer.classList.remove('hidden');
+                quizContainer.classList.add('fade-in');
+                startQuiz();
+            } else {
+                nameInput.focus();
+                nameInput.classList.add('border-red-500', 'focus:border-red-500');
+            }
+        });
+        
+        nameInput.addEventListener('input', () => {
+             nameInput.classList.remove('border-red-500', 'focus:border-red-500');
+        });
+
+        function startQuiz() {
+            currentQuestionIndex = 0;
+            score = 0;
+            currentQuizQuestions = [...allQuestions];
+            shuffleArray(currentQuizQuestions);
+
+            quizContent.style.display = 'block';
+            resultScreen.style.display = 'none';
+            nextBtn.classList.add('hidden');
+            quizHeader.innerHTML = `<p class="text-lg font-semibold text-slate-300">Boa sorte, <span class="text-cyan-400">${playerName}</span>!</p>`;
+            showQuestion();
+        }
+
+        function showQuestion() {
+            resetState();
+            const currentQuestion = currentQuizQuestions[currentQuestionIndex];
+            
+            questionCounter.textContent = `Questão ${currentQuestionIndex + 1} de ${currentQuizQuestions.length}`;
+            scoreCounter.textContent = `Pontos: ${score}`;
+            const progressPercentage = ((currentQuestionIndex) / currentQuizQuestions.length) * 100;
+            progressBar.style.width = `${progressPercentage}%`;
+
+            questionText.textContent = currentQuestion.question;
+
+            currentQuestion.options.forEach(option => {
+                const button = document.createElement('button');
+                button.textContent = option.text;
+                button.classList.add('option-btn', 'w-full', 'p-4', 'border-2', 'border-slate-600', 'rounded-lg', 'text-left', 'hover:bg-slate-700', 'hover:border-cyan-500', 'focus:outline-none', 'focus:ring-2', 'focus:ring-cyan-400');
+                if (option.correct) {
+                    button.dataset.correct = true;
+                }
+                button.addEventListener('click', selectAnswer);
+                optionsContainer.appendChild(button);
+            });
+        }
+
+        function resetState() {
+            nextBtn.classList.add('hidden');
+            optionsContainer.innerHTML = '';
+            feedbackContainer.innerHTML = '';
+        }
+
+        function selectAnswer(e) {
+            const selectedBtn = e.target;
+            const isCorrect = selectedBtn.dataset.correct === 'true';
+
+            if (isCorrect) {
+                score++;
+            }
+            
+            Array.from(optionsContainer.children).forEach(button => {
+                if (button.dataset.correct === 'true') {
+                    button.classList.add('correct');
+                } else {
+                     button.classList.add('opacity-50');
+                }
+                button.disabled = true;
+            });
+            
+            if (!isCorrect) {
+                selectedBtn.classList.remove('opacity-50');
+                selectedBtn.classList.add('incorrect');
+            }
+
+            scoreCounter.textContent = `Pontos: ${score}`;
+            showFeedback(isCorrect);
+            nextBtn.classList.remove('hidden');
+        }
+        
+        function showFeedback(isCorrect) {
+            const explanation = currentQuizQuestions[currentQuestionIndex].explanation;
+            const feedbackDiv = document.createElement('div');
+            feedbackDiv.innerHTML = `<strong>${isCorrect ? 'Correto!' : 'Incorreto.'}</strong> ${explanation}`;
+            feedbackDiv.classList.add('p-4', 'rounded-lg', 'mt-4', 'text-white', 'border-l-4', 'fade-in');
+            
+            if(isCorrect) {
+                feedbackDiv.classList.add('bg-green-900/50', 'border-green-500');
+            } else {
+                feedbackDiv.classList.add('bg-red-900/50', 'border-red-500');
+            }
+            
+            feedbackContainer.appendChild(feedbackDiv);
+        }
+
+        function showResults() {
+            quizContent.style.display = 'none';
+            resultScreen.style.display = 'block';
+            resultScreen.classList.add('fade-in');
+            resultTitle.innerHTML = `Parabéns, <span class="text-cyan-400">${playerName}</span>!`;
+            finalScore.textContent = `${score} / ${currentQuizQuestions.length}`;
+
+            // Lógica para mensagem e texto do botão
+            if (score >= 8) {
+                feedbackMessage.textContent = "Excelente! Você domina o Princípio Fundamental da Contagem.";
+                restartBtn.textContent = 'Começar de Novo';
+            } else if (score >= 5) {
+                feedbackMessage.textContent = "Muito bom! Continue praticando para fixar o conceito.";
+                restartBtn.textContent = 'Tentar Novamente';
+            } else {
+                feedbackMessage.textContent = "Não desanime! Reveja o material e tente novamente.";
+                restartBtn.textContent = 'Tentar Novamente';
+            }
+        }
+
+        nextBtn.addEventListener('click', () => {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < currentQuizQuestions.length) {
+                showQuestion();
+            } else {
+                progressBar.style.width = `100%`;
+                showResults();
+            }
+        });
+
+        restartBtn.addEventListener('click', () => {
+            nameInput.value = '';
+            welcomeScreen.style.display = 'block';
+            quizContainer.classList.add('hidden');
+        });
+    </script>
+</body>
+</html>
