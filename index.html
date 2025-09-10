@@ -44,6 +44,7 @@
 </head>
 <body class="p-4 md:p-8">
 
+    <!-- Container da Aplicação Principal -->
     <div id="app-container" class="max-w-7xl mx-auto">
         <header class="bg-green-700 text-white p-6 rounded-xl shadow-lg mb-8 text-center flex justify-between items-center">
             <div>
@@ -88,6 +89,7 @@
         </footer>
     </div>
 
+    <!-- Modals -->
     <div id="edit-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop hidden opacity-0">
         <div class="bg-white w-full max-w-2xl rounded-xl shadow-2xl modal-content transform scale-95">
              <div class="p-6 border-b bg-green-600 text-white rounded-t-xl">
@@ -178,6 +180,7 @@
         import { 
             getAuth, 
             onAuthStateChanged, 
+            signInWithCustomToken,
             signInAnonymously
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { 
@@ -250,5 +253,4 @@
                 { id: 314, name: "JÚLIA VITÓRIA PEREIRA DOS SANTOS", grades: [null, null, null, { sae: 3.5, prova: 6.0 }, null, null]},
                 { id: 315, name: "KAIO DA SILVA ANUNCIAÇÃO", grades: [null, null, null, { sae: 3.5, prova: 3.0 }, null, null]},
                 { id: 316, name: "KAUÃ FELIPE DE OLIVEIRA ESTEVAM", grades: [null, null, null, { sae: 1.0, prova: null }, null, null]},
-                { id: 317, name: "KAUANNY RODRIGUES SANTOS", grades: [null, null, null, { sae: 3.5, prova: 4.0 }, null, null]},
-                { id: 318, name: "LAVÍNIA LAURENTINO CARDOSO", grades: [null, null, null, { sae
+                { id: 317, name: "KAUANNY RODRIGUES SANTOS", grades: [null, null, null, { sae: 3.5, prova: 4.0 }, null, nu
