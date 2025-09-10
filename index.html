@@ -22,7 +22,6 @@
             transition: transform 0.3s ease;
         }
         .active-tab {
-            /* Estilo do anel para o botão ativo */
             ring: 4px;
             ring-offset: 2px;
             --tw-ring-color: #ef4444; /* red-500 */
@@ -45,10 +44,13 @@
 </head>
 <body class="p-4 md:p-8">
 
-    <div id="app" class="max-w-7xl mx-auto">
-        <header class="bg-green-700 text-white p-6 rounded-xl shadow-lg mb-8 text-center">
-            <h1 class="text-2xl md:text-4xl font-bold">Contemporâneo Centro Educacional</h1>
-            <p class="text-md text-green-100 mt-2">Sistema de Gerenciamento de Notas dos Alunos</p>
+    <!-- Container da Aplicação Principal -->
+    <div id="app-container" class="max-w-7xl mx-auto">
+        <header class="bg-green-700 text-white p-6 rounded-xl shadow-lg mb-8 text-center flex justify-between items-center">
+            <div>
+                <h1 class="text-2xl md:text-4xl font-bold">Contemporâneo Centro Educacional</h1>
+                <p class="text-md text-green-100 mt-2">Sistema de Gerenciamento de Notas dos Alunos</p>
+            </div>
         </header>
 
         <div class="bg-white p-6 rounded-xl shadow-md mb-8">
@@ -65,7 +67,10 @@
         </div>
 
         <main class="bg-white p-4 sm:p-6 rounded-xl shadow-md overflow-x-auto">
-             <h2 id="class-title" class="text-2xl font-bold text-gray-800 mb-4">Selecione uma turma para começar</h2>
+             <div class="flex justify-between items-center mb-4">
+                <h2 id="class-title" class="text-2xl font-bold text-gray-800">Selecione uma turma para começar</h2>
+                <button id="class-summary-btn" class="hidden bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition shadow text-sm font-semibold">✨ Gerar Resumo da Turma com IA</button>
+             </div>
             <table class="w-full text-left">
                 <thead class="border-b-2 border-gray-200">
                     <tr>
@@ -75,10 +80,13 @@
                     </tr>
                 </thead>
                 <tbody id="student-list">
-                     <tr><td colspan="3" class="text-center p-8 text-gray-500">Nenhuma turma selecionada.</td></tr>
+                     <tr><td colspan="3" class="text-center p-8 text-gray-500">Autenticando...</td></tr>
                 </tbody>
             </table>
         </main>
+        <footer class="text-center text-sm text-gray-500 mt-8 pb-4">
+            Criado por Kelvin Radimak
+        </footer>
     </div>
 
     <!-- Modals -->
@@ -154,151 +162,181 @@
             </div>
         </div>
     </div>
+    <div id="summary-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop hidden opacity-0">
+        <div class="bg-white w-full max-w-2xl rounded-xl shadow-2xl modal-content transform scale-95">
+             <div class="p-6 border-b flex justify-between items-start bg-green-600 text-white rounded-t-xl">
+                <h2 id="summary-title" class="text-2xl font-bold">Resumo da Turma</h2>
+                <button id="close-summary-modal-btn" class="text-green-100 hover:text-white transition">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+            </div>
+            <div id="summary-content" class="max-h-[70vh] overflow-y-auto p-6 prose prose-lg"></div>
+        </div>
+    </div>
     
-    <footer class="text-center text-sm text-gray-500 mt-8 pb-4">
-        Criado por Kelvin Radimak
-    </footer>
+    <script type="module">
+        // Importações do Firebase
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { 
+            getAuth, 
+            onAuthStateChanged, 
+            signInWithCustomToken,
+            signInAnonymously
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { 
+            getFirestore, 
+            doc, 
+            setDoc, 
+            getDoc,
+            onSnapshot
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-    <script>
+        // --- DADOS INICIAIS PARA NOVOS USUÁRIOS ---
+        const initialStudentData = {
+            "6A": [
+                { id: 101, name: "ALICE MATILDE SANTOS", grades: [{ final: 10.0 }, { final: 9.0 }, { final: 10.0 }, { sae: 2.5, prova: 5.0 }, null, null]},
+                { id: 102, name: "ANA CLARA LIMA ARAÚJO BASTOS", grades: [{ final: 10.0 }, { final: 8.0 }, { final: 10.0 }, { sae: 2.5, prova: 5.0 }, null, null]},
+                { id: 103, name: "ANTHONY GABRIEL SOUZA MENEZES", grades: [{ final: 10.0 }, { final: 10.0 }, { final: 10.0 }, { sae: 3.5, prova: 8.0 }, null, null]},
+                { id: 104, name: "BEATRIZ VIANA DOS SANTOS", grades: [{ final: 10.0 }, { final: 10.0 }, { final: 10.0 }, { sae: 1.0, prova: 1.0 }, null, null]},
+                { id: 105, name: "CARLOS RYAN OLIVEIRA BOMFIM DOS SANTOS", grades: [{ final: 10.0 }, { final: 8.5 }, { final: 10.0 }, { sae: 1.5, prova: 2.0 }, null, null]},
+                { id: 106, name: "ENZZO SANTANA FEITOSA CAVALCANTE", grades: [{ final: 10.0 }, { final: 10.0 }, { final: 10.0 }, { sae: 5.0, prova: 10.0 }, null, null]},
+                { id: 107, name: "JÉSSICA FREIRE DE CARVALHO LEITE", grades: [{ final: 10.0 }, { final: 8.0 }, { final: 8.0 }, { sae: 0.0, prova: 3.0 }, null, null]},
+                { id: 108, name: "JOÃO GUILHERME GONÇALVES SANTOS", grades: [{ final: 10.0 }, { final: 6.5 }, { final: 10.0 }, { sae: 1.5, prova: 5.5 }, null, null]},
+                { id: 109, name: "JÚLIA CAROLLINY SOUZA ANDRADE", grades: [{ final: 7.5 }, { final: 6.0 }, { final: 7.0 }, { sae: 1.0, prova: 4.5 }, null, null]},
+                { id: 110, name: "KETHLYN SOPHYA SANTOS DE OLIVEIRA", grades: [{ final: 10.0 }, { final: 6.5 }, { final: 10.0 }, { sae: 0.0, prova: 4.0 }, null, null]},
+                { id: 111, name: "LUCAS EDUARDO DA SILVA COSTA", grades: [{ final: 7.5 }, { final: 10.0 }, { final: 10.0 }, { sae: 2.5, prova: 5.0 }, null, null]},
+                { id: 113, name: "PAULA FABIANA NASCIMENTO BARBOSA DÓRIA", grades: [{ final: 10.0 }, { final: 6.0 }, { final: 6.0 }, { sae: 1.5, prova: 4.0 }, null, null]},
+                { id: 114, name: "PHILLIPE RAFAEL SANTANA SANTOS", grades: [{ final: 10.0 }, { final: 10.0 }, { final: 10.0 }, { sae: 3.5, prova: 5.5 }, null, null]},
+                { id: 115, name: "TONNY NÉO DA ROCHA", grades: [{ final: 10.0 }, { final: 10.0 }, { final: 10.0 }, { sae: 4.0, prova: 9.0 }, null, null]}
+            ],
+            "7A": [
+                 { id: 201, name: "ADEMIR JÚNIOR ALMEIDA OLIVEIRA", grades: [null, null, null, { sae: 3.5, prova: 7.0 }, null, null]},
+                 { id: 202, name: "ALÍCIA MARIA DE SOUZA BARROS", grades: [null, null, null, { sae: 3.5, prova: null }, null, null]},
+                 { id: 203, name: "ANNA JÚLIA DOS SANTOS GONÇALVES", grades: [null, null, null, { sae: 3.5, prova: 7.0 }, null, null]},
+                 { id: 204, name: "ANTONNY RAPHAEL CARDOSO DOS SANTOS", grades: [null, null, null, null, null, null]},
+                 { id: 205, name: "ARTHUR VALDIR BATISTA DOS SANTOS", grades: [null, null, null, { sae: 1.6, prova: 4.75 }, null, null]},
+                 { id: 206, name: "ARTHUR FERREIRA DE SANTANA", grades: [null, null, null, { sae: 1.0, prova: 3.0 }, null, null]},
+                 { id: 207, name: "ARTHUR MIGUEL DE SANTANA ARAGÃO", grades: [null, null, null, { sae: 2.5, prova: 9.75 }, null, null]},
+                 { id: 208, name: "ARTHUR SILVA OLIVEIRA SANTOS", grades: [null, null, null, { sae: 1.6, prova: 6.5 }, null, null]},
+                 { id: 209, name: "AYLA SOFHIA MATEUS DOS SANTOS", grades: [null, null, null, { sae: 1.0, prova: 6.5 }, null, null]},
+                 { id: 210, name: "CAIO JOAQUIM BORGES MELO", grades: [null, null, null, { sae: 3.5, prova: 5.0 }, null, null]},
+                 { id: 211, name: "CAIO LUCAS DE SANTANA", grades: [null, null, null, { sae: 1.6, prova: 5.0 }, null, null]},
+                 { id: 212, name: "CAUÃ VICTOR NOBRE FLORIANO", grades: [null, null, null, { sae: 1.5, prova: 4.5 }, null, null]},
+                 { id: 213, name: "CAUÊ SOUZA MATOS FILHO", grades: [null, null, null, { sae: 2.0, prova: 2.5 }, null, null]},
+                 { id: 214, name: "GUILHERME FERNANDES SANTOS BARROS", grades: [null, null, null, { sae: 0.0, prova: 10.0 }, null, null]},
+                 { id: 215, name: "JEFFERSON CAUÃ RODRIGUES BERNARDES", grades: [null, null, null, { sae: 4.0, prova: 10.0 }, null, null]},
+                 { id: 216, name: "JENNIFER LORENA RODRIGUES DOS SANTOS", grades: [null, null, null, { sae: 2.5, prova: 6.75 }, null, null]},
+                 { id: 217, name: "JOÃO PEDRO SANTOS ROSA MARTINS", grades: [null, null, null, { sae: 2.5, prova: 8.0 }, null, null]},
+                 { id: 218, name: "JÚLIA EXPEDITA SÁ DANTAS", grades: [null, null, null, { sae: 3.0, prova: null }, null, null]},
+                 { id: 219, name: "LETÍCIA MERIELEN SANTOS DE AQUINO", grades: [null, null, null, { sae: 1.6, prova: 5.0 }, null, null]},
+                 { id: 220, name: "LUIZ GUILHERME DOS SANTOS FONSECA", grades: [null, null, null, { sae: 1.0, prova: 5.75 }, null, null]},
+                 { id: 221, name: "MARIA AGATHA SANTOS SILVA", grades: [null, null, null, { sae: 3.5, prova: 5.0 }, null, null]},
+                 { id: 222, name: "MARIA EDUARDA SANTOS", grades: [null, null, null, { sae: 3.5, prova: 7.75 }, null, null]},
+                 { id: 223, name: "MICAELLY VITÓRIA SANTOS DO AMOR DIVINO", grades: [null, null, null, { sae: 1.0, prova: 6.75 }, null, null]},
+                 { id: 224, name: "SOPHIA SANTOS FRANÇA DE OLIVEIRA", grades: [null, null, null, { sae: 1.0, prova: 10.0 }, null, null]},
+                 { id: 225, name: "WELLINGTON SILVA DOS SANTOS", grades: [null, null, null, { sae: 1.0, prova: 5.75 }, null, null]},
+                 { id: 226, name: "WENDELL MENEZES SANTOS GOIS", grades: [null, null, null, { sae: 2.5, prova: 4.0 }, null, null]}
+            ],
+             "8A": [
+                { id: 301, name: "ALICIA BARBOSA FONTES", grades: [{ final: 10 }, { final: 10 }, { final: 10 }, { sae: 4.5, prova: 8.5 }, null, null]},
+                { id: 302, name: "ALICY DOS SANTOS MONTEIRO", grades: [null, null, null, { sae: 3.5, prova: 3.0 }, null, null]},
+                { id: 303, name: "ANTÔNIO CÉSAR FONTES DE JESUS", grades: [null, null, null, { sae: 2.0, prova: null }, null, null]},
+                { id: 304, name: "ARTHUR GABRIEL CORREIA PASSOS", grades: [null, null, null, { sae: 1.0, prova: 2.0 }, null, null]},
+                { id: 305, name: "CLAUDIO VINICIUS SILVA BISPO", grades: [null, null, null, { sae: 1.0, prova: 2.0 }, null, null]},
+                { id: 306, name: "GABRIEL DA SILVA SANTOS GUIMARÃES", grades: [null, null, null, { sae: 2.5, prova: 4.0 }, null, null]},
+                { id: 307, name: "GUSTAVO CAUÊ ANDRADE DE SÁ", grades: [null, null, null, { sae: 3.4, prova: 3.0 }, null, null]},
+                { id: 308, name: "HELENA VICTÓRIA MATTOS DA SILVA", grades: [null, null, null, { sae: 3.5, prova: 3.5 }, null, null]},
+                { id: 309, name: "HELENA SANTOS RODRIGUES", grades: [null, null, null, { sae: 3.5, prova: 2.0 }, null, null]},
+                { id: 311, name: "JOÃO CARLOS DE SANTANA GONÇALVES", grades: [null, null, null, { sae: 2.0, prova: 3.5 }, null, null]},
+                { id: 312, name: "JOÃO GUILHERME SOUZA DA SILVA", grades: [null, null, null, { sae: 2.0, prova: 2.0 }, null, null]},
+                { id: 313, name: "JULIA GABRIELLY DE FARIA ALVES", grades: [null, null, null, { sae: 2.0, prova: 2.0 }, null, null]},
+                { id: 314, name: "JÚLIA VITÓRIA PEREIRA DOS SANTOS", grades: [null, null, null, { sae: 3.5, prova: 6.0 }, null, null]},
+                { id: 315, name: "KAIO DA SILVA ANUNCIAÇÃO", grades: [null, null, null, { sae: 3.5, prova: 3.0 }, null, null]},
+                { id: 316, name: "KAUÃ FELIPE DE OLIVEIRA ESTEVAM", grades: [null, null, null, { sae: 1.0, prova: null }, null, null]},
+                { id: 317, name: "KAUANNY RODRIGUES SANTOS", grades: [null, null, null, { sae: 3.5, prova: 4.0 }, null, null]},
+                { id: 318, name: "LAVÍNIA LAURENTINO CARDOSO", grades: [null, null, null, { sae: 2.0, prova: 4.0 }, null, null]},
+                { id: 319, name: "LUAN MICKAEL SANTOS CHAGAS", grades: [null, null, null, { sae: 4.5, prova: 3.0 }, null, null]},
+                { id: 320, name: "LUIS MIGUEL SANTANA DE OLIVEIRA", grades: [null, null, null, { sae: 4.5, prova: 3.0 }, null, null]},
+                { id: 321, name: "LUISA GRAZIELLA NUNES DOS SANTOS", grades: [null, null, null, { sae: 2.0, prova: 2.0 }, null, null]},
+                { id: 322, name: "LUIZ FELIPE GOMES DO NASCIMENTO", grades: [null, null, null, { sae: 3.0, prova: 4.0 }, null, null]},
+                { id: 323, name: "MARIA EDUARDA LIMA SILVA PINTO", grades: [null, null, null, { sae: 3.5, prova: 4.0 }, null, null]},
+                { id: 324, name: "MARIA HELENA MATTOS DA SILVA", grades: [null, null, null, { sae: 3.5, prova: 2.5 }, null, null]},
+                { id: 325, name: "MARINA NEVES MELO", grades: [null, null, null, { sae: 2.5, prova: 3.0 }, null, null]},
+                { id: 326, name: "MAYARA VICTORIA SILVA DE ANDRADE", grades: [null, null, null, { sae: 1.0, prova: 1.0 }, null, null]},
+                { id: 327, name: "PEDRO GABRIEL CORREIA RAMOS SANTOS", grades: [null, null, null, { sae: 1.0, prova: null }, null, null]},
+                { id: 328, name: "PEDRO GUILHERME SANTOS SILVA", grades: [null, null, null, { sae: 1.0, prova: 2.0 }, null, null]},
+                { id: 329, name: "PEDRO HENRIQUE SANTOS MESSIAS", grades: [null, null, null, { sae: 1.5, prova: 0.0 }, null, null]},
+                { id: 330, name: "PEDRO HENRIQUE TELES RODRIGUES", grades: [null, null, null, { sae: 1.0, prova: 0.0 }, null, null]},
+                { id: 331, name: "PEDRO VINÍCIUS RODRIGUES CORTES", grades: [null, null, null, { sae: 3.5, prova: 3.0 }, null, null]},
+                { id: 332, name: "VITÓRIA REGINA SANTOS DÓRIA", grades: [null, null, null, { sae: 3.5, prova: 4.0 }, null, null]},
+                { id: 333, name: "WILLIAN EMMANUEL VIEIRA CALIXTO", grades: [null, null, null, { sae: 2.5, prova: 2.0 }, null, null]}
+            ], 
+            "9A": [
+                { id: 401, name: "ADAILTON SANTOS CAVALCANTE FILHO", grades: [null, null, null, { sae: 1.5, prova: 4.0 }, null, null]},
+                { id: 402, name: "ALEXANDRE DE OLIVEIRA SANTOS", grades: [null, null, null, { sae: 0.0, prova: 2.8 }, null, null]},
+                { id: 403, name: "ANTONY PIETRO PEREIRA DA SILVA", grades: [null, null, null, { sae: 1.0, prova: 2.0 }, null, null]},
+                { id: 404, name: "ARTHUR FEITOSA DE SOUZA", grades: [null, null, null, { sae: 0.0, prova: 3.2 }, null, null]},
+                { id: 405, name: "ARTHUR GOMES E SILVA", grades: [null, null, null, { sae: 3.5, prova: 5.0 }, null, null]},
+                { id: 406, name: "ARTHUR SAMUEL DA SILVA OLIVEIRA COSTA", grades: [null, null, null, { sae: 1.5, prova: 3.5 }, null, null]},
+                { id: 407, name: "CARLOS EDUARDO MILTON SANTOS", grades: [null, null, null, { sae: 1.0, prova: 3.2 }, null, null]},
+                { id: 408, name: "GABRIELY VIEIRA DOS SANTOS", grades: [null, null, null, { sae: 2.5, prova: 5.0, atividade: 1.0 }, null, null]},
+                { id: 409, name: "ÍCARO GUILHERME OLIVEIRA SANTANA", grades: [null, null, null, null, null, null]},
+                { id: 410, name: "ÍCARO SAMUEL DAS DORES SANTOS", grades: [null, null, null, { sae: 0.0, prova: 4.5 }, null, null]},
+                { id: 411, name: "JOÃO GABRIEL MONTEIRO DA CONCEIÇÃO", grades: [null, null, null, { sae: 1.5, prova: 5.5 }, null, null]},
+                { id: 412, name: "JOÃO GUILHERME DOS SANTOS", grades: [null, null, null, { sae: 3.5, prova: 6.5 }, null, null]},
+                { id: 413, name: "JOÃO VICTOR SILVA BISPO", grades: [null, null, null, { sae: 3.5, prova: 5.0 }, null, null]},
+                { id: 414, name: "LAILA SOPHIA NUNES DE JESUS", grades: [null, null, null, { sae: 1.5, prova: 1.7, atividade: 1.0 }, null, null]},
+                { id: 415, name: "LETÍCIA SANTOS DE OLIVEIRA", grades: [null, null, null, { sae: 0.0, prova: 4.5, atividade: 1.0 }, null, null]},
+                { id: 416, name: "LUIZ PAULO BASTOS ZABINE", grades: [null, null, null, { sae: 1.5, prova: 4.5 }, null, null]},
+                { id: 417, name: "MANOEL MESSIAS DOS SANTOS BRANDÃO NETO", grades: [null, null, null, { sae: 1.0, prova: 5.7 }, null, null]},
+                { id: 418, name: "MARIA FERNANDA SANTANA HORA", grades: [null, null, null, { sae: 2.5, prova: 3.0, atividade: 1.0 }, null, null]},
+                { id: 419, name: "MATEUS SOUZA SANTOS", grades: [null, null, null, { sae: 1.5, prova: 4.5 }, null, null]},
+                { id: 420, name: "RAISSA DE MENEZES NASCIMENTO", grades: [null, null, null, { sae: 5.0, prova: 7.0 }, null, null]},
+                { id: 421, name: "REBECA VIEIRA SANTOS", grades: [null, null, null, { sae: 3.5, prova: 4.5, atividade: 1.0 }, null, null]},
+                { id: 422, name: "RICARDO SANTANA SILVA", grades: [null, null, null, { sae: 1.0, prova: 5.5 }, null, null]},
+                { id: 423, name: "SYLVIA VITÓRIA OLIVEIRA SANTOS", grades: [null, null, null, { sae: 1.0, prova: 4.0 }, null, null]},
+                { id: 424, name: "VITORIA CAMILLY DOS SANTOS", grades: [null, null, null, { sae: 1.5, prova: 5.8 }, null, null]},
+                { id: 425, name: "WANDERSON SANTOS VITORINO", grades: [null, null, null, { sae: 2.5, prova: 5.0 }, null, null]}
+            ], 
+            "9B": [
+                { id: 501, name: "ADERLAN MENEZES RIBEIRO FILHO", grades: [null, null, null, { sae: 1.0, prova: 1.0 }, null, null]},
+                { id: 502, name: "AMANDA SOPHIA SANTOS DA PAZ", grades: [null, null, null, { sae: 1.5, prova: 7.5 }, null, null]},
+                { id: 503, name: "ANANDA DEOCLECIANO SOUZA", grades: [null, null, null, { sae: 3.5, prova: 2.5 }, null, null]},
+                { id: 504, name: "ANTONIO RAFAEL REGO DE BARROS", grades: [null, null, null, { sae: 2.5, prova: 4.0 }, null, null]},
+                { id: 505, name: "ARTUR SANTOS DE JESUS", grades: [null, null, null, { sae: 3.5, prova: 5.0 }, null, null]},
+                { id: 506, name: "CARLA VALENTINA MARTINEZ DA ROCHA", grades: [null, null, null, { sae: 1.5, prova: null }, null, null]},
+                { id: 507, name: "ENZO GABRIEL FRANÇA SANTOS", grades: [null, null, null, { sae: 1.0, prova: 6.5 }, null, null]},
+                { id: 508, name: "GUSTAVO HENRIQUE SANTOS CRUZ", grades: [null, null, null, { sae: 3.5, prova: 4.0 }, null, null]},
+                { id: 509, name: "HELLEN MARIA ALVES FERREIRA DA SILVA", grades: [null, null, null, { sae: 2.5, prova: null }, null, null]},
+                { id: 510, name: "KLEBER JOSÉ CORDEIRO JUNIOR", grades: [null, null, null, { sae: 3.5, prova: 2.3 }, null, null]},
+                { id: 511, name: "LETÍCIA LUIZA SANTOS DE JESUS", grades: [null, null, null, { sae: 1.0, prova: null }, null, null]},
+                { id: 512, name: "LUCAS GABRIEL SANTOS DA SILVA ALMEIDA", grades: [null, null, null, { sae: 2.5, prova: 8.0 }, null, null]},
+                { id: 513, name: "MARIA CLARA SANTOS SILVA", grades: [null, null, null, { sae: 1.5, prova: 3.0 }, null, null]},
+                { id: 514, name: "PEDRO GABRIEL DE OLIVEIRA GOIS", grades: [null, null, null, { sae: 1.0, prova: 4.5 }, null, null]},
+                { id: 515, name: "RUAN NOGUEIRA NASCIMENTO", grades: [null, null, null, { sae: 2.5, prova: 5.0 }, null, null]},
+                { id: 516, name: "THAYS SOPHIA SIDRONIO SILVA DOS SANTOS", grades: [null, null, null, { sae: 1.5, prova: 1.0 }, null, null]},
+                { id: 517, name: "YAWAN DOS SANTOS SILVA", grades: [null, null, null, { sae: 3.5, prova: 3.5 }, null, null]},
+                { id: 519, name: "YANNE BEATRIZ MEDEIROS NICOLAU DOS SANTOS", grades: [null, null, null, { sae: 2.5, prova: 4.0 }, null, null]}
+            ]
+        };
+        
         document.addEventListener('DOMContentLoaded', () => {
-            const initialStudentData = {
-                "6A": [
-                    { id: 101, name: "ALICE MATILDE SANTOS", grades: [null, null, null, { sae: 2.5, prova: 5.0 }, null, null]},
-                    { id: 102, name: "ANA CLARA LIMA ARAÚJO BASTOS", grades: [null, null, null, { sae: 2.5, prova: 5.0 }, null, null]},
-                    { id: 103, name: "ANTHONY GABRIEL SOUZA MENEZES", grades: [null, null, null, { sae: 3.5, prova: 8.0 }, null, null]},
-                    { id: 104, name: "BEATRIZ VIANA DOS SANTOS", grades: [null, null, null, { sae: 1.0, prova: 1.0 }, null, null]},
-                    { id: 105, name: "CARLOS RYAN OLIVEIRA BOMFIM DOS SANTOS", grades: [null, null, null, { sae: 1.5, prova: 2.0 }, null, null]},
-                    { id: 106, name: "ENZZO SANTANA FEITOSA CAVALCANTE", grades: [null, null, null, { sae: 5.0, prova: 10.0 }, null, null]},
-                    { id: 107, name: "JÉSSICA FREIRE DE CARVALHO LEITE", grades: [null, null, null, { sae: 0.0, prova: 3.0 }, null, null]},
-                    { id: 108, name: "JOÃO GUILHERME GONÇALVES SANTOS", grades: [null, null, null, { sae: 1.5, prova: 5.5 }, null, null]},
-                    { id: 109, name: "JÚLIA CAROLLINY SOUZA ANDRADE", grades: [null, null, null, { sae: 1.0, prova: 4.5 }, null, null]},
-                    { id: 110, name: "KETHLYN SOPHYA SANTOS DE OLIVEIRA", grades: [null, null, null, { sae: 0.0, prova: 4.0 }, null, null]},
-                    { id: 111, name: "LUCAS EDUARDO DA SILVA COSTA", grades: [null, null, null, { sae: 2.5, prova: 5.0 }, null, null]},
-                    { id: 113, name: "PAULA FABIANA NASCIMENTO BARBOSA DÓRIA", grades: [null, null, null, { sae: 1.5, prova: 4.0 }, null, null]},
-                    { id: 114, name: "PHILLIPE RAFAEL SANTANA SANTOS", grades: [null, null, null, { sae: 3.5, prova: 5.5 }, null, null]},
-                    { id: 115, name: "TONNY NÉO DA ROCHA", grades: [null, null, null, { sae: 4.0, prova: 9.0 }, null, null]}
-                ],
-                "7A": [
-                     { id: 201, name: "ADEMIR JÚNIOR ALMEIDA OLIVEIRA", grades: [null, null, null, { sae: 3.5, prova: 7.0 }, null, null]},
-                     { id: 202, name: "ALÍCIA MARIA DE SOUZA BARROS", grades: [null, null, null, { sae: 3.5, prova: null }, null, null]},
-                     { id: 203, name: "ANNA JÚLIA DOS SANTOS GONÇALVES", grades: [null, null, null, { sae: 3.5, prova: 7.0 }, null, null]},
-                     { id: 204, name: "ANTONNY RAPHAEL CARDOSO DOS SANTOS", grades: [null, null, null, null, null, null]},
-                     { id: 205, name: "ARTHUR VALDIR BATISTA DOS SANTOS", grades: [null, null, null, { sae: 1.6, prova: 4.75 }, null, null]},
-                     { id: 206, name: "ARTHUR FERREIRA DE SANTANA", grades: [null, null, null, { sae: 1.0, prova: 3.0 }, null, null]},
-                     { id: 207, name: "ARTHUR MIGUEL DE SANTANA ARAGÃO", grades: [null, null, null, { sae: 2.5, prova: 9.75 }, null, null]},
-                     { id: 208, name: "ARTHUR SILVA OLIVEIRA SANTOS", grades: [null, null, null, { sae: 1.6, prova: 6.5 }, null, null]},
-                     { id: 209, name: "AYLA SOFHIA MATEUS DOS SANTOS", grades: [null, null, null, { sae: 1.0, prova: 6.5 }, null, null]},
-                     { id: 210, name: "CAIO JOAQUIM BORGES MELO", grades: [null, null, null, { sae: 3.5, prova: 5.0 }, null, null]},
-                     { id: 211, name: "CAIO LUCAS DE SANTANA", grades: [null, null, null, { sae: 1.6, prova: 5.0 }, null, null]},
-                     { id: 212, name: "CAUÃ VICTOR NOBRE FLORIANO", grades: [null, null, null, { sae: 1.5, prova: 4.5 }, null, null]},
-                     { id: 213, name: "CAUÊ SOUZA MATOS FILHO", grades: [null, null, null, { sae: 2.0, prova: 2.5 }, null, null]},
-                     { id: 214, name: "GUILHERME FERNANDES SANTOS BARROS", grades: [null, null, null, { sae: 0.0, prova: 10.0 }, null, null]},
-                     { id: 215, name: "JEFFERSON CAUÃ RODRIGUES BERNARDES", grades: [null, null, null, { sae: 4.0, prova: 10.0 }, null, null]},
-                     { id: 216, name: "JENNIFER LORENA RODRIGUES DOS SANTOS", grades: [null, null, null, { sae: 2.5, prova: 6.75 }, null, null]},
-                     { id: 217, name: "JOÃO PEDRO SANTOS ROSA MARTINS", grades: [null, null, null, { sae: 2.5, prova: 8.0 }, null, null]},
-                     { id: 218, name: "JÚLIA EXPEDITA SÁ DANTAS", grades: [null, null, null, { sae: 3.0, prova: null }, null, null]},
-                     { id: 219, name: "LETÍCIA MERIELEN SANTOS DE AQUINO", grades: [null, null, null, { sae: 1.6, prova: 5.0 }, null, null]},
-                     { id: 220, name: "LUIZ GUILHERME DOS SANTOS FONSECA", grades: [null, null, null, { sae: 1.0, prova: 5.75 }, null, null]},
-                     { id: 221, name: "MARIA AGATHA SANTOS SILVA", grades: [null, null, null, { sae: 3.5, prova: 5.0 }, null, null]},
-                     { id: 222, name: "MARIA EDUARDA SANTOS", grades: [null, null, null, { sae: 3.5, prova: 7.75 }, null, null]},
-                     { id: 223, name: "MICAELLY VITÓRIA SANTOS DO AMOR DIVINO", grades: [null, null, null, { sae: 1.0, prova: 6.75 }, null, null]},
-                     { id: 224, name: "SOPHIA SANTOS FRANÇA DE OLIVEIRA", grades: [null, null, null, { sae: 1.0, prova: 10.0 }, null, null]},
-                     { id: 225, name: "WELLINGTON SILVA DOS SANTOS", grades: [null, null, null, { sae: 1.0, prova: 5.75 }, null, null]},
-                     { id: 226, name: "WENDELL MENEZES SANTOS GOIS", grades: [null, null, null, { sae: 2.5, prova: 4.0 }, null, null]}
-                ],
-                 "8A": [
-                    { id: 301, name: "ALICIA BARBOSA FONTES", grades: [{ final: 10 }, { final: 10 }, { final: 10 }, { sae: 4.5, prova: 8.5 }, null, null]},
-                    { id: 302, name: "ALICY DOS SANTOS MONTEIRO", grades: [null, null, null, { sae: 3.5, prova: 3.0 }, null, null]},
-                    { id: 303, name: "ANTÔNIO CÉSAR FONTES DE JESUS", grades: [null, null, null, { sae: 2.0, prova: null }, null, null]},
-                    { id: 304, name: "ARTHUR GABRIEL CORREIA PASSOS", grades: [null, null, null, { sae: 1.0, prova: 2.0 }, null, null]},
-                    { id: 305, name: "CLAUDIO VINICIUS SILVA BISPO", grades: [null, null, null, { sae: 1.0, prova: 2.0 }, null, null]},
-                    { id: 306, name: "GABRIEL DA SILVA SANTOS GUIMARÃES", grades: [null, null, null, { sae: 2.5, prova: 4.0 }, null, null]},
-                    { id: 307, name: "GUSTAVO CAUÊ ANDRADE DE SÁ", grades: [null, null, null, { sae: 3.4, prova: 3.0 }, null, null]},
-                    { id: 308, name: "HELENA VICTÓRIA MATTOS DA SILVA", grades: [null, null, null, { sae: 3.5, prova: 3.5 }, null, null]},
-                    { id: 309, name: "HELENA SANTOS RODRIGUES", grades: [null, null, null, { sae: 3.5, prova: 2.0 }, null, null]},
-                    { id: 311, name: "JOÃO CARLOS DE SANTANA GONÇALVES", grades: [null, null, null, { sae: 2.0, prova: 3.5 }, null, null]},
-                    { id: 312, name: "JOÃO GUILHERME SOUZA DA SILVA", grades: [null, null, null, { sae: 2.0, prova: 2.0 }, null, null]},
-                    { id: 313, name: "JULIA GABRIELLY DE FARIA ALVES", grades: [null, null, null, { sae: 2.0, prova: 2.0 }, null, null]},
-                    { id: 314, name: "JÚLIA VITÓRIA PEREIRA DOS SANTOS", grades: [null, null, null, { sae: 3.5, prova: 6.0 }, null, null]},
-                    { id: 315, name: "KAIO DA SILVA ANUNCIAÇÃO", grades: [null, null, null, { sae: 3.5, prova: 3.0 }, null, null]},
-                    { id: 316, name: "KAUÃ FELIPE DE OLIVEIRA ESTEVAM", grades: [null, null, null, { sae: 1.0, prova: null }, null, null]},
-                    { id: 317, name: "KAUANNY RODRIGUES SANTOS", grades: [null, null, null, { sae: 3.5, prova: 4.0 }, null, null]},
-                    { id: 318, name: "LAVÍNIA LAURENTINO CARDOSO", grades: [null, null, null, { sae: 2.0, prova: 4.0 }, null, null]},
-                    { id: 319, name: "LUAN MICKAEL SANTOS CHAGAS", grades: [null, null, null, { sae: 4.5, prova: 3.0 }, null, null]},
-                    { id: 320, name: "LUIS MIGUEL SANTANA DE OLIVEIRA", grades: [null, null, null, { sae: 4.5, prova: 3.0 }, null, null]},
-                    { id: 321, name: "LUISA GRAZIELLA NUNES DOS SANTOS", grades: [null, null, null, { sae: 2.0, prova: 2.0 }, null, null]},
-                    { id: 322, name: "LUIZ FELIPE GOMES DO NASCIMENTO", grades: [null, null, null, { sae: 3.0, prova: 4.0 }, null, null]},
-                    { id: 323, name: "MARIA EDUARDA LIMA SILVA PINTO", grades: [null, null, null, { sae: 3.5, prova: 4.0 }, null, null]},
-                    { id: 324, name: "MARIA HELENA MATTOS DA SILVA", grades: [null, null, null, { sae: 3.5, prova: 2.5 }, null, null]},
-                    { id: 325, name: "MARINA NEVES MELO", grades: [null, null, null, { sae: 2.5, prova: 3.0 }, null, null]},
-                    { id: 326, name: "MAYARA VICTORIA SILVA DE ANDRADE", grades: [null, null, null, { sae: 1.0, prova: 1.0 }, null, null]},
-                    { id: 327, name: "PEDRO GABRIEL CORREIA RAMOS SANTOS", grades: [null, null, null, { sae: 1.0, prova: null }, null, null]},
-                    { id: 328, name: "PEDRO GUILHERME SANTOS SILVA", grades: [null, null, null, { sae: 1.0, prova: 2.0 }, null, null]},
-                    { id: 329, name: "PEDRO HENRIQUE SANTOS MESSIAS", grades: [null, null, null, { sae: 1.5, prova: 0.0 }, null, null]},
-                    { id: 330, name: "PEDRO HENRIQUE TELES RODRIGUES", grades: [null, null, null, { sae: 1.0, prova: 0.0 }, null, null]},
-                    { id: 331, name: "PEDRO VINÍCIUS RODRIGUES CORTES", grades: [null, null, null, { sae: 3.5, prova: 3.0 }, null, null]},
-                    { id: 332, name: "VITÓRIA REGINA SANTOS DÓRIA", grades: [null, null, null, { sae: 3.5, prova: 4.0 }, null, null]},
-                    { id: 333, name: "WILLIAN EMMANUEL VIEIRA CALIXTO", grades: [null, null, null, { sae: 2.5, prova: 2.0 }, null, null]}
-                ], 
-                "9A": [
-                    { id: 401, name: "ADAILTON SANTOS CAVALCANTE FILHO", grades: [null, null, null, { sae: 1.5, prova: 4.0 }, null, null]},
-                    { id: 402, name: "ALEXANDRE DE OLIVEIRA SANTOS", grades: [null, null, null, { sae: 0.0, prova: 2.8 }, null, null]},
-                    { id: 403, name: "ANTONY PIETRO PEREIRA DA SILVA", grades: [null, null, null, { sae: 1.0, prova: 2.0 }, null, null]},
-                    { id: 404, name: "ARTHUR FEITOSA DE SOUZA", grades: [null, null, null, { sae: 0.0, prova: 3.2 }, null, null]},
-                    { id: 405, name: "ARTHUR GOMES E SILVA", grades: [null, null, null, { sae: 3.5, prova: 5.0 }, null, null]},
-                    { id: 406, name: "ARTHUR SAMUEL DA SILVA OLIVEIRA COSTA", grades: [null, null, null, { sae: 1.5, prova: 3.5 }, null, null]},
-                    { id: 407, name: "CARLOS EDUARDO MILTON SANTOS", grades: [null, null, null, { sae: 1.0, prova: 3.2 }, null, null]},
-                    { id: 408, name: "GABRIELY VIEIRA DOS SANTOS", grades: [null, null, null, { sae: 2.5, prova: 5.0, atividade: 1.0 }, null, null]},
-                    { id: 409, name: "ÍCARO GUILHERME OLIVEIRA SANTANA", grades: [null, null, null, null, null, null]},
-                    { id: 410, name: "ÍCARO SAMUEL DAS DORES SANTOS", grades: [null, null, null, { sae: 0.0, prova: 4.5 }, null, null]},
-                    { id: 411, name: "JOÃO GABRIEL MONTEIRO DA CONCEIÇÃO", grades: [null, null, null, { sae: 1.5, prova: 5.5 }, null, null]},
-                    { id: 412, name: "JOÃO GUILHERME DOS SANTOS", grades: [null, null, null, { sae: 3.5, prova: 6.5 }, null, null]},
-                    { id: 413, name: "JOÃO VICTOR SILVA BISPO", grades: [null, null, null, { sae: 3.5, prova: 5.0 }, null, null]},
-                    { id: 414, name: "LAILA SOPHIA NUNES DE JESUS", grades: [null, null, null, { sae: 1.5, prova: 1.7, atividade: 1.0 }, null, null]},
-                    { id: 415, name: "LETÍCIA SANTOS DE OLIVEIRA", grades: [null, null, null, { sae: 0.0, prova: 4.5, atividade: 1.0 }, null, null]},
-                    { id: 416, name: "LUIZ PAULO BASTOS ZABINE", grades: [null, null, null, { sae: 1.5, prova: 4.5 }, null, null]},
-                    { id: 417, name: "MANOEL MESSIAS DOS SANTOS BRANDÃO NETO", grades: [null, null, null, { sae: 1.0, prova: 5.7 }, null, null]},
-                    { id: 418, name: "MARIA FERNANDA SANTANA HORA", grades: [null, null, null, { sae: 2.5, prova: 3.0, atividade: 1.0 }, null, null]},
-                    { id: 419, name: "MATEUS SOUZA SANTOS", grades: [null, null, null, { sae: 1.5, prova: 4.5 }, null, null]},
-                    { id: 420, name: "RAISSA DE MENEZES NASCIMENTO", grades: [null, null, null, { sae: 5.0, prova: 7.0 }, null, null]},
-                    { id: 421, name: "REBECA VIEIRA SANTOS", grades: [null, null, null, { sae: 3.5, prova: 4.5, atividade: 1.0 }, null, null]},
-                    { id: 422, name: "RICARDO SANTANA SILVA", grades: [null, null, null, { sae: 1.0, prova: 5.5 }, null, null]},
-                    { id: 423, name: "SYLVIA VITÓRIA OLIVEIRA SANTOS", grades: [null, null, null, { sae: 1.0, prova: 4.0 }, null, null]},
-                    { id: 424, name: "VITORIA CAMILLY DOS SANTOS", grades: [null, null, null, { sae: 1.5, prova: 5.8 }, null, null]},
-                    { id: 425, name: "WANDERSON SANTOS VITORINO", grades: [null, null, null, { sae: 2.5, prova: 5.0 }, null, null]}
-                ], 
-                "9B": [
-                    { id: 501, name: "ADERLAN MENEZES RIBEIRO FILHO", grades: [null, null, null, { sae: 1.0, prova: 1.0 }, null, null]},
-                    { id: 502, name: "AMANDA SOPHIA SANTOS DA PAZ", grades: [null, null, null, { sae: 1.5, prova: 7.5 }, null, null]},
-                    { id: 503, name: "ANANDA DEOCLECIANO SOUZA", grades: [null, null, null, { sae: 3.5, prova: 2.5 }, null, null]},
-                    { id: 504, name: "ANTONIO RAFAEL REGO DE BARROS", grades: [null, null, null, { sae: 2.5, prova: 4.0 }, null, null]},
-                    { id: 505, name: "ARTUR SANTOS DE JESUS", grades: [null, null, null, { sae: 3.5, prova: 5.0 }, null, null]},
-                    { id: 506, name: "CARLA VALENTINA MARTINEZ DA ROCHA", grades: [null, null, null, { sae: 1.5, prova: null }, null, null]},
-                    { id: 507, name: "ENZO GABRIEL FRANÇA SANTOS", grades: [null, null, null, { sae: 1.0, prova: 6.5 }, null, null]},
-                    { id: 508, name: "GUSTAVO HENRIQUE SANTOS CRUZ", grades: [null, null, null, { sae: 3.5, prova: 4.0 }, null, null]},
-                    { id: 509, name: "HELLEN MARIA ALVES FERREIRA DA SILVA", grades: [null, null, null, { sae: 2.5, prova: null }, null, null]},
-                    { id: 510, name: "KLEBER JOSÉ CORDEIRO JUNIOR", grades: [null, null, null, { sae: 3.5, prova: 2.3 }, null, null]},
-                    { id: 511, name: "LETÍCIA LUIZA SANTOS DE JESUS", grades: [null, null, null, { sae: 1.0, prova: null }, null, null]},
-                    { id: 512, name: "LUCAS GABRIEL SANTOS DA SILVA ALMEIDA", grades: [null, null, null, { sae: 2.5, prova: 8.0 }, null, null]},
-                    { id: 513, name: "MARIA CLARA SANTOS SILVA", grades: [null, null, null, { sae: 1.5, prova: 3.0 }, null, null]},
-                    { id: 514, name: "PEDRO GABRIEL DE OLIVEIRA GOIS", grades: [null, null, null, { sae: 1.0, prova: 4.5 }, null, null]},
-                    { id: 515, name: "RUAN NOGUEIRA NASCIMENTO", grades: [null, null, null, { sae: 2.5, prova: 5.0 }, null, null]},
-                    { id: 516, name: "THAYS SOPHIA SIDRONIO SILVA DOS SANTOS", grades: [null, null, null, { sae: 1.5, prova: 1.0 }, null, null]},
-                    { id: 517, name: "YAWAN DOS SANTOS SILVA", grades: [null, null, null, { sae: 3.5, prova: 3.5 }, null, null]},
-                    { id: 519, name: "YANNE BEATRIZ MEDEIROS NICOLAU DOS SANTOS", grades: [null, null, null, { sae: 2.5, prova: 4.0 }, null, null]}
-                ]
-            };
-
-            const studentData = JSON.parse(JSON.stringify(initialStudentData));
-            
+            // --- VARIÁVEIS GLOBAIS ---
+            let studentData = {};
             let currentClass = null;
             let currentSearchTerm = '';
             let currentStudentForModal = null;
+            let db, auth;
+            let currentUserId = null;
+            let unsubscribeFromFirestore = null; 
 
+            // --- ELEMENTOS DO DOM ---
+            const appContainer = document.getElementById('app-container');
             const studentListEl = document.getElementById('student-list');
             const searchInputEl = document.getElementById('search-input');
             const classTabsEl = document.getElementById('class-tabs');
             const classTitleEl = document.getElementById('class-title');
+            const classSummaryBtn = document.getElementById('class-summary-btn');
             const editModalEl = document.getElementById('edit-modal');
             const editStudentNameEl = document.getElementById('edit-student-name');
             const editFormContentEl = document.getElementById('edit-form-content');
@@ -310,8 +348,95 @@
             const printReportBtn = document.getElementById('print-report-btn');
             const aiAnalysisBtn = document.getElementById('ai-analysis-btn');
             const aiAnalysisContainer = document.getElementById('ai-analysis-container');
+            const summaryModalEl = document.getElementById('summary-modal');
+            const summaryTitleEl = document.getElementById('summary-title');
+            const summaryContentEl = document.getElementById('summary-content');
+            const closeSummaryModalBtn = document.getElementById('close-summary-modal-btn');
+            
+            // --- CONFIGURAÇÃO DO FIREBASE ---
+            try {
+                const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+                const app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+            } catch (e) {
+                console.error("Erro ao inicializar o Firebase. Verifique a configuração.", e);
+                document.body.innerHTML = `<div class="p-8 text-center text-red-600 bg-red-100 rounded-lg"><h1>Erro Crítico</h1><p>Não foi possível conectar ao banco de dados. Verifique a configuração do Firebase.</p></div>`;
+            }
+            
+            // --- LÓGICA DE AUTENTICAÇÃO ---
+            const mainApp = async () => {
+                try {
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+                } catch (error) {
+                    console.error("Firebase Authentication Error:", error);
+                    document.body.innerHTML = `<div class="p-8 text-center text-red-600 bg-red-100 rounded-lg"><h1>Erro de Autenticação</h1><p>Não foi possível autenticar o usuário para carregar a aplicação.</p></div>`;
+                }
+            };
+            
+            onAuthStateChanged(auth, user => {
+                if (user) {
+                    currentUserId = user.uid;
+                    setupRealtimeListener(currentUserId);
+                } else {
+                    currentUserId = null;
+                    if (unsubscribeFromFirestore) {
+                        unsubscribeFromFirestore();
+                    }
+                }
+            });
 
-            const apiKey = "AIzaSyDxcxVmGPBbg7mJ6_cmMDkHrDpbx3Lspik"; 
+            mainApp();
+
+            // --- LÓGICA DO FIRESTORE ---
+            const initializeUserData = async (userId) => {
+                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                const userDocRef = doc(db, 'artifacts', appId, 'users', userId);
+                await setDoc(userDocRef, { studentData: initialStudentData });
+            };
+
+            const setupRealtimeListener = (userId) => {
+                 const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                 const userDocRef = doc(db, 'artifacts', appId, 'users', userId);
+                 unsubscribeFromFirestore = onSnapshot(userDocRef, (docSnap) => {
+                     if (docSnap.exists() && docSnap.data().studentData) {
+                         const data = docSnap.data().studentData;
+                         studentData = data;
+                        Object.values(studentData).flat().forEach(student => {
+                            student.grades.forEach((grade, index) => {
+                                if (grade) {
+                                    if(index >= 3){
+                                         grade.final = calculateUnitFinal(grade.sae, grade.prova, grade.atividade);
+                                    }
+                                }
+                            });
+                            student.overallAverage = calculateOverallAverage(student.grades);
+                        });
+                         setupClassTabs();
+                         renderStudents();
+                     } else {
+                         console.log("Documento do usuário não encontrado, inicializando...");
+                         initializeUserData(userId);
+                     }
+                 }, (error) => {
+                     console.error("Erro ao ouvir o banco de dados:", error);
+                     studentListEl.innerHTML = `<tr><td colspan="3" class="text-center p-8 text-red-500">Erro de permissão ao carregar os dados. Verifique as regras de segurança do Firestore.</td></tr>`;
+                 });
+            };
+
+            const updateFirestoreData = async () => {
+                if (!currentUserId) return;
+                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                const userDocRef = doc(db, 'artifacts', appId, 'users', currentUserId);
+                await setDoc(userDocRef, { studentData });
+            };
+
+            // --- LÓGICA DA APLICAÇÃO ---
+            const apiKey = ""; 
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
 
             const calculateUnitFinal = (sae, prova, atividade) => {
@@ -324,22 +449,12 @@
             };
 
             const calculateOverallAverage = (grades) => {
+                if (!grades) return null;
                 const validUnits = grades.filter(g => g && g.final !== null && typeof g.final !== 'undefined');
                 if (validUnits.length === 0) return null;
                 const total = validUnits.reduce((sum, g) => sum + g.final, 0);
                 return total / validUnits.length;
             };
-            
-            Object.values(studentData).flat().forEach(student => {
-                student.grades.forEach((grade, index) => {
-                    if (grade) {
-                        if(index >= 3){ // Unidades 4, 5, 6
-                             grade.final = calculateUnitFinal(grade.sae, grade.prova, grade.atividade);
-                        }
-                    }
-                });
-                student.overallAverage = calculateOverallAverage(student.grades);
-            });
 
             const getFinalGradeColor = (grade) => {
                 if (grade === null || typeof grade === 'undefined') return 'text-gray-400';
@@ -349,11 +464,13 @@
             };
 
             const renderStudents = () => {
-                if (!currentClass) {
+                if (!currentClass || !studentData[currentClass]) {
                     studentListEl.innerHTML = `<tr><td colspan="3" class="text-center p-8 text-gray-500">Nenhuma turma selecionada.</td></tr>`;
                     classTitleEl.textContent = 'Selecione uma turma para começar';
+                    classSummaryBtn.classList.add('hidden');
                     return;
                 }
+                classSummaryBtn.classList.remove('hidden');
                 const students = studentData[currentClass]
                     .filter(student => student.name.toLowerCase().includes(currentSearchTerm.toLowerCase()))
                     .sort((a, b) => a.name.localeCompare(b.name));
@@ -444,8 +561,7 @@
                         }
                     }
                 }
-                currentStudentForModal.overallAverage = calculateOverallAverage(currentStudentForModal.grades);
-                renderStudents();
+                updateFirestoreData(); // Salva no Firebase
                 closeEditModal();
             };
 
@@ -533,8 +649,7 @@
                     const result = await response.json();
                     const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
                     if(text){
-                         // Remove potential markdown and ensure structure
-                        let cleanedText = text.replace(/Pontos Fortes:|Pontos de Atenção:|Sugestões Pedagógicas:|Análise Pedagógica/gi, '').trim();
+                         let cleanedText = text.replace(/Pontos Fortes:|Pontos de Atenção:|Sugestões Pedagógicas:|Análise Pedagógica/gi, '').trim();
                         let sections = cleanedText.split(/\n\s*\n/);
                         let html = '<strong>Análise Pedagógica</strong>';
                         if (sections.length >= 3) {
@@ -542,7 +657,7 @@
                              html += `<br><br><strong>Pontos de Atenção:</strong><br>${sections[1].trim()}`;
                              html += `<br><br><strong>Sugestões Pedagógicas:</strong><br>${sections[2].trim()}`;
                         } else {
-                            html = text.replace(/\n/g, '<br>'); // Fallback
+                            html = text.replace(/\n/g, '<br>');
                         }
                         aiAnalysisContainer.innerHTML = html;
                         printReportBtn.disabled = false;
@@ -557,6 +672,72 @@
                 }
             };
             
+             const openSummaryModal = async () => {
+                summaryTitleEl.textContent = `Resumo da Turma ${currentClass.replace('A', 'º Ano "A"').replace('B', 'º Ano "B"')}`;
+                summaryModalEl.classList.remove('hidden');
+                 setTimeout(() => {
+                    summaryModalEl.classList.remove('opacity-0');
+                    summaryModalEl.querySelector('.modal-content').classList.remove('scale-95');
+                }, 10);
+                summaryContentEl.innerHTML = '<div class="loader"></div>';
+
+                const students = studentData[currentClass];
+                const studentDataForPrompt = students.map(s => ({
+                    nome: s.name,
+                    mediaFinal: s.overallAverage?.toFixed(1) || 'N/A'
+                }));
+
+                const prompt = `
+                    Você é um coordenador pedagógico experiente analisando o desempenho da turma ${currentClass}. Sua tarefa é fornecer um resumo coeso e prático para o professor da turma.
+
+                    Dados da Turma (Nome e Média Final):
+                    ${JSON.stringify(studentDataForPrompt, null, 2)}
+
+                    Análise Requerida:
+                    Baseado nos dados (média para aprovação é 6.0), gere um relatório para o professor. Use uma linguagem clara e profissional. Formate a resposta usando tags HTML: use <h3> para os títulos, <p> para parágrafos, <ul> e <li> para listas. Não use <br>.
+
+                    O relatório deve conter as seguintes seções:
+
+                    <h3>Desempenho Geral da Turma</h3>
+                    <p>Faça uma avaliação geral. Calcule e informe a porcentagem de alunos aprovados (média >= 6.0).</p>
+
+                    <h3>Destaques Positivos</h3>
+                    <p>Liste os alunos com desempenho consistentemente alto (média >= 8.5).</p>
+
+                    <h3>Pontos de Atenção</h3>
+                    <p>Liste os alunos que estão com a média final abaixo de 6.0 e que requerem atenção especial.</p>
+
+                    <h3>Sugestões Práticas</h3>
+                    <p>Com base na análise, sugira 1 ou 2 ações que o professor pode tomar.</p>
+                `;
+
+                 try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                    });
+                    if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
+                    const result = await response.json();
+                    const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                    if(text){
+                        summaryContentEl.innerHTML = text;
+                    } else {
+                        summaryContentEl.innerHTML = '<p class="text-red-500">Não foi possível gerar o resumo.</p>';
+                    }
+                } catch (error) {
+                    console.error("Gemini API Error:", error);
+                    summaryContentEl.innerHTML = '<p class="text-red-500">Erro ao gerar o resumo. Tente novamente.</p>';
+                }
+            };
+
+            const closeSummaryModal = () => {
+                summaryModalEl.classList.add('opacity-0');
+                summaryModalEl.querySelector('.modal-content').classList.add('scale-95');
+                setTimeout(() => { summaryModalEl.classList.add('hidden'); }, 300);
+            };
+
+
             const classColors = {
                 "6A": "bg-blue-500 hover:bg-blue-600",
                 "7A": "bg-teal-500 hover:bg-teal-600",
@@ -564,22 +745,24 @@
                 "9A": "bg-pink-500 hover:bg-pink-600",
                 "9B": "bg-indigo-500 hover:bg-indigo-600"
             };
-
-            const classNames = Object.keys(studentData);
-            classTabsEl.innerHTML = classNames.map(name => `
-                <button data-class="${name}" class="class-tab px-4 py-2 rounded-lg text-white font-semibold transition shadow-md ${classColors[name]}">
-                    ${name.replace('A', 'º Ano "A"').replace('B', 'º Ano "B"')}
-                </button>
-            `).join('');
             
-            classTabsEl.addEventListener('click', (e) => {
-                if(e.target.matches('.class-tab')) {
-                    currentClass = e.target.dataset.class;
-                    document.querySelectorAll('.class-tab').forEach(t => t.classList.remove('active-tab'));
-                    e.target.classList.add('active-tab');
-                    renderStudents();
-                }
-            });
+            const setupClassTabs = () => {
+                const classNames = Object.keys(studentData);
+                classTabsEl.innerHTML = classNames.map(name => `
+                    <button data-class="${name}" class="class-tab px-4 py-2 rounded-lg text-white font-semibold transition shadow-md ${classColors[name]}">
+                        ${name.replace('A', 'º Ano "A"').replace('B', 'º Ano "B"')}
+                    </button>
+                `).join('');
+                
+                classTabsEl.addEventListener('click', (e) => {
+                    if(e.target.matches('.class-tab')) {
+                        currentClass = e.target.dataset.class;
+                        document.querySelectorAll('.class-tab').forEach(t => t.classList.remove('active-tab'));
+                        e.target.classList.add('active-tab');
+                        renderStudents();
+                    }
+                });
+            };
 
             searchInputEl.addEventListener('keyup', (e) => { currentSearchTerm = e.target.value; renderStudents(); });
             
@@ -596,6 +779,8 @@
             closeEditModalBtn.addEventListener('click', closeEditModal);
             closeReportModalBtn.addEventListener('click', closeReportModal);
             aiAnalysisBtn.addEventListener('click', generateAIAnalysis);
+            classSummaryBtn.addEventListener('click', openSummaryModal);
+            closeSummaryModalBtn.addEventListener('click', closeSummaryModal);
 
             printReportBtn.addEventListener('click', () => {
                 const title = "Relatório Pedagógico do Aluno"
