@@ -354,8 +354,9 @@
             const closeSummaryModalBtn = document.getElementById('close-summary-modal-btn');
             
             // --- CONFIGURAÇÃO DO FIREBASE ---
+            const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+
             try {
-                const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
                 const app = initializeApp(firebaseConfig);
                 auth = getAuth(app);
                 db = getFirestore(app);
@@ -436,7 +437,7 @@
             };
 
             // --- LÓGICA DA APLICAÇÃO ---
-            const apiKey = "AIzaSyDxcxVmGPBbg7mJ6_cmMDkHrDpbx3Lspik"; 
+            const apiKey = ""; 
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
 
             const calculateUnitFinal = (sae, prova, atividade) => {
