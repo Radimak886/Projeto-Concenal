@@ -179,7 +179,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { 
             getAuth, 
-            onAuthStateChanged, 
+            onAuthStateChanged,
             signInWithCustomToken,
             signInAnonymously
         } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
@@ -354,9 +354,8 @@
             const closeSummaryModalBtn = document.getElementById('close-summary-modal-btn');
             
             // --- CONFIGURAÇÃO DO FIREBASE ---
-            const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
-
             try {
+                const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
                 const app = initializeApp(firebaseConfig);
                 auth = getAuth(app);
                 db = getFirestore(app);
@@ -437,7 +436,7 @@
             };
 
             // --- LÓGICA DA APLICAÇÃO ---
-            const apiKey = ""; 
+            const apiKey = "AIzaSyDxcxVmGPBbg7mJ6_cmMDkHrDpbx3Lspik"; 
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
 
             const calculateUnitFinal = (sae, prova, atividade) => {
