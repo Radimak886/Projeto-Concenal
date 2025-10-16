@@ -738,7 +738,7 @@
             resultDiv.innerHTML = translations[currentLang].generating_response;
             animateResultBox(resultDiv);
 
-            const apiKey = "";
+            const apiKey = "AIzaSyDxcxVmGPBbg7mJ6_cmMDkHrDpbx3Lspik";
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
             const payload = { contents: [{ parts: [{ text: prompt }] }] };
             
@@ -1748,4 +1748,5 @@
     </script>
 </body>
 </html>
+
 
