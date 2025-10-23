@@ -123,10 +123,10 @@
         .loader {
             width: 50px; height: 50px; border: 5px solid #4B5563; border-top-color: #8B5CF6; border-radius: 50%; animation: spin 1s linear infinite; margin: 20px auto;
         }
-        #audio-player-container {
+        .audio-player-container {
             margin-top: 1rem;
         }
-        #audio-player-container audio {
+        .audio-player-container audio {
             width: 100%;
         }
         .file-upload-label {
@@ -184,7 +184,7 @@
                 INFINITY MIND's
             </h1>
             <p data-lang-key="subtitle" class="text-lg text-gray-400 mt-2">Suas ferramentas de IA para estudos, finanças e criatividade.</p>
-            <div class="absolute top-0 right-0">
+            <div class="absolute top-0 right-0 flex items-center gap-2">
                 <select id="language-switcher" class="select-field !w-auto !mt-0" onchange="changeLanguage(this.value)">
                     <option value="pt-br">🇧🇷 Português</option>
                     <option value="en">🇬🇧 English</option>
@@ -192,6 +192,12 @@
                     <option value="it">🇮🇹 Italiano</option>
                     <option value="de">🇩🇪 Deutsch</option>
                 </select>
+                <button onclick="manageApiKey()" title="Gerenciar Chave de API" class="p-2 rounded-full hover:bg-gray-700 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                </button>
             </div>
         </header>
 
@@ -202,6 +208,9 @@
                 <p data-lang-key="welcome_desc" class="text-gray-400 max-w-2xl mx-auto">Sua central de ferramentas inteligentes para resolver desde problemas matemáticos complexos até cálculos do dia a dia. Explore nossas calculadoras e conversores, potencializados com IA para oferecer mais do que apenas respostas. Escolha uma ferramenta abaixo para começar.</p>
             </div>
             <div id="tool-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <div class="menu-card" data-tool-id="tool-concept-comparator" onclick="showTool('tool-concept-comparator')"><div class="menu-card-icon">🆚</div><h3 data-lang-key="tool_concept_comparator_title" class="text-xl font-semibold text-white">Comparador de Conceitos</h3><p data-lang-key="tool_concept_comparator_desc" class="text-gray-400">Entenda as diferenças e semelhanças.</p></div>
+                <div class="menu-card" data-tool-id="tool-real-world-apps" onclick="showTool('tool-real-world-apps')"><div class="menu-card-icon">💡</div><h3 data-lang-key="tool_real_world_apps_title" class="text-xl font-semibold text-white">Aplicações Reais</h3><p data-lang-key="tool_real_world_apps_desc" class="text-gray-400">Veja como a matemática é usada.</p></div>
+                <div class="menu-card" data-tool-id="tool-real-world-math" onclick="showTool('tool-real-world-math')"><div class="menu-card-icon">🌎</div><h3 data-lang-key="tool_real_world_math_title" class="text-xl font-semibold text-white">Matemática do Dia a Dia</h3><p data-lang-key="tool_real_world_math_desc" class="text-gray-400">Resolva problemas práticos do cotidiano.</p></div>
                 <div class="menu-card" data-tool-id="tool-math-history" onclick="showTool('tool-math-history')"><div class="menu-card-icon">🏛️</div><h3 data-lang-key="tool_math_history_title" class="text-xl font-semibold text-white">História da Matemática</h3><p data-lang-key="tool_math_history_desc" class="text-gray-400">Descubra a origem dos conceitos.</p></div>
                 <div class="menu-card" data-tool-id="tool-math-story" onclick="showTool('tool-math-story')"><div class="menu-card-icon">📖</div><h3 data-lang-key="tool_math_story_title" class="text-xl font-semibold text-white">Contador de Histórias</h3><p data-lang-key="tool_math_story_desc" class="text-gray-400">Aprenda matemática com histórias.</p></div>
                 <div class="menu-card" data-tool-id="tool-graph-plotter" onclick="showTool('tool-graph-plotter')"><div class="menu-card-icon">📈</div><h3 data-lang-key="tool_graph_plotter_title" class="text-xl font-semibold text-white">Gráfico de Funções</h3><p data-lang-key="tool_graph_plotter_desc" class="text-gray-400">Visualize equações em um gráfico.</p></div>
@@ -232,6 +241,9 @@
             </div>
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 
+                <div id="tool-concept-comparator" class="tool-page calculator-card lg:col-span-3"><div class="tool-content-wrapper"><h2 data-lang-key="concept_comparator_title" class="text-2xl font-semibold mb-4 text-center text-white">✨ Comparador de Conceitos</h2><p data-lang-key="concept_comparator_desc" class="text-center text-gray-400 mb-4">Compare dois conceitos matemáticos e entenda suas relações.</p><div class="grid grid-cols-2 gap-4"><div><label for="concept1" class="font-medium" data-lang-key="concept1_label">Conceito 1:</label><input type="text" id="concept1" class="input-field" data-lang-key="concept1_placeholder" placeholder="Ex: Derivada"></div><div><label for="concept2" class="font-medium" data-lang-key="concept2_label">Conceito 2:</label><input type="text" id="concept2" class="input-field" data-lang-key="concept2_placeholder" placeholder="Ex: Integral"></div></div><button onclick="compareConcepts()" class="calc-button gemini-button mt-6" data-lang-key="compare_btn">Comparar Conceitos</button><div id="conceptComparisonResult" class="result-box"></div><div id="conceptComparisonAudioPlayerContainer" class="audio-player-container"></div></div></div>
+                <div id="tool-real-world-apps" class="tool-page calculator-card lg:col-span-3"><div class="tool-content-wrapper"><h2 data-lang-key="real_world_apps_title" class="text-2xl font-semibold mb-4 text-center text-white">✨ Aplicações no Mundo Real</h2><p data-lang-key="real_world_apps_desc" class="text-center text-gray-400 mb-4">Descubra como um conceito matemático é aplicado na prática.</p><div><label for="realWorldConcept" class="font-medium" data-lang-key="real_world_apps_label">Conceito Matemático:</label><input type="text" id="realWorldConcept" class="input-field" data-lang-key="real_world_apps_placeholder" placeholder="Ex: Trigonometria, Logaritmo"></div><button onclick="findRealWorldApps()" class="calc-button gemini-button mt-6" data-lang-key="find_apps_btn">Encontrar Aplicações</button><div id="realWorldAppsResult" class="result-box"></div><div id="realWorldAppsAudioPlayerContainer" class="audio-player-container"></div></div></div>
+                <div id="tool-real-world-math" class="tool-page calculator-card lg:col-span-3"><div class="tool-content-wrapper"><h2 data-lang-key="real_world_math_title" class="text-2xl font-semibold mb-4 text-center text-white">✨ Matemática do Dia a Dia</h2><p data-lang-key="real_world_math_desc" class="text-center text-gray-400 mb-4">Descreva uma situação cotidiana e a IA resolverá a matemática para você.</p><div><label for="realWorldProblemInput" class="font-medium" data-lang-key="real_world_math_label">Descreva sua situação:</label><textarea id="realWorldProblemInput" class="textarea-field" data-lang-key="real_world_math_placeholder" placeholder="Ex: Fui ao mercado e comprei 2kg de maçã por R$5/kg e 3kg de banana por R$4/kg. Se paguei com uma nota de R$50, quanto recebi de troco?"></textarea></div><button onclick="solveRealWorldProblem()" class="calc-button gemini-button mt-6" data-lang-key="solve_situation_btn">Resolver Situação</button><div id="realWorldMathResult" class="result-box"></div><div id="realWorldMathAudioPlayerContainer" class="audio-player-container"></div></div></div>
                 <div id="tool-math-history" class="tool-page calculator-card lg:col-span-3"><div class="tool-content-wrapper"><h2 data-lang-key="math_history_title" class="text-2xl font-semibold mb-4 text-center text-white">✨ História da Matemática</h2><p data-lang-key="math_history_desc" class="text-center text-gray-400 mb-4">Descubra a origem e o impacto de conceitos e matemáticos.</p><div><label for="mathHistoryInput" class="font-medium" data-lang-key="math_history_label">Conceito ou Matemático:</label><input type="text" id="mathHistoryInput" class="input-field" data-lang-key="math_history_placeholder" placeholder="Ex: Pi, Isaac Newton, Álgebra"></div><button onclick="getMathHistory()" class="calc-button gemini-button mt-6" data-lang-key="get_history_btn">Descobrir História</button><div id="mathHistoryResult" class="result-box"></div><div id="mathHistoryAudioPlayerContainer" class="audio-player-container"></div></div></div>
                 <div id="tool-math-story" class="tool-page calculator-card lg:col-span-3"><div class="tool-content-wrapper"><h2 data-lang-key="math_story_title" class="text-2xl font-semibold mb-4 text-center text-white">✨ Contador de Histórias Matemáticas</h2><p data-lang-key="math_story_desc" class="text-center text-gray-400 mb-4">Aprenda um conceito matemático através de uma história criativa.</p><div><label for="mathStoryInput" class="font-medium" data-lang-key="math_story_label">Conceito Matemático:</label><input type="text" id="mathStoryInput" class="input-field" data-lang-key="math_story_placeholder" placeholder="Ex: Frações, Porcentagem, Teorema de Pitágoras"></div><button onclick="getMathStory()" class="calc-button gemini-button mt-6" data-lang-key="tell_story_btn">Contar História</button><div id="mathStoryResult" class="result-box"></div><div id="mathStoryAudioPlayerContainer" class="audio-player-container"></div></div></div>
                 <div id="tool-graph-plotter" class="tool-page calculator-card lg:col-span-3"><div class="tool-content-wrapper"><h2 data-lang-key="graph_plotter_title" class="text-2xl font-semibold mb-4 text-center text-white">✨ Gráfico de Funções</h2><p data-lang-key="graph_plotter_desc" class="text-center text-gray-400 mb-4">Digite uma função de 'x' para visualizar seu gráfico.</p><div><label for="functionInput" class="font-medium" data-lang-key="function_label">Função f(x) =</label><input type="text" id="functionInput" class="input-field" data-lang-key="function_placeholder" placeholder="Ex: x^2, sin(x), 2*x + 1"></div><div class="grid grid-cols-2 gap-4 mt-4"><div><label for="xMin" class="font-medium" data-lang-key="x_min_label">X Mínimo</label><input type="number" id="xMin" class="input-field" value="-10"></div><div><label for="xMax" class="font-medium" data-lang-key="x_max_label">X Máximo</label><input type="number" id="xMax" class="input-field" value="10"></div></div><button onclick="plotFunction()" class="calc-button mt-6" data-lang-key="plot_graph_btn">Gerar Gráfico</button><div class="result-box mt-4 bg-gray-800 p-2 rounded-lg"><canvas id="functionChart"></canvas></div><button id="analyzeGraphBtn" onclick="analyzeGraph()" class="calc-button gemini-button mt-4" style="display: none;" data-lang-key="analyze_graph_btn">✨ Analisar Gráfico</button><div id="graphAnalysisResult" class="result-box" style="display: none;"></div></div></div>
@@ -258,6 +270,29 @@
     </div>
 
     <script>
+        // --- API Key Management ---
+        function getApiKey() {
+            let apiKey = localStorage.getItem('geminiApiKey');
+            if (!apiKey) {
+                apiKey = prompt("Por favor, insira sua chave de API do Google AI Studio:", "");
+                if (apiKey) {
+                    localStorage.setItem('geminiApiKey', apiKey);
+                }
+            }
+            return apiKey;
+        }
+
+        function manageApiKey() {
+            let apiKey = prompt("Gerencie sua chave de API do Google AI Studio. Deixe em branco para remover.", localStorage.getItem('geminiApiKey') || "");
+            if (apiKey) {
+                localStorage.setItem('geminiApiKey', apiKey);
+                alert("Chave de API salva com sucesso!");
+            } else if (apiKey === "") {
+                localStorage.removeItem('geminiApiKey');
+                alert("Chave de API removida.");
+            }
+        }
+
         // --- Language Translation System ---
         const translations = {
             'pt-br': {
@@ -265,6 +300,12 @@
                 welcome_title: "Bem-vindo ao INFINITY MIND's",
                 welcome_desc: "Sua central de ferramentas inteligentes para resolver desde problemas matemáticos complexos até cálculos do dia a dia. Explore nossas calculadoras e conversores, potencializados com IA para oferecer mais do que apenas respostas. Escolha uma ferramenta abaixo para começar.",
                 
+                tool_concept_comparator_title: "Comparador de Conceitos",
+                tool_concept_comparator_desc: "Entenda as diferenças e semelhanças.",
+                tool_real_world_apps_title: "Aplicações Reais",
+                tool_real_world_apps_desc: "Veja como a matemática é usada.",
+                tool_real_world_math_title: "Matemática do Dia a Dia",
+                tool_real_world_math_desc: "Resolva problemas práticos do cotidiano.",
                 tool_math_history_title: "História da Matemática",
                 tool_math_history_desc: "Descubra a origem dos conceitos.",
                 tool_math_story_title: "Contador de Histórias",
@@ -307,6 +348,28 @@
                 tool_temperature_desc: "Celsius e Fahrenheit.",
                 
                 back_to_menu: "Voltar ao Menu",
+
+                concept_comparator_title: "✨ Comparador de Conceitos",
+                concept_comparator_desc: "Compare dois conceitos matemáticos e entenda suas relações.",
+                concept1_label: "Conceito 1:",
+                concept1_placeholder: "Ex: Derivada",
+                concept2_label: "Conceito 2:",
+                concept2_placeholder: "Ex: Integral",
+                compare_btn: "Comparar Conceitos",
+                listen_comparison_btn: "✨ Ouvir Comparação", // Translation needed
+
+                real_world_apps_title: "✨ Aplicações no Mundo Real",
+                real_world_apps_desc: "Descubra como um conceito matemático é aplicado na prática.",
+                real_world_apps_label: "Conceito Matemático:",
+                real_world_apps_placeholder: "Ex: Trigonometria, Logaritmo",
+                find_apps_btn: "Encontrar Aplicações",
+                listen_apps_btn: "✨ Ouvir Aplicações", // Translation needed
+
+                real_world_math_title: "✨ Matemática do Dia a Dia",
+                real_world_math_desc: "Descreva uma situação cotidiana e a IA resolverá a matemática para você.",
+                real_world_math_label: "Descreva sua situação:",
+                real_world_math_placeholder: "Ex: Fui ao mercado e comprei 2kg de maçã por R$5/kg e 3kg de banana por R$4/kg. Se paguei com uma nota de R$50, quanto recebi de troco?",
+                solve_situation_btn: "Resolver Situação",
 
                 math_history_title: "✨ História da Matemática",
                 math_history_desc: "Descubra a origem e o impacto de conceitos e matemáticos.",
@@ -468,6 +531,12 @@
                 welcome_title: "Welcome to INFINITY MIND's",
                 welcome_desc: "Your hub of smart tools to solve everything from complex math problems to daily calculations. Explore our calculators and converters, powered by AI to offer more than just answers. Choose a tool below to get started.",
                 
+                tool_concept_comparator_title: "Concept Comparator",
+                tool_concept_comparator_desc: "Understand the differences and similarities.",
+                tool_real_world_apps_title: "Real-World Applications",
+                tool_real_world_apps_desc: "See how math is used.",
+                tool_real_world_math_title: "Everyday Math",
+                tool_real_world_math_desc: "Solve practical, daily life problems.",
                 tool_math_history_title: "History of Mathematics",
                 tool_math_history_desc: "Discover the origin of concepts.",
                 tool_math_story_title: "Math Storyteller",
@@ -510,6 +579,28 @@
                 tool_temperature_desc: "Celsius and Fahrenheit.",
                 
                 back_to_menu: "Back to Menu",
+
+                concept_comparator_title: "✨ Concept Comparator",
+                concept_comparator_desc: "Compare two mathematical concepts and understand their relationships.",
+                concept1_label: "Concept 1:",
+                concept1_placeholder: "E.g., Derivative",
+                concept2_label: "Concept 2:",
+                concept2_placeholder: "E.g., Integral",
+                compare_btn: "Compare Concepts",
+                listen_comparison_btn: "✨ Listen to Comparison",
+
+                real_world_apps_title: "✨ Real-World Applications",
+                real_world_apps_desc: "Discover how a mathematical concept is applied in practice.",
+                real_world_apps_label: "Mathematical Concept:",
+                real_world_apps_placeholder: "E.g., Trigonometry, Logarithm",
+                find_apps_btn: "Find Applications",
+                listen_apps_btn: "✨ Listen to Applications",
+
+                real_world_math_title: "✨ Everyday Math",
+                real_world_math_desc: "Describe an everyday situation and the AI will solve the math for you.",
+                real_world_math_label: "Describe your situation:",
+                real_world_math_placeholder: "E.g., I went to the market and bought 2kg of apples for $5/kg and 3kg of bananas for $4/kg. If I paid with a $50 bill, how much change did I get?",
+                solve_situation_btn: "Solve Situation",
 
                 math_history_title: "✨ History of Mathematics",
                 math_history_desc: "Discover the origin and impact of concepts and mathematicians.",
@@ -724,6 +815,12 @@
 
         // --- Gemini API Call (Text) ---
         async function callGemini(prompt, button, resultDiv, audioContainerId) {
+            const apiKey = getApiKey();
+            if (!apiKey) {
+                alert("Chave de API não encontrada. Por favor, configure-a no ícone de engrenagem.");
+                return;
+            }
+
             if (audioContainerId) {
                 document.getElementById(audioContainerId).innerHTML = ''; // Clear old audio player
             }
@@ -738,8 +835,7 @@
             resultDiv.innerHTML = translations[currentLang].generating_response;
             animateResultBox(resultDiv);
 
-            const apiKey = "AIzaSyDxcxVmGPBbg7mJ6_cmMDkHrDpbx3Lspik";
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
             const payload = { contents: [{ parts: [{ text: prompt }] }] };
             
             try {
@@ -765,7 +861,9 @@
                         if (audioContainerId === 'formulaAudioPlayerContainer') buttonTextKey = 'listen_explanation_btn';
                         if (audioContainerId === 'mathHistoryAudioPlayerContainer') buttonTextKey = 'listen_history_btn';
                         if (audioContainerId === 'mathStoryAudioPlayerContainer') buttonTextKey = 'listen_story_btn';
-
+                        if (audioContainerId === 'realWorldMathAudioPlayerContainer') buttonTextKey = 'listen_solution_btn'; // Reuse for everyday math
+                        if (audioContainerId === 'conceptComparisonAudioPlayerContainer') buttonTextKey = 'listen_comparison_btn'; // Added translation key reference
+                        if (audioContainerId === 'realWorldAppsAudioPlayerContainer') buttonTextKey = 'listen_apps_btn'; // Added translation key reference
                         
                         listenButton.innerHTML = translations[currentLang][buttonTextKey] || 'Listen';
                         listenButton.className = 'calc-button gemini-button mt-4';
@@ -833,11 +931,16 @@
         }
         
         async function playTextAsSpeech(text, containerId, button) {
+             const apiKey = getApiKey();
+             if (!apiKey) {
+                 alert("Chave de API não encontrada para TTS. Por favor, configure-a.");
+                 return;
+             }
+
              const originalButtonHTML = button.innerHTML;
              button.disabled = true;
              button.innerHTML = `<span class="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>`;
 
-             const apiKey = "";
              const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`;
              const payload = {
                  contents: [{ parts: [{ text: `Diga de forma clara e informativa: ${text}` }] }],
@@ -883,6 +986,11 @@
 
         // --- AI Image Generation ---
         async function generateImage() {
+            const apiKey = getApiKey();
+            if (!apiKey) {
+                alert("Chave de API não encontrada. Por favor, configure-a.");
+                return;
+            }
             const prompt = document.getElementById('imagePrompt').value;
             if (!prompt.trim()) { alert('Please enter a description for the image.'); return; }
             
@@ -894,7 +1002,6 @@
             button.innerHTML = `<span class="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>`;
             resultDiv.innerHTML = `<div class="loader"></div><p class="text-center">${translations[currentLang].generating_image}</p>`;
             
-            const apiKey = ""; 
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent?key=${apiKey}`;
             const payload = {
                 contents: [{
@@ -928,6 +1035,11 @@
         
         // --- NEW: Study Planner ---
         async function generateStudyPlan() {
+            const apiKey = getApiKey();
+            if (!apiKey) {
+                alert("Chave de API não encontrada. Por favor, configure-a.");
+                return;
+            }
             const subject = document.getElementById('studySubject').value;
             const duration = document.getElementById('studyDuration').value;
             if (!subject.trim() || !duration.trim()) {
@@ -946,8 +1058,7 @@
             resultDiv.innerHTML = translations[currentLang].generating_response;
             animateResultBox(resultDiv);
             
-            const apiKey = "";
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
             const payload = {
               contents: [{ parts: [{ text: prompt }] }],
               generationConfig: {
@@ -1016,6 +1127,11 @@
         }
 
         async function solveByPhoto() {
+            const apiKey = getApiKey();
+            if (!apiKey) {
+                alert("Chave de API não encontrada. Por favor, configure-a.");
+                return;
+            }
             if (!currentImageBase64) {
                 alert(translations[currentLang].no_image_selected);
                 return;
@@ -1031,8 +1147,7 @@
             resultDiv.innerHTML = translations[currentLang].generating_response;
             animateResultBox(resultDiv);
 
-            const apiKey = "";
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
             const payload = {
                 contents: [{
                     parts: [
@@ -1081,6 +1196,11 @@
 
         // --- NEW: Mind Map Generator ---
         async function generateMindMap() {
+            const apiKey = getApiKey();
+            if (!apiKey) {
+                alert("Chave de API não encontrada. Por favor, configure-a.");
+                return;
+            }
             const subject = document.getElementById('mindMapSubject').value;
             if (!subject.trim()) {
                 alert(translations[currentLang].invalid_values);
@@ -1095,8 +1215,7 @@
             container.innerHTML = `<div class="loader"></div>`;
             
             const prompt = `Crie um mapa mental sobre "${subject}". A estrutura deve ser um JSON com uma "ideia_central", e um array de "ramos" principais. Cada ramo deve ter um "titulo" e um array de "sub_ramos" (strings).`;
-            const apiKey = "";
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
             const payload = {
                 contents: [{ parts: [{ text: prompt }] }],
                 generationConfig: {
@@ -1223,7 +1342,7 @@
             'puta que pariu', 'puto', 'putinha', 'vagabundo', 'canalha', 'desgraçado', 'desgraçada'
         ];
         const politicalBlockWords = ['lula', 'bolsonaro', 'prisão', 'prisioneiro'];
-        const apiChatUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=`;
+        
         let lockoutInterval;
 
         function updateLockoutMessage() {
@@ -1261,6 +1380,11 @@
         }
         
         async function sendChatMessage() {
+            const apiKey = getApiKey();
+            if (!apiKey) {
+                alert("Chave de API não encontrada. Por favor, configure-a.");
+                return;
+            }
             const lockoutEndTime = parseInt(localStorage.getItem('lockoutEndTime')) || 0;
             if (Date.now() < lockoutEndTime) {
                 updateLockoutMessage();
@@ -1343,6 +1467,7 @@
                 A resposta final deve ser no idioma ${currentLang}. Não use formatação markdown como ###, ##, ou ***. Use negrito (**) e quebras de linha se necessário.
             `;
             const payload = { contents: [{ parts: [{ text: prompt }] }] };
+            const apiChatUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
 
             try {
                 const response = await fetch(apiChatUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
@@ -1451,6 +1576,46 @@
             const button = document.getElementById('solveProblemBtn');
             const resultDiv = document.getElementById('wordProblemResult');
             callGemini(prompt, button, resultDiv, 'wpAudioPlayerContainer');
+        }
+
+        // --- NEW: Real-World Math Solver ---
+        function solveRealWorldProblem() {
+            const problem = document.getElementById('realWorldProblemInput').value;
+            if (!problem.trim()) { 
+                alert(translations[currentLang].invalid_values);
+                return;
+            }
+            const prompt = `Aja como um assistente de matemática prático. Analise a seguinte situação do dia a dia: "${problem}". Primeiro, explique o problema em termos matemáticos. Depois, mostre os cálculos passo a passo. Finalmente, dê a resposta final de forma clara. A resposta deve ser em ${currentLang}.`;
+            const button = document.querySelector('#tool-real-world-math button');
+            const resultDiv = document.getElementById('realWorldMathResult');
+            callGemini(prompt, button, resultDiv, 'realWorldMathAudioPlayerContainer');
+        }
+
+        // --- NEW: Concept Comparator ---
+        function compareConcepts() {
+            const concept1 = document.getElementById('concept1').value;
+            const concept2 = document.getElementById('concept2').value;
+            if (!concept1.trim() || !concept2.trim()) {
+                alert(translations[currentLang].invalid_values);
+                return;
+            }
+            const prompt = `Aja como um professor de matemática. Compare e contraste os conceitos matemáticos "${concept1}" e "${concept2}". Explique as semelhanças, as diferenças e como eles se relacionam, se aplicável. Use exemplos simples se possível. A resposta deve ser didática e no idioma ${currentLang}.`;
+            const button = document.querySelector('#tool-concept-comparator button');
+            const resultDiv = document.getElementById('conceptComparisonResult');
+            callGemini(prompt, button, resultDiv, 'conceptComparisonAudioPlayerContainer'); // Added audio container ID
+        }
+
+        // --- NEW: Real-World Apps ---
+        function findRealWorldApps() {
+            const concept = document.getElementById('realWorldConcept').value;
+            if (!concept.trim()) {
+                alert(translations[currentLang].invalid_values);
+                return;
+            }
+            const prompt = `Liste e explique brevemente 3 a 5 aplicações práticas e interessantes do conceito matemático "${concept}" no mundo real. As explicações devem ser claras e concisas, adequadas para um estudante. A resposta deve ser no idioma ${currentLang}.`;
+            const button = document.querySelector('#tool-real-world-apps button');
+            const resultDiv = document.getElementById('realWorldAppsResult');
+            callGemini(prompt, button, resultDiv, 'realWorldAppsAudioPlayerContainer'); // Added audio container ID
         }
 
         function summarizeSubject() {
