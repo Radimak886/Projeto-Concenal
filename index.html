@@ -21,7 +21,7 @@
     <script type="text/javascript" id="MathJax-script" async
         src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js">
     </script>
-    <!-- PDF Export -->
+    <!-- PDF Export (Versão Estável) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -684,6 +684,7 @@
                 tool_graph_plotter_title: "Grafici",
                 tool_measurement_title: "Convertitore Universale",
                 tool_word_problem_title: "Problemi Logici",
+                tool_mind_map_title: "Mappa Mentale",
                 tool_summarizer_title: "Riassunti",
                 tool_level_explainer_title: "Livelli di Spiegazione",
                 tool_interactive_quiz_title: "Quiz Infinito",
@@ -708,6 +709,7 @@
                 tool_graph_plotter_title: "Grafiken",
                 tool_measurement_title: "Universal-Konverter",
                 tool_word_problem_title: "Logikprobleme",
+                tool_mind_map_title: "Mind Map",
                 tool_summarizer_title: "Zusammenfassungen",
                 tool_level_explainer_title: "Erklärungsstufen",
                 tool_interactive_quiz_title: "Unendliches Quiz",
@@ -848,7 +850,6 @@
 
         // Helper para verificar palavras inteiras
         const containsWord = (text, word) => {
-            // Escapa caracteres especiais de regex, se houver, embora para palavras simples não seja crítico.
             const escapedWord = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); 
             const regex = new RegExp(`\\b${escapedWord}\\b`, 'i');
             return regex.test(text);
@@ -986,7 +987,6 @@
 
             if(!originalMsg) return;
 
-            // Word Boundary Checks
             if (politicalWords.some(w => containsWord(msg, w))) {
                 const banTime = Date.now() + (72 * 60 * 60 * 1000);
                 localStorage.setItem('chatBanUntil', banTime);
@@ -1014,7 +1014,30 @@
             chatWindow.innerHTML += `<div id="${loadId}" class="chat-bubble chat-ai"><div class="loader" style="border-color:#8B5CF6; border-bottom-color:transparent"></div> Digitando...</div>`;
             chatWindow.scrollTop = chatWindow.scrollHeight;
 
-            const systemP = `Você é o "Tutor Infinity", um professor de ensino fundamental/médio amigável. Estilo: ${style}. Use LaTeX ($...$) para fórmulas. Formate SEMPRE com HTML (ex: <b>, <ul>, <li>) e LaTeX para matemática. Responda em ${currentLang}.`;
+            const systemP = `
+                Atue como o "Tutor Infinity", um professor de matemática e ciências de elite do ensino fundamental II (6º ao 9º ano).
+                Seu objetivo é explicar com clareza absoluta, organização visual impecável e didática envolvente.
+                
+                REGRAS DE FORMATAÇÃO RIGOROSAS:
+                1. **Estrutura HTML**: Use tags HTML para organizar sua resposta. 
+                   - Use <h3> para títulos de seções.
+                   - Use <ul> e <li> para listas e passos.
+                   - Use <strong> para destacar termos importantes.
+                   - Use <br> para quebras de linha.
+                
+                2. **Matemática em LaTeX**: TODA expressão matemática, número ou variável DEVE ser escrita em LaTeX, envolvida por cifrões ($...$). 
+                   - Exemplo: "A equação é $x^2 + 2x + 1 = 0$".
+                   - Para blocos destacados, use $$...$$.
+                
+                3. **Estilo de Resposta (${style})**:
+                   - Se "didático": Explique o conceito, dê um exemplo do dia a dia e depois a resolução.
+                   - Se "passo-a-passo": Use lista numerada (<ol>) para cada etapa do cálculo.
+                   - Se "socrático": Guie o aluno com perguntas, não dê a resposta direta.
+
+                4. **Tom**: Seja encorajador, paciente e use emojis ocasionais para manter o engajamento.
+                
+                Idioma: ${currentLang}.
+            `;
 
             const text = await callGeminiAPI(originalMsg, systemP);
             
