@@ -106,9 +106,9 @@
             min-height: 60px; word-wrap: break-word;
         }
         .result-box h3 { color: #A78BFA; font-weight: bold; margin-bottom: 8px; font-size: 1.1em; }
+        .result-box strong { color: #fff; font-weight: 700; }
         .result-box ul { list-style-type: disc; padding-left: 20px; margin-top: 8px; }
         .result-box li { margin-bottom: 4px; }
-        .result-box strong { color: #fff; }
 
         .loader {
             width: 20px; height: 20px; border: 2px solid #FFF;
@@ -129,8 +129,6 @@
         .chat-bubble { padding: 10px 14px; border-radius: 12px; max-width: 90%; margin-bottom: 10px; font-size: 0.95rem; line-height: 1.5; animation: fadeIn 0.2s; word-wrap: break-word; }
         .chat-user { background-color: #4C1D95; color: white; align-self: flex-end; margin-left: auto; border-bottom-right-radius: 2px; }
         .chat-ai { background-color: #334155; color: #E2E8F0; align-self: flex-start; margin-right: auto; border-bottom-left-radius: 2px; border: 1px solid #475569; }
-
-        #mindMapContainer { overflow: hidden; height: 350px; background: #1e293b; border-radius: 10px; border: 1px solid #334155; display: flex; align-items: center; justify-content: center;}
 
         #apiKeyModal { backdrop-filter: blur(8px); background-color: rgba(0, 0, 0, 0.7); }
     </style>
@@ -220,7 +218,6 @@
                          <div class="menu-card" onclick="showTool('tool-solve-by-photo')"><div class="menu-card-icon">📸</div><h3 data-lang-key="tool_solve_by_photo_title">Resolver Foto</h3></div>
                          <div class="menu-card" onclick="showTool('tool-code-explainer')"><div class="menu-card-icon">💻</div><h3 data-lang-key="tool_code_explainer_title">Tutor de Código</h3></div>
                          <div class="menu-card" onclick="showTool('tool-word-problem')"><div class="menu-card-icon">🧠</div><h3 data-lang-key="tool_word_problem_title">Problemas Lógicos</h3></div>
-                         <div class="menu-card" onclick="showTool('tool-mind-map')"><div class="menu-card-icon">🗺️</div><h3 data-lang-key="tool_mind_map_title">Mapa Mental</h3></div>
                          <div class="menu-card" onclick="showTool('tool-summarizer')"><div class="menu-card-icon">📚</div><h3 data-lang-key="tool_summarizer_title">Resumos</h3></div>
                          <div class="menu-card" onclick="showTool('tool-level-explainer')"><div class="menu-card-icon">📶</div><h3 data-lang-key="tool_level_explainer_title">Níveis de Explicação</h3></div>
                     </div>
@@ -264,7 +261,7 @@
                         <div class="bg-slate-900 p-3 border-b border-slate-700 flex justify-between items-center flex-shrink-0">
                             <span class="text-green-400 font-bold flex items-center gap-2 text-sm md:text-base"><span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span> Tutor Online</span>
                             <div class="flex gap-2">
-                                <button onclick="downloadChatPDF()" class="text-xs text-blue-400 hover:text-white px-2 py-1 bg-slate-800 rounded border border-slate-600">📥 Baixar</button>
+                                <button onclick="downloadChatPDF()" class="text-xs text-blue-400 hover:text-white px-2 py-1 bg-slate-800 rounded border border-slate-600">📥 Baixar PDF</button>
                                 <button onclick="document.getElementById('chatWindow').innerHTML=''" class="text-xs text-gray-500 hover:text-white px-2 py-1 bg-slate-800 rounded border border-slate-600">Limpar</button>
                             </div>
                         </div>
@@ -480,15 +477,6 @@
                     </div>
                 </div>
 
-                <!-- Mapa Mental -->
-                <div id="tool-mind-map" class="tool-page">
-                    <input type="text" id="mindMapSubject" class="input-field" placeholder="Digite um tema central (Ex: Sistema Solar)">
-                    <button id="generateMindMapBtn" onclick="generateMindMap()" class="calc-button gemini-button">Gerar Mapa Mental</button>
-                    <div id="mindMapContainer" class="mt-6 relative">
-                        <p class="text-gray-500 text-sm absolute">O mapa aparecerá aqui</p>
-                    </div>
-                </div>
-
                 <!-- Gerador de Imagens -->
                 <div id="tool-image-gen" class="tool-page">
                     <textarea id="imagePrompt" class="textarea-field h-32" placeholder="Descreva a imagem que você quer criar..."></textarea>
@@ -554,11 +542,28 @@
                       <div id="measurementResult" class="result-box hidden text-center text-xl flex items-center justify-center"></div>
                 </div>
 
+                <!-- GRAFICO -->
                 <div id="tool-graph-plotter" class="tool-page">
-                    <input type="text" id="functionInput" class="input-field" placeholder="Ex: x^2 ou sin(x)">
+                    <h2 class="text-center text-xl md:text-2xl font-bold mb-4 text-purple-400">Gráfico de Funções</h2>
+                    <div class="mb-4 text-sm text-gray-400 bg-slate-800 p-3 rounded border border-slate-600">
+                        <p><strong>Como usar:</strong> Digite a função usando notação matemática padrão.</p>
+                        <ul class="list-disc ml-4 mt-1">
+                            <li>Soma/Subtração: <code>x + 2</code>, <code>x - 5</code></li>
+                            <li>Multiplicação/Divisão: <code>2*x</code>, <code>x/2</code></li>
+                            <li>Potência: Use <code>^</code> (Ex: <code>x^2</code> para x ao quadrado)</li>
+                            <li>Funções: <code>sin(x)</code>, <code>cos(x)</code>, <code>sqrt(x)</code></li>
+                        </ul>
+                    </div>
+                    <input type="text" id="functionInput" class="input-field" placeholder="Ex: x^2 - 4*x + 3">
                     <div class="flex gap-2 mt-2">
-                        <input type="number" id="xMin" class="input-field" value="-10" placeholder="Min">
-                        <input type="number" id="xMax" class="input-field" value="10" placeholder="Max">
+                        <div class="flex-1">
+                            <label class="text-xs text-gray-400">Início do Eixo X</label>
+                            <input type="number" id="xMin" class="input-field !mt-0" value="-10" placeholder="-10">
+                        </div>
+                        <div class="flex-1">
+                            <label class="text-xs text-gray-400">Fim do Eixo X</label>
+                            <input type="number" id="xMax" class="input-field !mt-0" value="10" placeholder="10">
+                        </div>
                     </div>
                     <button onclick="plotFunction()" class="calc-button">Plotar Gráfico</button>
                     <div class="bg-white rounded-lg mt-4 p-2">
@@ -607,7 +612,6 @@
                 tool_graph_plotter_title: "Gráficos",
                 tool_measurement_title: "Conversor Universal",
                 tool_word_problem_title: "Problemas Lógicos",
-                tool_mind_map_title: "Mapa Mental",
                 tool_summarizer_title: "Resumos",
                 tool_level_explainer_title: "Níveis de Explicação",
                 tool_interactive_quiz_title: "Quiz Infinito",
@@ -632,7 +636,6 @@
                 tool_graph_plotter_title: "Graphs",
                 tool_measurement_title: "Universal Converter",
                 tool_word_problem_title: "Logic Problems",
-                tool_mind_map_title: "Mind Map",
                 tool_summarizer_title: "Summaries",
                 tool_level_explainer_title: "Explanation Levels",
                 tool_interactive_quiz_title: "Infinite Quiz",
@@ -657,7 +660,6 @@
                 tool_graph_plotter_title: "Gráficos",
                 tool_measurement_title: "Convertidor Universal",
                 tool_word_problem_title: "Problemas Lógicos",
-                tool_mind_map_title: "Mapa Mental",
                 tool_summarizer_title: "Resúmenes",
                 tool_level_explainer_title: "Niveles de Explicación",
                 tool_interactive_quiz_title: "Quiz Infinito",
@@ -682,7 +684,6 @@
                 tool_graph_plotter_title: "Grafici",
                 tool_measurement_title: "Convertitore Universale",
                 tool_word_problem_title: "Problemi Logici",
-                tool_mind_map_title: "Mappa Mentale",
                 tool_summarizer_title: "Riassunti",
                 tool_level_explainer_title: "Livelli di Spiegazione",
                 tool_interactive_quiz_title: "Quiz Infinito",
@@ -707,7 +708,6 @@
                 tool_graph_plotter_title: "Grafiken",
                 tool_measurement_title: "Universal-Konverter",
                 tool_word_problem_title: "Logikprobleme",
-                tool_mind_map_title: "Mind Map",
                 tool_summarizer_title: "Zusammenfassungen",
                 tool_level_explainer_title: "Erklärungsstufen",
                 tool_interactive_quiz_title: "Unendliches Quiz",
@@ -846,22 +846,27 @@
             }
         }
 
+        // Limpeza robusta de texto (Remove marcadores markdown)
         function cleanText(text) {
             if (!text) return "";
             return text
-                .replace(/^###\s*(.*$)/gim, '<strong>$1</strong>') 
-                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') 
-                .replace(/\*/g, '') 
-                .replace(/\n/g, '<br>');
+                .replace(/^###\s*(.*$)/gim, '<strong style="color: #A78BFA; font-size: 1.1em;">$1</strong>') // Headers para roxo
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Negrito
+                .replace(/\*/g, '') // Remove * soltos
+                .replace(/\n/g, '<br>'); // Quebra de linha
         }
 
-        // --- DOWNLOAD PDF ---
+        // --- DOWNLOAD PDF CORRIGIDO (RENDERIZAÇÃO CANVAS) ---
         function downloadPDF(sourceElement, filename) {
+            // Clonar para não afetar a tela
             const contentClone = sourceElement.cloneNode(true);
-            const buttons = contentClone.querySelectorAll('button');
-            buttons.forEach(btn => btn.remove());
+            
+            // Remover botões e inputs do clone
+            const toRemove = contentClone.querySelectorAll('button, input, select');
+            toRemove.forEach(el => el.remove());
 
-            contentClone.style.color = 'black';
+            // Estilo para impressão
+            contentClone.style.color = '#000000';
             contentClone.style.background = 'transparent';
             contentClone.style.width = '100%';
             
@@ -873,26 +878,27 @@
                 el.classList.remove('text-white', 'text-gray-200', 'text-gray-300', 'text-gray-400', 'text-gray-500', 'bg-slate-800', 'bg-slate-900', 'bg-slate-700');
             });
 
+            // Container Temporário Visível (mas escondido pelo z-index)
             const pdfContainer = document.createElement('div');
             pdfContainer.style.width = '790px'; 
             pdfContainer.style.minHeight = '1000px';
             pdfContainer.style.padding = '40px';
             pdfContainer.style.backgroundColor = '#ffffff';
             pdfContainer.style.fontFamily = 'Arial, sans-serif';
-            pdfContainer.style.border = '1px solid #ddd';
+            pdfContainer.style.border = '1px solid #ccc';
             
             pdfContainer.style.position = 'fixed';
             pdfContainer.style.top = '0';
             pdfContainer.style.left = '0';
             pdfContainer.style.zIndex = '-9999';
-            pdfContainer.style.pointerEvents = 'none'; 
-
+            
+            // Marca d'água
             const watermark = document.createElement('div');
             watermark.innerHTML = "INFINITY MIND's";
             watermark.style.cssText = `
                 position: absolute; top: 50%; left: 50%; 
                 transform: translate(-50%, -50%) rotate(-45deg); 
-                font-size: 90px; font-weight: bold; color: #f5f5f5; 
+                font-size: 90px; font-weight: bold; color: #f3f3f3; 
                 z-index: 0; pointer-events: none; user-select: none;
                 white-space: nowrap;
             `;
@@ -902,6 +908,7 @@
             contentWrapper.style.position = 'relative';
             contentWrapper.style.zIndex = '1';
 
+            // Cabeçalho
             const header = document.createElement('div');
             header.innerHTML = `
                 <div style="text-align: center; border-bottom: 3px solid #7C3AED; padding-bottom: 20px; margin-bottom: 30px;">
@@ -912,6 +919,7 @@
             contentWrapper.appendChild(header);
             contentWrapper.appendChild(contentClone);
 
+            // Rodapé
             const footer = document.createElement('div');
             footer.innerHTML = `
                 <div style="margin-top: 60px; text-align: center; font-size: 10px; color: #888; border-top: 1px solid #eee; padding-top: 15px;">
@@ -924,13 +932,14 @@
             document.body.appendChild(pdfContainer);
 
             const opt = {
-                margin: [15, 15, 15, 15],
+                margin: [10, 10, 10, 10],
                 filename: filename + '.pdf',
                 image: { type: 'jpeg', quality: 0.98 },
                 html2canvas: { scale: 2, useCORS: true, scrollY: 0 }, 
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
 
+            // Delay para garantir renderização
             setTimeout(() => {
                 html2pdf().set(opt).from(pdfContainer).save().then(() => {
                     document.body.removeChild(pdfContainer);
@@ -939,7 +948,7 @@
                     alert("Erro ao gerar PDF. Tente novamente.");
                     document.body.removeChild(pdfContainer);
                 });
-            }, 500); 
+            }, 800); 
         }
 
         function downloadChatPDF() {
@@ -948,7 +957,7 @@
             downloadPDF(chatWindow, 'Chat_Tutor_InfinityMinds');
         }
 
-        // --- Chat IA com BLOQUEIO ---
+        // --- Chat IA ---
         const politicalWords = ['lula', 'bolsonaro', 'pt', 'pl', 'política', 'voto', 'eleição', 'partido', 'governo'];
         const offensiveWords = ['sexo', 'porn', 'matar', 'suicidio', 'puta', 'puto', 'buceta', 'penis', 'gostosa', 'cachorra', 'cachorro', 'gostoso', 'pau', 'pica', 'caralho', 'merda', 'bosta', 'foder', 'transar', 'cu', 'viado'];
 
@@ -960,7 +969,6 @@
             const lockoutMessage = document.getElementById('lockout-message');
             const style = document.getElementById('responseStyle').value;
 
-            // 1. Verificar se há bloqueio ativo
             const banUntil = localStorage.getItem('chatBanUntil');
             if (banUntil && Date.now() < parseInt(banUntil)) {
                 const remaining = Math.ceil((parseInt(banUntil) - Date.now()) / 60000);
@@ -973,40 +981,25 @@
 
             if(!originalMsg) return;
 
-            // 2. Verificar Política (72h)
             if (politicalWords.some(w => msg.includes(w))) {
-                const banTime = Date.now() + (72 * 60 * 60 * 1000); // 72 horas
+                const banTime = Date.now() + (72 * 60 * 60 * 1000);
                 localStorage.setItem('chatBanUntil', banTime);
                 chatWindow.innerHTML += `<div class="chat-bubble bg-red-900/50 text-white border border-red-500 self-center text-center">🛑 <strong>Assunto Proibido:</strong> Discussões políticas não são permitidas. Seu acesso ao chat foi suspenso por 72 horas.</div>`;
                 input.value = '';
                 return;
             }
 
-            // 3. Verificar Ofensas (Progressivo)
             if (offensiveWords.some(w => msg.includes(w))) {
                 let offenses = parseInt(localStorage.getItem('chatOffenses') || '0') + 1;
                 localStorage.setItem('chatOffenses', offenses);
-                
-                let banDuration = 0;
-                let msgText = "";
-
-                if (offenses === 1) {
-                    banDuration = 15 * 60 * 1000; // 15 min
-                    msgText = "15 minutos";
-                } else {
-                    banDuration = 24 * 60 * 60 * 1000; // 24 horas
-                    msgText = "24 horas";
-                }
-
-                const banTime = Date.now() + banDuration;
-                localStorage.setItem('chatBanUntil', banTime);
-
+                let banDuration = offenses === 1 ? 15 * 60 * 1000 : 24 * 60 * 60 * 1000;
+                let msgText = offenses === 1 ? "15 minutos" : "24 horas";
+                localStorage.setItem('chatBanUntil', Date.now() + banDuration);
                 chatWindow.innerHTML += `<div class="chat-bubble bg-red-900/50 text-white border border-red-500 self-center text-center">⚠️ <strong>Linguagem Inadequada:</strong> (${offenses}ª infração). Seu acesso foi suspenso por ${msgText}. Mantenha o respeito.</div>`;
                 input.value = '';
                 return;
             }
 
-            // Se passou, envia mensagem
             chatWindow.innerHTML += `<div class="chat-bubble chat-user">${originalMsg}</div>`;
             input.value = '';
             chatWindow.scrollTop = chatWindow.scrollHeight;
@@ -1015,7 +1008,7 @@
             chatWindow.innerHTML += `<div id="${loadId}" class="chat-bubble chat-ai"><div class="loader" style="border-color:#8B5CF6; border-bottom-color:transparent"></div> Digitando...</div>`;
             chatWindow.scrollTop = chatWindow.scrollHeight;
 
-            const systemP = `Você é o "Tutor Infinity", um professor de ensino fundamental/médio amigável, especialista em exatas. Estilo: ${style}. Use LaTeX ($...$) para fórmulas. Responda em ${currentLang}.`;
+            const systemP = `Você é o "Tutor Infinity", um professor de ensino fundamental/médio amigável. Estilo: ${style}. Use LaTeX ($...$) para fórmulas. Formate SEMPRE com HTML (ex: <b>, <ul>, <li>) e LaTeX para matemática. Responda em ${currentLang}.`;
 
             const text = await callGeminiAPI(originalMsg, systemP);
             
@@ -1031,194 +1024,30 @@
             chatWindow.scrollTop = chatWindow.scrollHeight;
         }
 
-        // --- EXERCÍCIOS (NOVA FUNÇÃO) ---
-        async function generateExercises() {
-            const topic = document.getElementById('exTopic').value;
-            const grade = document.getElementById('exGrade').value;
-            const diff = document.getElementById('exDiff').value;
-            const type = document.getElementById('exType').value;
-            const resDiv = document.getElementById('exResult');
-
-            if(!topic) return alert("Por favor, digite um assunto.");
-
-            resDiv.classList.remove('hidden');
-            resDiv.innerHTML = '<div class="loader"></div> <span class="animate-pulse">A IA está criando sua lista personalizada...</span>';
-
-            const prompt = `
-                Atue como um professor de matemática do ensino fundamental (Brasil).
-                Crie uma lista de 5 exercícios sobre "${topic}".
-                Público: Alunos do ${grade}.
-                Nível: ${diff}.
-                Formato: ${type}.
-                
-                Estrutura Obrigatória:
-                1. Título da Lista (com cabeçalho escolar)
-                2. As 5 Questões (numeradas)
-                3. Espaço para resposta (se dissertativa) ou opções A,B,C,D (se múltipla escolha)
-                4. GABARITO COMENTADO no final.
-                
-                Use LaTeX para fórmulas matemáticas.
-            `;
-
-            const text = await callGeminiAPI(prompt);
-            if(text) {
-                resDiv.innerHTML = cleanText(text);
-                if(window.MathJax) window.MathJax.typesetPromise([resDiv]);
-                
-                const btnId = 'dl-ex-' + Date.now();
-                resDiv.innerHTML += `<br><button id="${btnId}" class="mt-4 bg-slate-700 text-white px-4 py-2 rounded-lg text-sm flex items-center gap-2 hover:bg-slate-600 transition shadow-lg w-full md:w-auto justify-center">📥 Baixar Lista de Exercícios (PDF)</button>`;
-                setTimeout(() => {
-                    document.getElementById(btnId).onclick = () => downloadPDF(resDiv, `Exercicios_${topic.replace(/\s/g,'_')}`);
-                }, 100);
-            } else {
-                resDiv.innerHTML = "Erro ao gerar exercícios.";
-            }
-        }
-
-        // --- CARREIRA MELHORADA (NOVA FUNÇÃO) ---
-        async function generateCareerPlan() {
-            const interest = document.getElementById('careerInterest').value;
-            const skills = document.getElementById('careerSkills').value;
-            const level = document.getElementById('careerLevel').value;
-            const resDiv = document.getElementById('careerResult');
-
-            if(!interest || !skills) return alert("Por favor, preencha seus interesses e habilidades.");
-
-            resDiv.classList.remove('hidden');
-            resDiv.innerHTML = '<div class="loader"></div> <span class="animate-pulse">A IA está montando seu plano de futuro...</span>';
-
-            const prompt = `
-                Crie um plano de carreira detalhado para um estudante do nível: ${level}.
-                Interesse Principal: ${interest}.
-                Habilidades Atuais: ${skills}.
-                
-                A resposta deve conter:
-                1. **Caminho de Estudos:** O que focar agora na escola/faculdade.
-                2. **Habilidades a Desenvolver:** O que aprender extra.
-                3. **Possíveis Profissões:** 3 opções de carreira relacionadas.
-                4. **Dica de Ouro:** Um conselho prático.
-                
-                Use formatação clara com tópicos. Idioma: Português do Brasil.
-            `;
-
-            const text = await callGeminiAPI(prompt);
-            if(text) {
-                resDiv.innerHTML = cleanText(text);
-                const btnId = 'dl-career-' + Date.now();
-                resDiv.innerHTML += `<br><button id="${btnId}" class="mt-4 bg-slate-700 text-white px-4 py-2 rounded-lg text-sm flex items-center gap-2 hover:bg-slate-600 transition shadow-lg w-full md:w-auto justify-center">📥 Baixar Plano de Carreira</button>`;
-                setTimeout(() => {
-                    document.getElementById(btnId).onclick = () => downloadPDF(resDiv, 'Plano_Carreira_InfinityMinds');
-                }, 100);
-            } else {
-                resDiv.innerHTML = "Erro ao gerar plano.";
-            }
-        }
-
-        // --- Conversor Universal Completo (Abrasileirado) ---
-        const unitFactors = {
-            length: { m: 1, km: 1000, cm: 0.01, mm: 0.001, mi: 1609.34, yd: 0.9144, ft: 0.3048, in: 0.0254 },
-            mass: { kg: 1, g: 0.001, mg: 0.000001, lb: 0.453592, oz: 0.0283495 },
-            volume: { l: 1, ml: 0.001, gal: 3.78541, floz: 0.0295735 },
-            area: { sq_m: 1, sq_km: 1000000, ha: 10000, ac: 4046.86, sq_ft: 0.092903 },
-            temperature: { c: 'c', f: 'f', k: 'k' } 
-        };
-
-        function updateMeasurementUnits() {
-             const cat = document.getElementById('measureCategory').value;
-             const sel1 = document.getElementById('from_measurement');
-             const sel2 = document.getElementById('to_measurement');
-             
-             sel1.innerHTML = sel2.innerHTML = '';
-             
-             const units = Object.keys(unitFactors[cat]);
-             units.forEach(u => {
-                 let label = u.toUpperCase();
-                 if (u === 'sq_m') label = 'm²';
-                 if (u === 'sq_km') label = 'km²';
-                 if (u === 'sq_ft') label = 'ft²';
-                 if (u === 'in') label = 'pol';
-                 
-                 sel1.innerHTML += `<option value="${u}">${label}</option>`;
-                 sel2.innerHTML += `<option value="${u}">${label}</option>`;
-             });
-        }
-
-        function convertMeasurement() {
-             const cat = document.getElementById('measureCategory').value;
-             const val = parseFloat(document.getElementById('measurementAmount').value);
-             const from = document.getElementById('from_measurement').value;
-             const to = document.getElementById('to_measurement').value;
-             const resDiv = document.getElementById('measurementResult');
-
-             if (isNaN(val)) return;
-             resDiv.classList.remove('hidden');
-
-             let result;
-
-             if (cat === 'temperature') {
-                 let tempInC;
-                 if (from === 'c') tempInC = val;
-                 else if (from === 'f') tempInC = (val - 32) * 5/9;
-                 else if (from === 'k') tempInC = val - 273.15;
-
-                 if (to === 'c') result = tempInC;
-                 else if (to === 'f') result = (tempInC * 9/5) + 32;
-                 else if (to === 'k') result = tempInC + 273.15;
-             } else {
-                 const baseVal = val * unitFactors[cat][from];
-                 result = baseVal / unitFactors[cat][to];
-             }
-
-             // Formatação Brasileira
-             const formattedResult = result.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
-             const formattedVal = val.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
-             
-             // Ajuste do Label
-             let toLabel = to.toUpperCase();
-             let fromLabel = from.toUpperCase();
-             if(to === 'sq_m') toLabel = 'm²'; if(from === 'sq_m') fromLabel = 'm²';
-
-             resDiv.innerHTML = `<strong>${formattedVal} ${fromLabel} = ${formattedResult} ${toLabel}</strong>`;
-        }
-
-        // ... (Outras funções inalteradas: genericAICall, solveByPhoto, generateImage, etc.) ...
-        // ... Apenas garantindo que genericAICall e outras usem cleanText e downloadPDF se necessário ...
-
-        // --- Ferramentas Genéricas IA (Mantidas) ---
         async function genericAICall(btn, prefix) {
             const textarea = btn.previousElementSibling;
             const input = textarea.value;
             const resultDiv = btn.nextElementSibling;
-            
             if(!input.trim()) return;
-            
             resultDiv.classList.remove('hidden');
             resultDiv.innerHTML = '<div class="loader border-purple-500"></div> Gerando resposta...';
 
-            const system = `Assistente educacional expert. Responda estruturado e didático. Idioma: ${currentLang}`;
+            const system = `Assistente educacional. Use LaTeX para matemática ($...$). Responda em ${currentLang}.`;
             const fullPrompt = `${prefix} "${input}"`;
 
             const text = await callGeminiAPI(fullPrompt, system);
-            
             if(text) {
                 resultDiv.innerHTML = cleanText(text);
                 if(window.MathJax) window.MathJax.typesetPromise([resultDiv]);
-                
                 const btnId = 'dl-btn-' + Date.now();
                 resultDiv.innerHTML += `<br><button id="${btnId}" class="mt-4 bg-slate-700 text-white px-4 py-2 rounded-lg text-sm flex items-center gap-2 hover:bg-slate-600 transition shadow-lg w-full md:w-auto justify-center">📥 Baixar PDF</button>`;
-                setTimeout(() => {
-                    const dlBtn = document.getElementById(btnId);
-                    if(dlBtn) dlBtn.onclick = () => downloadPDF(resultDiv, 'InfinityMinds_Resultado');
-                }, 100);
-
+                setTimeout(() => { document.getElementById(btnId).onclick = () => downloadPDF(resultDiv, 'InfinityMinds_Resultado'); }, 100);
             } else {
                 resultDiv.innerHTML = "Erro ao processar.";
             }
         }
 
-        // Visão, ImagemGen, CalcBasics, Bhaskara, Percent, Cambio, Plotter, Quiz, MindMap, IMC 
-        // (Mantidos do bloco anterior, apenas garantindo que estão aqui)
-        
+        // --- Visão ---
         let currentImgBase64 = null;
         function previewImage(e) {
             const file = e.target.files[0];
@@ -1237,7 +1066,7 @@
             const resDiv = document.getElementById('solveByPhotoResult');
             resDiv.classList.remove('hidden');
             resDiv.innerHTML = '<div class="loader"></div> Analisando imagem...';
-            const system = `Solucionador matemático. Analise e resolva passo a passo. Idioma: ${currentLang}`;
+            const system = `Solucionador matemático. Use LaTeX ($...$) para fórmulas. Responda em ${currentLang}`;
             const text = await callGeminiAPI("Resolva este problema.", system, true, currentImgBase64);
             if(text) {
                 resDiv.innerHTML = cleanText(text);
@@ -1247,28 +1076,45 @@
                 setTimeout(() => { document.getElementById(btnId).onclick = () => downloadPDF(resDiv, 'Resolucao_Foto'); }, 100);
             } else { resDiv.innerHTML = "Não consegui ler a imagem."; }
         }
+
+        // --- Gerador de Imagens (Tratamento de Erro Melhorado) ---
         async function generateImage() {
             const prompt = document.getElementById('imagePrompt').value;
             const resDiv = document.getElementById('imageResult');
             if(!prompt) return;
-            resDiv.innerHTML = '<div class="loader"></div>';
+            resDiv.innerHTML = '<div class="loader"></div> <span class="text-sm text-gray-400">Criando imagem...</span>';
+            
             const apiKey = getApiKey();
+            // Tenta modelo padrão Imagen 3
             try {
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`, {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-001:predict?key=${apiKey}`, {
                     method: 'POST', headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ instances: [{ prompt: prompt }], parameters: { sampleCount: 1 } })
                 });
+                
+                if (!response.ok) throw new Error("Falha na requisição");
+
                 const data = await response.json();
                 if(data.predictions && data.predictions[0]) {
                     const b64 = data.predictions[0].bytesBase64Encoded;
                     resDiv.innerHTML = `<img src="data:image/png;base64,${b64}" class="rounded shadow-lg max-h-[400px]">`;
-                } else { throw new Error("Modelo indisponível."); }
-            } catch(e) { resDiv.innerHTML = `<p class="text-yellow-400 text-sm">Erro: ${e.message}</p>`; }
+                    // Botão de download para imagem
+                    const btnId = 'dl-img-' + Date.now();
+                    resDiv.innerHTML += `<br><a href="data:image/png;base64,${b64}" download="InfinityMinds_Imagem.png" class="inline-block mt-2 bg-purple-600 text-white px-4 py-2 rounded text-sm hover:bg-purple-500 transition">📥 Baixar Imagem</a>`;
+                } else {
+                    throw new Error("Resposta vazia");
+                }
+            } catch(e) {
+                resDiv.innerHTML = `<p class="text-yellow-400 text-sm p-2 border border-yellow-600 rounded bg-yellow-900/20">⚠️ A geração de imagens falhou. Sua chave API pode não ter acesso ao modelo 'Imagen' ou ele está indisponível na sua região.</p>`;
+            }
         }
+
+        // --- Funções Matemáticas Puras ---
         let calcDisplay = document.getElementById('basicCalcDisplay');
         function appendToDisplay(v) { calcDisplay.value += v; }
         function clearDisplay() { calcDisplay.value = ''; }
         function calculateResult() { try { calcDisplay.value = eval(calcDisplay.value); } catch { calcDisplay.value = 'Erro'; } }
+
         function solveQuadratic() {
             const a = parseFloat(document.getElementById('coeffA').value);
             const b = parseFloat(document.getElementById('coeffB').value);
@@ -1294,13 +1140,15 @@
             const div = document.getElementById('quadraticExplainResult');
             div.classList.remove('hidden');
             div.innerHTML = "<div class='loader'></div>";
-            callGeminiAPI(`Explique a equação ${a}x² + ${b}x + ${c} = 0. Idioma: ${currentLang}`).then(t => {
+            callGeminiAPI(`Explique a equação ${a}x² + ${b}x + ${c} = 0 usando LaTeX para as fórmulas. Idioma: ${currentLang}`).then(t => {
                 div.innerHTML = cleanText(t);
+                if(window.MathJax) window.MathJax.typesetPromise([div]);
                 const btnId = 'dl-quad-' + Date.now();
                 div.innerHTML += `<br><button id="${btnId}" class="mt-3 bg-slate-700 text-white px-3 py-1 rounded text-xs">📥 Baixar Explicação</button>`;
                 setTimeout(() => { document.getElementById(btnId).onclick = () => downloadPDF(div, 'Bhaskara_Explicacao'); }, 100);
             });
         }
+
         function calculatePercentage() {
             const pInput = document.getElementById('percentValue').value;
             const bInput = document.getElementById('baseValue').value;
@@ -1312,6 +1160,7 @@
             const res = (p/100) * b;
             div.innerHTML = `<strong>${p}% de ${b} = ${res.toFixed(2)}</strong>`;
         }
+
         async function convertCurrency() {
             const amount = parseFloat(document.getElementById('amount').value);
             const from = document.getElementById('from_currency').value;
@@ -1328,14 +1177,19 @@
                 div.innerHTML = `<strong>${amount} ${from} = ${result} ${to}</strong>`;
             } catch(e) { div.innerHTML = "Erro na conversão."; }
         }
+
         function plotFunction() {
             const expr = document.getElementById('functionInput').value;
             const ctx = document.getElementById('functionChart').getContext('2d');
             if(window.myChart) window.myChart.destroy();
             const xValues = [];
             const yValues = [];
+            
+            const xMin = parseFloat(document.getElementById('xMin').value) || -10;
+            const xMax = parseFloat(document.getElementById('xMax').value) || 10;
+
             try {
-                for(let x = -10; x <= 10; x+=0.5) {
+                for(let x = xMin; x <= xMax; x+=0.5) {
                     xValues.push(x);
                     let scope = {x: x};
                     yValues.push(math.evaluate(expr, scope));
@@ -1346,6 +1200,8 @@
                 });
             } catch(e) { alert("Função inválida."); }
         }
+
+        // --- Quiz ---
         async function startQuiz() {
             const topic = document.getElementById('quizTopic').value || "Conhecimentos Gerais";
             document.getElementById('quiz-setup').classList.add('hidden');
@@ -1357,12 +1213,14 @@
             document.getElementById('quiz-loader').classList.remove('hidden');
             document.getElementById('quiz-content').classList.add('hidden');
             const jsonSchema = `{ "question": "Texto", "options": ["A","B","C","D"], "answer": 0, "explanation": "Texto" }`;
-            const system = `JSON pergunta quiz sobre "${topic}". Formato: ${jsonSchema}. Idioma: ${currentLang}`;
+            const system = `JSON pergunta quiz sobre "${topic}". Use LaTeX para fórmulas. Formato: ${jsonSchema}. Idioma: ${currentLang}`;
             const text = await callGeminiAPI("Gerar", system);
             try {
                 const jsonStr = text.replace(/```json|```/g, '').trim();
                 const data = JSON.parse(jsonStr);
                 document.getElementById('quiz-question-text').textContent = data.question;
+                if(window.MathJax) window.MathJax.typesetPromise([document.getElementById('quiz-question-text')]);
+                
                 const optsDiv = document.getElementById('quiz-options');
                 optsDiv.innerHTML = '';
                 data.options.forEach((opt, idx) => {
@@ -1389,40 +1247,14 @@
             feedback.innerHTML = selected === correct ? `<strong class="text-green-400">Correto!</strong> ${explain}` : `<strong class="text-red-400">Errado.</strong> ${explain}`;
             feedback.className = selected === correct ? "mt-4 p-4 rounded-lg text-sm border border-green-500 bg-green-900/20 block" : "mt-4 p-4 rounded-lg text-sm border border-red-500 bg-red-900/20 block";
             document.getElementById('quiz-next-btn').classList.remove('hidden');
+            if(window.MathJax) window.MathJax.typesetPromise([feedback]);
             if(selected === correct) {
                 let score = document.getElementById('quiz-score');
                 score.innerText = "Pontos: " + (parseInt(score.innerText.split(' ')[1]) + 10);
             }
         }
         function nextQuizQuestion() { loadQuizQuestion(document.getElementById('quizTopic').value || "Geral"); }
-        async function generateMindMap() {
-            const subject = document.getElementById('mindMapSubject').value;
-            if(!subject) return;
-            const container = document.getElementById('mindMapContainer');
-            container.innerHTML = '<div class="loader"></div>';
-            const system = `Mapa mental JSON: { "center": "Tema", "nodes": ["Sub1", "Sub2", "Sub3", "Sub4"] }. Tema: "${subject}". Idioma: ${currentLang}`;
-            const text = await callGeminiAPI("Gerar", system);
-            try {
-                const data = JSON.parse(text.replace(/```json|```/g, '').trim());
-                container.innerHTML = `
-                <svg width="100%" height="100%" viewBox="0 0 600 400" xmlns="http://www.w3.org/2000/svg">
-                    <line x1="300" y1="200" x2="150" y2="100" stroke="#475569" stroke-width="2"/>
-                    <line x1="300" y1="200" x2="450" y2="100" stroke="#475569" stroke-width="2"/>
-                    <line x1="300" y1="200" x2="150" y2="300" stroke="#475569" stroke-width="2"/>
-                    <line x1="300" y1="200" x2="450" y2="300" stroke="#475569" stroke-width="2"/>
-                    <circle cx="300" cy="200" r="50" fill="#8B5CF6" />
-                    <text x="300" y="205" text-anchor="middle" fill="white" font-weight="bold" font-size="14">${data.center.substring(0,15)}</text>
-                    <rect x="100" y="80" width="100" height="40" rx="10" fill="#10B981" />
-                    <text x="150" y="105" text-anchor="middle" fill="white" font-size="12">${data.nodes[0]}</text>
-                    <rect x="400" y="80" width="100" height="40" rx="10" fill="#10B981" />
-                    <text x="450" y="105" text-anchor="middle" fill="white" font-size="12">${data.nodes[1]}</text>
-                    <rect x="100" y="280" width="100" height="40" rx="10" fill="#10B981" />
-                    <text x="150" y="305" text-anchor="middle" fill="white" font-size="12">${data.nodes[2]}</text>
-                    <rect x="400" y="280" width="100" height="40" rx="10" fill="#10B981" />
-                    <text x="450" y="305" text-anchor="middle" fill="white" font-size="12">${data.nodes[3]}</text>
-                </svg>`;
-            } catch(e) { container.innerHTML = "Erro visual."; }
-        }
+
         function solveSystemOfEquations() {
              const a1 = parseFloat(document.getElementById('eq_a1').value);
              const b1 = parseFloat(document.getElementById('eq_b1').value);
@@ -1440,7 +1272,117 @@
              }
         }
 
-        // --- NOVO: IMC com IA Integrada ---
+        async function generateExercises() {
+            const topic = document.getElementById('exTopic').value;
+            const grade = document.getElementById('exGrade').value;
+            const diff = document.getElementById('exDiff').value;
+            const type = document.getElementById('exType').value;
+            const resDiv = document.getElementById('exResult');
+
+            if(!topic) return alert("Por favor, digite um assunto.");
+
+            resDiv.classList.remove('hidden');
+            resDiv.innerHTML = '<div class="loader"></div> <span class="animate-pulse">Criando lista...</span>';
+
+            const prompt = `
+                Crie uma lista de 5 exercícios de matemática sobre "${topic}".
+                Público: ${grade}. Nível: ${diff}. Tipo: ${type}.
+                Use LaTeX para fórmulas ($...$).
+                Formatação limpa com títulos em negrito.
+                Inclua GABARITO no final. Idioma: Português do Brasil.
+            `;
+
+            const text = await callGeminiAPI(prompt);
+            if(text) {
+                resDiv.innerHTML = cleanText(text);
+                if(window.MathJax) window.MathJax.typesetPromise([resDiv]);
+                
+                const safeTopic = topic.replace(/\s/g, '_');
+                const btnId = 'dl-ex-' + Date.now();
+                resDiv.innerHTML += `<br><button id="${btnId}" class="mt-4 bg-slate-700 text-white px-4 py-2 rounded-lg text-sm flex items-center gap-2 hover:bg-slate-600 transition shadow-lg w-full md:w-auto justify-center">📥 Baixar PDF</button>`;
+                setTimeout(() => {
+                    document.getElementById(btnId).onclick = () => downloadPDF(resDiv, 'Exercicios_' + safeTopic);
+                }, 100);
+            } else {
+                resDiv.innerHTML = "Erro ao gerar exercícios.";
+            }
+        }
+
+        async function generateCareerPlan() {
+            const interest = document.getElementById('careerInterest').value;
+            const skills = document.getElementById('careerSkills').value;
+            const level = document.getElementById('careerLevel').value;
+            const resDiv = document.getElementById('careerResult');
+
+            if(!interest || !skills) return alert("Preencha os campos.");
+
+            resDiv.classList.remove('hidden');
+            resDiv.innerHTML = '<div class="loader"></div> <span class="animate-pulse">Planejando...</span>';
+
+            const prompt = `
+                Plano de carreira para estudante do ${level}.
+                Interesse: ${interest}. Habilidades: ${skills}.
+                Estrutura: Estudos, Habilidades a desenvolver, Profissões, Dica.
+                Idioma: Português do Brasil.
+            `;
+
+            const text = await callGeminiAPI(prompt);
+            if(text) {
+                resDiv.innerHTML = cleanText(text);
+                const btnId = 'dl-career-' + Date.now();
+                resDiv.innerHTML += `<br><button id="${btnId}" class="mt-4 bg-slate-700 text-white px-4 py-2 rounded-lg text-sm flex items-center gap-2 hover:bg-slate-600 transition shadow-lg w-full md:w-auto justify-center">📥 Baixar Plano</button>`;
+                setTimeout(() => {
+                    document.getElementById(btnId).onclick = () => downloadPDF(resDiv, 'Plano_Carreira_InfinityMinds');
+                }, 100);
+            } else {
+                resDiv.innerHTML = "Erro ao gerar plano.";
+            }
+        }
+
+        // Conversor e IMC mantidos iguais
+        const unitFactors = {
+            length: { m: 1, km: 1000, cm: 0.01, mm: 0.001, mi: 1609.34, yd: 0.9144, ft: 0.3048, in: 0.0254 },
+            mass: { kg: 1, g: 0.001, mg: 0.000001, lb: 0.453592, oz: 0.0283495 },
+            volume: { l: 1, ml: 0.001, gal: 3.78541, floz: 0.0295735 },
+            area: { sq_m: 1, sq_km: 1000000, ha: 10000, ac: 4046.86, sq_ft: 0.092903 },
+            temperature: { c: 'c', f: 'f', k: 'k' } 
+        };
+        function updateMeasurementUnits() {
+             const cat = document.getElementById('measureCategory').value;
+             const sel1 = document.getElementById('from_measurement');
+             const sel2 = document.getElementById('to_measurement');
+             sel1.innerHTML = sel2.innerHTML = '';
+             const units = Object.keys(unitFactors[cat]);
+             units.forEach(u => {
+                 let label = u.toUpperCase();
+                 if (u === 'sq_m') label = 'm²'; if (u === 'sq_km') label = 'km²'; if (u === 'sq_ft') label = 'ft²'; if (u === 'in') label = 'pol';
+                 sel1.innerHTML += `<option value="${u}">${label}</option>`; sel2.innerHTML += `<option value="${u}">${label}</option>`;
+             });
+        }
+        function convertMeasurement() {
+             const cat = document.getElementById('measureCategory').value;
+             const val = parseFloat(document.getElementById('measurementAmount').value);
+             const from = document.getElementById('from_measurement').value;
+             const to = document.getElementById('to_measurement').value;
+             const resDiv = document.getElementById('measurementResult');
+             if (isNaN(val)) return;
+             resDiv.classList.remove('hidden');
+             let result;
+             if (cat === 'temperature') {
+                 let tempInC;
+                 if (from === 'c') tempInC = val; else if (from === 'f') tempInC = (val - 32) * 5/9; else if (from === 'k') tempInC = val - 273.15;
+                 if (to === 'c') result = tempInC; else if (to === 'f') result = (tempInC * 9/5) + 32; else if (to === 'k') result = tempInC + 273.15;
+             } else {
+                 const baseVal = val * unitFactors[cat][from];
+                 result = baseVal / unitFactors[cat][to];
+             }
+             const formattedResult = result.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+             const formattedVal = val.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+             let toLabel = to.toUpperCase(); let fromLabel = from.toUpperCase();
+             if(to === 'sq_m') toLabel = 'm²'; if(from === 'sq_m') fromLabel = 'm²';
+             resDiv.innerHTML = `<strong>${formattedVal} ${fromLabel} = ${formattedResult} ${toLabel}</strong>`;
+        }
+
         async function calculateBMI() {
             const w = parseFloat(document.getElementById('weight').value);
             const h = parseFloat(document.getElementById('height').value);
@@ -1449,46 +1391,30 @@
             const catDiv = document.getElementById('bmiCategory');
             const aiDiv = document.getElementById('bmiAiContent');
             const bar = document.getElementById('bmiBar');
-
             if(!w || !h) return alert("Preencha peso e altura");
-
             const hM = h / 100;
             const bmi = w / (hM * hM);
             const bmiFixed = bmi.toFixed(1);
-
-            // Lógica Classificação
-            let cat = "";
-            let colorClass = "";
-            let percent = 0;
-
+            let cat = ""; let colorClass = ""; let percent = 0;
             if(bmi < 18.5) { cat = "Abaixo do Peso"; colorClass = "text-yellow-400"; percent = 20; }
             else if(bmi < 24.9) { cat = "Peso Normal"; colorClass = "text-green-400"; percent = 50; }
             else if(bmi < 29.9) { cat = "Sobrepeso"; colorClass = "text-orange-400"; percent = 75; }
             else { cat = "Obesidade"; colorClass = "text-red-500"; percent = 100; }
-
-            // Atualiza UI
             resDiv.classList.remove('hidden');
             valDiv.innerText = bmiFixed;
             catDiv.innerText = cat;
             catDiv.className = `text-xl font-medium ${colorClass}`;
             setTimeout(() => { bar.style.width = percent + "%"; }, 100);
-
-            // CHAMADA IA AUTOMÁTICA
-            aiDiv.innerHTML = '<div class="flex items-center gap-2"><div class="loader" style="width:16px;height:16px;"></div> <span class="animate-pulse">A IA está analisando seu perfil...</span></div>';
-            
-            const systemPrompt = "Você é um nutricionista esportivo encorajador e prático.";
-            const userPrompt = `O usuário tem um IMC de ${bmiFixed} classificado como ${cat}. Crie 3 dicas curtas (bullet points) e sugira 1 refeição específica saudável para este caso. Seja direto. Idioma: ${currentLang}`;
-
+            aiDiv.innerHTML = '<div class="flex items-center gap-2"><div class="loader" style="width:16px;height:16px;"></div> <span class="animate-pulse">Analisando...</span></div>';
+            const systemPrompt = "Nutricionista esportivo prático.";
+            const userPrompt = `IMC ${bmiFixed}, categoria ${cat}. 3 dicas curtas e 1 refeição. Idioma: ${currentLang}`;
             const aiResponse = await callGeminiAPI(userPrompt, systemPrompt);
             if(aiResponse) {
                 aiDiv.innerHTML = cleanText(aiResponse);
-                // Adiciona botão download específico para o resultado do IMC
                 const btnId = 'dl-bmi-' + Date.now();
                 aiDiv.innerHTML += `<br><button id="${btnId}" class="mt-3 text-xs text-pink-400 border border-pink-500/50 px-2 py-1 rounded hover:bg-pink-500/20 transition">📥 Baixar Dicas</button>`;
                 document.getElementById(btnId).onclick = () => downloadPDF(aiDiv, 'Dicas_Saude_InfinityMinds');
-            } else {
-                aiDiv.innerHTML = "Não foi possível gerar dicas agora.";
-            }
+            } else { aiDiv.innerHTML = "Erro ao gerar dicas."; }
         }
 
         updateMeasurementUnits();
