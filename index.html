@@ -846,30 +846,31 @@
             }
         }
 
-        // Limpeza robusta de texto (Remove marcadores markdown)
+        // Helper para verificar palavras inteiras
+        const containsWord = (text, word) => {
+            // Escapa caracteres especiais de regex, se houver, embora para palavras simples não seja crítico.
+            const escapedWord = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); 
+            const regex = new RegExp(`\\b${escapedWord}\\b`, 'i');
+            return regex.test(text);
+        };
+
+        // Limpeza robusta de texto
         function cleanText(text) {
             if (!text) return "";
             return text
-                .replace(/^###\s*(.*$)/gim, '<strong style="color: #A78BFA; font-size: 1.1em;">$1</strong>') // Headers para roxo
-                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Negrito
-                .replace(/\*/g, '') // Remove * soltos
-                .replace(/\n/g, '<br>'); // Quebra de linha
+                .replace(/^###\s*(.*$)/gim, '<strong style="color: #A78BFA; font-size: 1.1em;">$1</strong>') 
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') 
+                .replace(/\*/g, '') 
+                .replace(/\n/g, '<br>'); 
         }
 
-        // --- DOWNLOAD PDF CORRIGIDO (RENDERIZAÇÃO CANVAS) ---
+        // --- DOWNLOAD PDF CORRIGIDO ---
         function downloadPDF(sourceElement, filename) {
-            // Clonar para não afetar a tela
             const contentClone = sourceElement.cloneNode(true);
             
-            // Remover botões e inputs do clone
-            const toRemove = contentClone.querySelectorAll('button, input, select');
-            toRemove.forEach(el => el.remove());
+            const buttons = contentClone.querySelectorAll('button');
+            buttons.forEach(btn => btn.remove());
 
-            // Estilo para impressão
-            contentClone.style.color = '#000000';
-            contentClone.style.background = 'transparent';
-            contentClone.style.width = '100%';
-            
             const allElements = contentClone.querySelectorAll('*');
             allElements.forEach(el => {
                 el.style.color = '#000000';
@@ -878,7 +879,6 @@
                 el.classList.remove('text-white', 'text-gray-200', 'text-gray-300', 'text-gray-400', 'text-gray-500', 'bg-slate-800', 'bg-slate-900', 'bg-slate-700');
             });
 
-            // Container Temporário Visível (mas escondido pelo z-index)
             const pdfContainer = document.createElement('div');
             pdfContainer.style.width = '790px'; 
             pdfContainer.style.minHeight = '1000px';
@@ -886,13 +886,11 @@
             pdfContainer.style.backgroundColor = '#ffffff';
             pdfContainer.style.fontFamily = 'Arial, sans-serif';
             pdfContainer.style.border = '1px solid #ccc';
-            
             pdfContainer.style.position = 'fixed';
             pdfContainer.style.top = '0';
             pdfContainer.style.left = '0';
             pdfContainer.style.zIndex = '-9999';
             
-            // Marca d'água
             const watermark = document.createElement('div');
             watermark.innerHTML = "INFINITY MIND's";
             watermark.style.cssText = `
@@ -908,7 +906,6 @@
             contentWrapper.style.position = 'relative';
             contentWrapper.style.zIndex = '1';
 
-            // Cabeçalho
             const header = document.createElement('div');
             header.innerHTML = `
                 <div style="text-align: center; border-bottom: 3px solid #7C3AED; padding-bottom: 20px; margin-bottom: 30px;">
@@ -919,7 +916,6 @@
             contentWrapper.appendChild(header);
             contentWrapper.appendChild(contentClone);
 
-            // Rodapé
             const footer = document.createElement('div');
             footer.innerHTML = `
                 <div style="margin-top: 60px; text-align: center; font-size: 10px; color: #888; border-top: 1px solid #eee; padding-top: 15px;">
@@ -939,7 +935,6 @@
                 jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
 
-            // Delay para garantir renderização
             setTimeout(() => {
                 html2pdf().set(opt).from(pdfContainer).save().then(() => {
                     document.body.removeChild(pdfContainer);
@@ -969,6 +964,16 @@
             const lockoutMessage = document.getElementById('lockout-message');
             const style = document.getElementById('responseStyle').value;
 
+            // Admin Unlock Backdoor
+            if (msg === '/admin unlock') {
+                localStorage.removeItem('chatBanUntil');
+                localStorage.removeItem('chatOffenses');
+                lockoutMessage.classList.add('hidden');
+                alert('Sistema desbloqueado pelo administrador.');
+                input.value = '';
+                return;
+            }
+
             const banUntil = localStorage.getItem('chatBanUntil');
             if (banUntil && Date.now() < parseInt(banUntil)) {
                 const remaining = Math.ceil((parseInt(banUntil) - Date.now()) / 60000);
@@ -981,7 +986,8 @@
 
             if(!originalMsg) return;
 
-            if (politicalWords.some(w => msg.includes(w))) {
+            // Word Boundary Checks
+            if (politicalWords.some(w => containsWord(msg, w))) {
                 const banTime = Date.now() + (72 * 60 * 60 * 1000);
                 localStorage.setItem('chatBanUntil', banTime);
                 chatWindow.innerHTML += `<div class="chat-bubble bg-red-900/50 text-white border border-red-500 self-center text-center">🛑 <strong>Assunto Proibido:</strong> Discussões políticas não são permitidas. Seu acesso ao chat foi suspenso por 72 horas.</div>`;
@@ -989,7 +995,7 @@
                 return;
             }
 
-            if (offensiveWords.some(w => msg.includes(w))) {
+            if (offensiveWords.some(w => containsWord(msg, w))) {
                 let offenses = parseInt(localStorage.getItem('chatOffenses') || '0') + 1;
                 localStorage.setItem('chatOffenses', offenses);
                 let banDuration = offenses === 1 ? 15 * 60 * 1000 : 24 * 60 * 60 * 1000;
