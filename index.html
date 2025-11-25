@@ -218,6 +218,7 @@
                     <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
                          <div class="menu-card border-green-500/30 bg-green-900/10" onclick="showTool('tool-live-chat')"><div class="menu-card-icon">🎓</div><h3 data-lang-key="tool_live_chat_title">Tutor IA (Chat)</h3></div>
                          <div class="menu-card" onclick="showTool('tool-solve-by-photo')"><div class="menu-card-icon">📸</div><h3 data-lang-key="tool_solve_by_photo_title">Resolver Foto</h3></div>
+                         <div class="menu-card" onclick="showTool('tool-code-explainer')"><div class="menu-card-icon">💻</div><h3 data-lang-key="tool_code_explainer_title">Tutor de Código</h3></div>
                          <div class="menu-card" onclick="showTool('tool-word-problem')"><div class="menu-card-icon">🧠</div><h3 data-lang-key="tool_word_problem_title">Problemas Lógicos</h3></div>
                          <div class="menu-card" onclick="showTool('tool-mind-map')"><div class="menu-card-icon">🗺️</div><h3 data-lang-key="tool_mind_map_title">Mapa Mental</h3></div>
                          <div class="menu-card" onclick="showTool('tool-summarizer')"><div class="menu-card-icon">📚</div><h3 data-lang-key="tool_summarizer_title">Resumos</h3></div>
@@ -233,6 +234,7 @@
                     </div>
                     <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
                         <div class="menu-card" onclick="showTool('tool-interactive-quiz')"><div class="menu-card-icon">⚡</div><h3 data-lang-key="tool_interactive_quiz_title">Quiz Infinito</h3></div>
+                        <div class="menu-card" onclick="showTool('tool-math-story')"><div class="menu-card-icon">📚</div><h3 data-lang-key="tool_math_story_title">Histórias Matemáticas</h3></div>
                         <div class="menu-card" onclick="showTool('tool-image-gen')"><div class="menu-card-icon">🎨</div><h3 data-lang-key="tool_image_gen_title">Criar Imagens</h3></div>
                         <div class="menu-card" onclick="showTool('tool-career')"><div class="menu-card-icon">🧭</div><h3 data-lang-key="tool_career_title">Carreiras</h3></div>
                         <div class="menu-card" onclick="showTool('tool-exercises')"><div class="menu-card-icon">✍️</div><h3 data-lang-key="tool_exercises_title">Gerar Exercícios</h3></div>
@@ -432,6 +434,8 @@
                 <div id="tool-word-problem" class="tool-page ai-text-tool" data-prompt="Resolva este problema passo a passo, como um professor paciente:"></div>
                 <div id="tool-summarizer" class="tool-page ai-text-tool" data-prompt="Faça um resumo claro e estruturado em tópicos sobre:"></div>
                 <div id="tool-level-explainer" class="tool-page ai-text-tool" data-prompt="Explique este conceito em 3 níveis (Criança, Estudante, Especialista):"></div>
+                <div id="tool-math-story" class="tool-page ai-text-tool" data-prompt="Crie uma história curta, criativa e didática que ajude a entender o conceito matemático de: "></div>
+                <div id="tool-code-explainer" class="tool-page ai-text-tool" data-prompt="Atue como um programador sênior e explique o seguinte código de forma didática para um estudante: "></div>
                 
                 <!-- Bhaskara -->
                 <div id="tool-quadratic" class="tool-page">
@@ -610,9 +614,110 @@
                 tool_image_gen_title: "Criar Imagens",
                 tool_career_title: "Carreiras",
                 tool_exercises_title: "Gerar Exercícios",
-                tool_currency_title: "Câmbio"
+                tool_currency_title: "Câmbio",
+                tool_math_story_title: "Histórias Matemáticas",
+                tool_code_explainer_title: "Tutor de Código"
             },
-            // ... outros idiomas mantidos ...
+            'en': {
+                welcome_desc: "Smart tools for math, science and daily life.",
+                tool_basic_calc_title: "Basic Calculator",
+                tool_live_chat_title: "Live AI Tutor",
+                tool_solve_by_photo_title: "Solve by Photo",
+                tool_bmi_title: "BMI + AI Nutri",
+                gemini_error: "AI Error. Check API Key.",
+                back_to_menu: "Menu",
+                tool_equations_title: "Linear Systems",
+                tool_quadratic_title: "Quadratic Equation",
+                tool_percentage_title: "Percentage",
+                tool_graph_plotter_title: "Graphs",
+                tool_measurement_title: "Universal Converter",
+                tool_word_problem_title: "Logic Problems",
+                tool_mind_map_title: "Mind Map",
+                tool_summarizer_title: "Summaries",
+                tool_level_explainer_title: "Explanation Levels",
+                tool_interactive_quiz_title: "Infinite Quiz",
+                tool_image_gen_title: "Create Images",
+                tool_career_title: "Careers",
+                tool_exercises_title: "Generate Exercises",
+                tool_currency_title: "Currency",
+                tool_math_story_title: "Math Stories",
+                tool_code_explainer_title: "Code Tutor"
+            },
+            'es': {
+                welcome_desc: "Herramientas inteligentes para matemáticas, ciencias y organización.",
+                tool_basic_calc_title: "Calculadora Básica",
+                tool_live_chat_title: "Tutor IA en Vivo",
+                tool_solve_by_photo_title: "Resolver por Foto",
+                tool_bmi_title: "IMC + Nutri IA",
+                gemini_error: "Error de IA. Verifique clave API.",
+                back_to_menu: "Menú",
+                tool_equations_title: "Sistemas Lineales",
+                tool_quadratic_title: "Ecuación Cuadrática",
+                tool_percentage_title: "Porcentaje",
+                tool_graph_plotter_title: "Gráficos",
+                tool_measurement_title: "Convertidor Universal",
+                tool_word_problem_title: "Problemas Lógicos",
+                tool_mind_map_title: "Mapa Mental",
+                tool_summarizer_title: "Resúmenes",
+                tool_level_explainer_title: "Niveles de Explicación",
+                tool_interactive_quiz_title: "Quiz Infinito",
+                tool_image_gen_title: "Crear Imágenes",
+                tool_career_title: "Carreras",
+                tool_exercises_title: "Generar Ejercicios",
+                tool_currency_title: "Cambio",
+                tool_math_story_title: "Historias Matemáticas",
+                tool_code_explainer_title: "Tutor de Código"
+            },
+            'it': {
+                welcome_desc: "Strumenti intelligenti per matematica, scienze e organizzazione.",
+                tool_basic_calc_title: "Calcolatrice Base",
+                tool_live_chat_title: "Tutor IA dal Vivo",
+                tool_solve_by_photo_title: "Risolvi con Foto",
+                tool_bmi_title: "BMI + Nutri IA",
+                gemini_error: "Errore IA. Controlla chiave API.",
+                back_to_menu: "Menu",
+                tool_equations_title: "Sistemi Lineari",
+                tool_quadratic_title: "Equazione Quadratica",
+                tool_percentage_title: "Percentuale",
+                tool_graph_plotter_title: "Grafici",
+                tool_measurement_title: "Convertitore Universale",
+                tool_word_problem_title: "Problemi Logici",
+                tool_mind_map_title: "Mappa Mentale",
+                tool_summarizer_title: "Riassunti",
+                tool_level_explainer_title: "Livelli di Spiegazione",
+                tool_interactive_quiz_title: "Quiz Infinito",
+                tool_image_gen_title: "Crea Immagini",
+                tool_career_title: "Carriere",
+                tool_exercises_title: "Genera Esercizi",
+                tool_currency_title: "Cambio",
+                tool_math_story_title: "Storie Matematiche",
+                tool_code_explainer_title: "Tutor di Codice"
+            },
+            'de': {
+                welcome_desc: "Intelligente Tools für Mathe, Wissenschaft und Organisation.",
+                tool_basic_calc_title: "Basis-Rechner",
+                tool_live_chat_title: "Live KI-Tutor",
+                tool_solve_by_photo_title: "Lösen per Foto",
+                tool_bmi_title: "BMI + KI Nutri",
+                gemini_error: "KI-Fehler. API-Key prüfen.",
+                back_to_menu: "Menü",
+                tool_equations_title: "Lineare Systeme",
+                tool_quadratic_title: "Quadratische Gleichung",
+                tool_percentage_title: "Prozentsatz",
+                tool_graph_plotter_title: "Grafiken",
+                tool_measurement_title: "Universal-Konverter",
+                tool_word_problem_title: "Logikprobleme",
+                tool_mind_map_title: "Mind Map",
+                tool_summarizer_title: "Zusammenfassungen",
+                tool_level_explainer_title: "Erklärungsstufen",
+                tool_interactive_quiz_title: "Unendliches Quiz",
+                tool_image_gen_title: "Bilder Erstellen",
+                tool_career_title: "Karrieren",
+                tool_exercises_title: "Übungen Erstellen",
+                tool_currency_title: "Währung",
+                tool_math_story_title: "Mathe-Geschichten",
+                tool_code_explainer_title: "Code-Tutor"
+            }
         };
 
         let currentLang = 'pt-br';
