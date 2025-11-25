@@ -709,7 +709,6 @@
                 tool_graph_plotter_title: "Grafiken",
                 tool_measurement_title: "Universal-Konverter",
                 tool_word_problem_title: "Logikprobleme",
-                tool_mind_map_title: "Mind Map",
                 tool_summarizer_title: "Zusammenfassungen",
                 tool_level_explainer_title: "Erklärungsstufen",
                 tool_interactive_quiz_title: "Unendliches Quiz",
@@ -846,6 +845,25 @@
                     }
                 }
             }
+        }
+
+        function playErrorSound() {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+
+            oscillator.type = 'sawtooth';
+            oscillator.frequency.setValueAtTime(150, audioCtx.currentTime); 
+            oscillator.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.1);
+
+            gainNode.gain.setValueAtTime(0.5, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            oscillator.start();
+            oscillator.stop(audioCtx.currentTime + 0.3);
         }
 
         // Helper para verificar palavras inteiras
@@ -988,6 +1006,7 @@
             if(!originalMsg) return;
 
             if (politicalWords.some(w => containsWord(msg, w))) {
+                playErrorSound();
                 const banTime = Date.now() + (72 * 60 * 60 * 1000);
                 localStorage.setItem('chatBanUntil', banTime);
                 chatWindow.innerHTML += `<div class="chat-bubble bg-red-900/50 text-white border border-red-500 self-center text-center">🛑 <strong>Assunto Proibido:</strong> Discussões políticas não são permitidas. Seu acesso ao chat foi suspenso por 72 horas.</div>`;
@@ -996,6 +1015,7 @@
             }
 
             if (offensiveWords.some(w => containsWord(msg, w))) {
+                playErrorSound();
                 let offenses = parseInt(localStorage.getItem('chatOffenses') || '0') + 1;
                 localStorage.setItem('chatOffenses', offenses);
                 let banDuration = offenses === 1 ? 15 * 60 * 1000 : 24 * 60 * 60 * 1000;
