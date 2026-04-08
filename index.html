@@ -266,7 +266,7 @@
             const [selectedMatch, setSelectedMatch] = useState(null);
             const [isSaving, setIsSaving] = useState(false);
             const [appState, setAppState] = useState('SETUP'); 
-            const [selectedPlayerStats, setSelectedPlayerStats] = useState(null); // Modal de Gráfico Individual
+            const [selectedPlayerStats, setSelectedPlayerStats] = useState(null); 
             
             // Estado da Partida
             const [time, setTime] = useState(0);
@@ -319,11 +319,10 @@
                 return () => unsubscribe();
             }, []);
 
-            // ESCUTA DO BANCO DE DADOS (ACESSANDO PASTA GLOBAL PARA TODOS OS DISPOSITIVOS DO CONCENAL)
+            // ESCUTA DO BANCO DE DADOS PÚBLICO GERAL
             useEffect(() => {
                 if (!user) return;
                 
-                // Alterado de 'users'/'uid' para 'public'/'data' garantindo que qualquer aparelho veja os dados
                 const refMatches = collection(db, 'artifacts', appRootId, 'public', 'data', 'matches');
                 const unsubMatches = onSnapshot(refMatches, (snap) => {
                     const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -358,7 +357,7 @@
                 return () => clearInterval(interval);
             }, [isTimerRunning, appState]);
 
-            // Lógica para Tabela de Classificação Global (Aba Histórico)
+            // Tabela de Classificação Global
             const getStandings = () => {
                 const table = {};
                 matchHistory.forEach(m => {
@@ -481,6 +480,7 @@
                 setBulkInput(""); setShowBulkAdd(null);
             };
 
+            // SALVAMENTO COM PURIFICADOR JSON.PARSE PARA EVITAR TRAVAMENTOS POR UNDEFINED
             const saveMatch = async () => {
                 if(!user) return;
                 setIsSaving(true);
@@ -498,7 +498,8 @@
                         tournamentId: activeTourneyMatch?.tourneyId || null 
                     };
 
-                    await addDoc(collection(db, 'artifacts', appRootId, 'public', 'data', 'matches'), matchData);
+                    const cleanMatchData = JSON.parse(JSON.stringify(matchData));
+                    await addDoc(collection(db, 'artifacts', appRootId, 'public', 'data', 'matches'), cleanMatchData);
 
                     if (activeTourneyMatch && activeTourney) {
                         const updatedTourney = { ...activeTourney };
@@ -525,7 +526,9 @@
                         updateTourneyPlayers(teams.A.id, teams.A);
                         updateTourneyPlayers(teams.B.id, teams.B);
 
-                        await setDoc(doc(db, 'artifacts', appRootId, 'public', 'data', 'tournaments', updatedTourney.id), updatedTourney);
+                        const cleanTourney = JSON.parse(JSON.stringify(updatedTourney));
+                        await setDoc(doc(db, 'artifacts', appRootId, 'public', 'data', 'tournaments', updatedTourney.id), cleanTourney);
+                        
                         setActiveTourneyMatch(null);
                         setTeams(getInitialTeams()); setTimeline([]);
                         setAppState('TOURNAMENT_DASH');
@@ -533,7 +536,10 @@
                         setTeams(getInitialTeams()); setTimeline([]);
                         setAppState('HISTORY');
                     }
-                } catch(e) { console.error("Erro ao salvar:", e); } 
+                } catch(e) { 
+                    console.error("Erro ao salvar:", e);
+                    alert("Erro ao gravar no Banco de Dados: " + e.message);
+                } 
                 finally { setIsSaving(false); }
             };
 
@@ -562,12 +568,18 @@
                         generatedMatches = generateKnockoutPhase(newTourney.teams, phaseName, newTourney.doubleRound);
                     }
                     const tourneyData = { ...newTourney, matches: generatedMatches, createdAt: Date.now(), status: 'ACTIVE' };
-                    const docRef = await addDoc(collection(db, 'artifacts', appRootId, 'public', 'data', 'tournaments'), tourneyData);
+                    
+                    const cleanTourney = JSON.parse(JSON.stringify(tourneyData));
+                    const docRef = await addDoc(collection(db, 'artifacts', appRootId, 'public', 'data', 'tournaments'), cleanTourney);
+                    
                     setActiveTourney({ id: docRef.id, ...tourneyData });
                     setNewTourney({ name: '', format: 'LEAGUE', doubleRound: false, teams: [] });
                     setTourneyTab('JOGOS');
                     setAppState('TOURNAMENT_DASH');
-                } catch(e) { console.error(e); } finally { setIsSaving(false); }
+                } catch(e) { 
+                    console.error("Erro ao gerar torneio:", e); 
+                    alert("Erro ao salvar Torneio: " + e.message);
+                } finally { setIsSaving(false); }
             };
 
             const startTourneyMatch = (match) => {
@@ -606,7 +618,10 @@
                 let nextPhaseName = winners.length > 4 ? 'Quartas' : (winners.length > 2 ? 'Semifinal' : 'Final');
                 const newMatches = generateKnockoutPhase(winners, nextPhaseName, activeTourney.doubleRound);
                 const updatedTourney = { ...activeTourney, matches: [...activeTourney.matches, ...newMatches] };
-                await setDoc(doc(db, 'artifacts', appRootId, 'public', 'data', 'tournaments', updatedTourney.id), updatedTourney);
+                
+                const cleanTourney = JSON.parse(JSON.stringify(updatedTourney));
+                await setDoc(doc(db, 'artifacts', appRootId, 'public', 'data', 'tournaments', updatedTourney.id), cleanTourney);
+                
                 setActiveTourney(updatedTourney);
             };
 
@@ -720,7 +735,7 @@
                                 </div>
                             ))}
                         </div>
-                        <button onClick={()=>{ if(!teams.A.name||!teams.B.name) return alert("Preencha o nome dos times!"); playSfx('start'); setTime(matchConfig.durationMinutes*60); setAppState('MATCH'); }} className="w-full bg-gradient-to-r from-emerald-600 to-emerald-500 text-white text-xl font-black py-5 rounded-2xl shadow-xl active:scale-95 uppercase tracking-widest border border-emerald-400/30">Começar Jogo Rápido</button>
+                        <button onClick={()=>{ if(!teams.A.name||!teams.B.name) return alert("Preencha o nome dos times!"); playSfx('start'); setTime(matchConfig.durationMinutes*60); setAppState('MATCH'); }} className="w-full bg-gradient-to-r from-emerald-600 to-emerald-500 text-white text-xl font-black py-5 rounded-2xl shadow-xl active:scale-95 uppercase tracking-widest border border-emerald-400/30 shadow-emerald-900/20">Começar Partida Oficial</button>
                     </div>
                     <FooterCredits />
                 </div>
