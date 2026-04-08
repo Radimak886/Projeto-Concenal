@@ -257,34 +257,6 @@
             return matches;
         };
 
-        const getTourneyStandings = (tourney) => {
-            if (!tourney || !tourney.teams) return [];
-            const table = {};
-            tourney.teams.forEach(t => {
-                table[t.id] = { id: t.id, name: t.name, flag: t.flag, p:0, v:0, e:0, d:0, gp:0, gc:0, pts:0 };
-            });
-            tourney.matches.forEach(m => {
-                if(!m.played) return;
-                const tA = table[m.homeId];
-                const tB = table[m.awayId];
-                if(tA && tB) {
-                    tA.p++; tB.p++;
-                    tA.gp += m.homeGoals; tA.gc += m.awayGoals;
-                    tB.gp += m.awayGoals; tB.gc += m.homeGoals;
-                    if(m.homeGoals > m.awayGoals) { tA.v++; tA.pts+=3; tB.d++; }
-                    else if(m.awayGoals > m.homeGoals) { tB.v++; tB.pts+=3; tA.d++; }
-                    else { tA.e++; tB.e++; tA.pts+=1; tB.pts+=1; }
-                }
-            });
-            return Object.values(table).sort((a,b) => {
-                if(b.pts !== a.pts) return b.pts - a.pts; 
-                if(b.v !== a.v) return b.v - a.v; 
-                const sgA = a.gp - a.gc; const sgB = b.gp - b.gc;
-                if(sgB !== sgA) return sgB - sgA; 
-                return b.gp - a.gp; 
-            });
-        };
-
         function App() {
             const [user, setUser] = useState(null);
             
@@ -329,7 +301,7 @@
             const [tTeamFlag, setTTeamFlag] = useState(null);
             const [tTeamPlayers, setTTeamPlayers] = useState('');
 
-            // AUTENTICAÇÃO SEGURA
+            // AUTENTICAÇÃO SEGURA (USANDO PASTA PÚBLICA PARA COMPARTILHAMENTO ENTRE DISPOSITIVOS)
             useEffect(() => {
                 const initAuth = async () => {
                     try {
@@ -347,16 +319,18 @@
                 return () => unsubscribe();
             }, []);
 
-            // ESCUTA DO BANCO DE DADOS
+            // ESCUTA DO BANCO DE DADOS (ACESSANDO PASTA GLOBAL PARA TODOS OS DISPOSITIVOS DO CONCENAL)
             useEffect(() => {
                 if (!user) return;
-                const refMatches = collection(db, 'artifacts', appRootId, 'users', user.uid, 'matches');
+                
+                // Alterado de 'users'/'uid' para 'public'/'data' garantindo que qualquer aparelho veja os dados
+                const refMatches = collection(db, 'artifacts', appRootId, 'public', 'data', 'matches');
                 const unsubMatches = onSnapshot(refMatches, (snap) => {
                     const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                     setMatchHistory(data.sort((a,b) => b.timestamp - a.timestamp));
                 });
 
-                const refTourneys = collection(db, 'artifacts', appRootId, 'users', user.uid, 'tournaments');
+                const refTourneys = collection(db, 'artifacts', appRootId, 'public', 'data', 'tournaments');
                 const unsubTourneys = onSnapshot(refTourneys, (snap) => {
                     const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                     setTournaments(data.sort((a,b) => b.createdAt - a.createdAt));
@@ -524,7 +498,7 @@
                         tournamentId: activeTourneyMatch?.tourneyId || null 
                     };
 
-                    await addDoc(collection(db, 'artifacts', appRootId, 'users', user.uid, 'matches'), matchData);
+                    await addDoc(collection(db, 'artifacts', appRootId, 'public', 'data', 'matches'), matchData);
 
                     if (activeTourneyMatch && activeTourney) {
                         const updatedTourney = { ...activeTourney };
@@ -551,7 +525,7 @@
                         updateTourneyPlayers(teams.A.id, teams.A);
                         updateTourneyPlayers(teams.B.id, teams.B);
 
-                        await setDoc(doc(db, 'artifacts', appRootId, 'users', user.uid, 'tournaments', updatedTourney.id), updatedTourney);
+                        await setDoc(doc(db, 'artifacts', appRootId, 'public', 'data', 'tournaments', updatedTourney.id), updatedTourney);
                         setActiveTourneyMatch(null);
                         setTeams(getInitialTeams()); setTimeline([]);
                         setAppState('TOURNAMENT_DASH');
@@ -588,7 +562,7 @@
                         generatedMatches = generateKnockoutPhase(newTourney.teams, phaseName, newTourney.doubleRound);
                     }
                     const tourneyData = { ...newTourney, matches: generatedMatches, createdAt: Date.now(), status: 'ACTIVE' };
-                    const docRef = await addDoc(collection(db, 'artifacts', appRootId, 'users', user.uid, 'tournaments'), tourneyData);
+                    const docRef = await addDoc(collection(db, 'artifacts', appRootId, 'public', 'data', 'tournaments'), tourneyData);
                     setActiveTourney({ id: docRef.id, ...tourneyData });
                     setNewTourney({ name: '', format: 'LEAGUE', doubleRound: false, teams: [] });
                     setTourneyTab('JOGOS');
@@ -632,7 +606,7 @@
                 let nextPhaseName = winners.length > 4 ? 'Quartas' : (winners.length > 2 ? 'Semifinal' : 'Final');
                 const newMatches = generateKnockoutPhase(winners, nextPhaseName, activeTourney.doubleRound);
                 const updatedTourney = { ...activeTourney, matches: [...activeTourney.matches, ...newMatches] };
-                await setDoc(doc(db, 'artifacts', appRootId, 'users', user.uid, 'tournaments', updatedTourney.id), updatedTourney);
+                await setDoc(doc(db, 'artifacts', appRootId, 'public', 'data', 'tournaments', updatedTourney.id), updatedTourney);
                 setActiveTourney(updatedTourney);
             };
 
@@ -782,7 +756,7 @@
                                     <div className="mt-6 flex justify-between items-center border-t border-neutral-800 pt-4">
                                         <span className="text-xs font-bold text-neutral-500 uppercase">{t.matches.filter(m=>m.played).length} / {t.matches.length} Jogos</span>
                                         <div className="flex gap-2">
-                                            <button onClick={()=>{ if(confirm("Apagar o torneio apaga todos os jogos dele. Confirma?")) deleteDoc(doc(db, 'artifacts', appRootId, 'users', user.uid, 'tournaments', t.id)); }} className="p-2 text-neutral-600 hover:text-red-500"><Trash2 size={18}/></button>
+                                            <button onClick={()=>{ if(confirm("Apagar o torneio apaga todos os jogos dele. Confirma?")) deleteDoc(doc(db, 'artifacts', appRootId, 'public', 'data', 'tournaments', t.id)); }} className="p-2 text-neutral-600 hover:text-red-500"><Trash2 size={18}/></button>
                                             <button onClick={()=>{setActiveTourney(t); setTourneyTab('JOGOS'); setAppState('TOURNAMENT_DASH');}} className="bg-neutral-800 text-blue-400 font-bold px-4 py-2 rounded-lg text-xs uppercase active:scale-95 flex items-center gap-1">Painel <ArrowRight size={14}/></button>
                                         </div>
                                     </div>
@@ -1373,7 +1347,7 @@
                                         <div className="flex flex-col"><span className="text-[10px] text-neutral-600 font-mono mb-1">{m.dateString}</span><div className="flex items-center gap-2 text-green-500 font-black text-sm uppercase"><FlagImage code={m.teamA.flag} className="w-8 h-5"/> <span className="truncate w-20 md:w-full">{m.teamA.name}</span></div></div>
                                         <div className="text-3xl font-black text-white">{m.teamA.goals} - {m.teamB.goals}</div>
                                         <div className="flex flex-col items-end"><div className="flex items-center gap-2 text-yellow-400 font-black text-sm uppercase"><span className="truncate w-20 md:w-full text-right">{m.teamB.name}</span> <FlagImage code={m.teamB.flag} className="w-8 h-5"/></div></div>
-                                        <button onClick={(e)=>{ e.stopPropagation(); if(confirm("Apagar súmula permanentemente?")) deleteDoc(doc(db, 'artifacts', appRootId, 'users', user.uid, 'matches', m.id)); }} className="ml-4 p-3 text-neutral-700 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all hidden md:block"><Trash2 size={20}/></button>
+                                        <button onClick={(e)=>{ e.stopPropagation(); if(confirm("Apagar súmula permanentemente?")) deleteDoc(doc(db, 'artifacts', appRootId, 'public', 'data', 'matches', m.id)); }} className="ml-4 p-3 text-neutral-700 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all hidden md:block"><Trash2 size={20}/></button>
                                     </div>
                                 ))}
                                 {matchHistory.length === 0 && <div className="text-center py-20 bg-[#0d0d0d] rounded-3xl border border-neutral-900 text-neutral-600 font-mono italic">Nenhum registro no banco de dados.</div>}
