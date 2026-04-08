@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RAD CBF</title>
+    <title>Súmula Digital Pro - Kelvin</title>
     
     <!-- Bibliotecas Base -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -72,11 +72,14 @@
         const XCircle = ({size, className}) => <i className={`ph-fill ph-x-circle ${className||''}`} style={{fontSize: size}}></i>;
         const Star = ({size, className}) => <i className={`ph-fill ph-star ${className||''}`} style={{fontSize: size}}></i>;
         const ArrowsClockwise = ({size, className}) => <i className={`ph-bold ph-arrows-clockwise ${className||''}`} style={{fontSize: size}}></i>;
+        const BracketsAngle = ({size, className}) => <i className={`ph-bold ph-brackets-angle ${className||''}`} style={{fontSize: size}}></i>;
+        const ListNumbers = ({size, className}) => <i className={`ph-bold ph-list-numbers ${className||''}`} style={{fontSize: size}}></i>;
+        const Swords = ({size, className}) => <i className={`ph-fill ph-sword ${className||''}`} style={{fontSize: size}}></i>;
 
         // --- CONFIGURAÇÃO FIREBASE (Credenciais do Kelvin) ---
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
-        import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+        import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, setDoc } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
         const firebaseConfig = {
             apiKey: "AIzaSyBwgLd5qV_cClw7VGKUq3j5rdzRzNoc_68",
@@ -141,13 +144,12 @@
             return <img src={`https://flagcdn.com/${code}.svg`} className={`object-cover rounded shadow-sm border border-neutral-800 ${className}`} />;
         };
 
-        // --- COMPONENTE GRÁFICO CORRIGIDO (Zero Neutro) ---
+        // --- GRÁFICOS COMPONENTES ---
         const StatBar = ({ label, valA, valB }) => {
             const numA = valA || 0;
             const numB = valB || 0;
             const total = numA + numB;
             
-            // Se ambos forem zero, a barra fica 50/50 com cor cinza neutra
             const isZeroZero = total === 0;
             const pctA = isZeroZero ? 50 : (numA / total) * 100;
             
@@ -171,12 +173,130 @@
             );
         };
 
+        const PlayerBar = ({ label, value, max, color }) => {
+            const pct = Math.min(((value || 0) / max) * 100, 100);
+            return (
+                <div className="mb-3">
+                    <div className="flex justify-between text-[10px] font-bold text-neutral-400 mb-1 uppercase">
+                        <span>{label}</span>
+                        <span className="text-white font-mono">{value || 0}</span>
+                    </div>
+                    <div className="h-2 w-full bg-neutral-900 rounded-full overflow-hidden border border-neutral-800">
+                        <div style={{ width: `${pct}%` }} className={`h-full ${color} transition-all duration-1000`}></div>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- COMPONENTE DE CRÉDITOS ---
+        const FooterCredits = () => (
+            <div className="w-full flex justify-center pt-8 pb-4 mt-auto">
+                <p className="text-[10px] text-neutral-600 font-mono uppercase tracking-widest text-center">
+                    Criado por Kelvin Radimak e Felipe Gabriel
+                </p>
+            </div>
+        );
+
+        // --- MOTOR DE GERAÇÃO DE TORNEIOS ---
+        const generateLeagueMatches = (teams, isDouble) => {
+            let t = [...teams];
+            if (t.length % 2 !== 0) t.push({ id: 'BYE', name: 'FOLGA' });
+            let matches = [];
+            let numRounds = t.length - 1;
+            let half = t.length / 2;
+
+            for (let r = 0; r < numRounds; r++) {
+                for (let i = 0; i < half; i++) {
+                    let home = t[i];
+                    let away = t[t.length - 1 - i];
+                    if (home.id !== 'BYE' && away.id !== 'BYE') {
+                        matches.push({
+                            id: Math.random().toString(36).substr(2, 9),
+                            roundName: `Rodada ${r + 1}`,
+                            homeId: home.id, awayId: away.id,
+                            homeGoals: 0, awayGoals: 0, played: false
+                        });
+                    }
+                }
+                t.splice(1, 0, t.pop()); // Rotaciona
+            }
+
+            if (isDouble) {
+                let returnMatches = matches.map(m => ({
+                    ...m,
+                    id: Math.random().toString(36).substr(2, 9),
+                    roundName: `Rodada ${parseInt(m.roundName.split(' ')[1]) + numRounds} (Volta)`,
+                    homeId: m.awayId, awayId: m.homeId
+                }));
+                matches = [...matches, ...returnMatches];
+            }
+            return matches;
+        };
+
+        const generateKnockoutPhase = (teamsArray, phaseName, isDouble) => {
+            let matches = [];
+            let shuffled = [...teamsArray].sort(() => Math.random() - 0.5);
+            for (let i = 0; i < shuffled.length; i += 2) {
+                if (shuffled[i + 1]) {
+                    matches.push({
+                        id: Math.random().toString(36).substr(2, 9),
+                        roundName: phaseName,
+                        homeId: shuffled[i].id, awayId: shuffled[i+1].id,
+                        homeGoals: 0, awayGoals: 0, played: false
+                    });
+                    if (isDouble) {
+                        matches.push({
+                            id: Math.random().toString(36).substr(2, 9),
+                            roundName: `${phaseName} (Volta)`,
+                            homeId: shuffled[i+1].id, awayId: shuffled[i].id,
+                            homeGoals: 0, awayGoals: 0, played: false
+                        });
+                    }
+                }
+            }
+            return matches;
+        };
+
+        const getTourneyStandings = (tourney) => {
+            if (!tourney || !tourney.teams) return [];
+            const table = {};
+            tourney.teams.forEach(t => {
+                table[t.id] = { id: t.id, name: t.name, flag: t.flag, p:0, v:0, e:0, d:0, gp:0, gc:0, pts:0 };
+            });
+            tourney.matches.forEach(m => {
+                if(!m.played) return;
+                const tA = table[m.homeId];
+                const tB = table[m.awayId];
+                if(tA && tB) {
+                    tA.p++; tB.p++;
+                    tA.gp += m.homeGoals; tA.gc += m.awayGoals;
+                    tB.gp += m.awayGoals; tB.gc += m.homeGoals;
+                    if(m.homeGoals > m.awayGoals) { tA.v++; tA.pts+=3; tB.d++; }
+                    else if(m.awayGoals > m.homeGoals) { tB.v++; tB.pts+=3; tA.d++; }
+                    else { tA.e++; tB.e++; tA.pts+=1; tB.pts+=1; }
+                }
+            });
+            return Object.values(table).sort((a,b) => {
+                if(b.pts !== a.pts) return b.pts - a.pts; 
+                if(b.v !== a.v) return b.v - a.v; 
+                const sgA = a.gp - a.gc; const sgB = b.gp - b.gc;
+                if(sgB !== sgA) return sgB - sgA; 
+                return b.gp - a.gp; 
+            });
+        };
+
         function App() {
             const [user, setUser] = useState(null);
+            
+            // Estados Gerais
             const [matchHistory, setMatchHistory] = useState([]);
+            const [tournaments, setTournaments] = useState([]);
             const [selectedMatch, setSelectedMatch] = useState(null);
             const [isSaving, setIsSaving] = useState(false);
             const [appState, setAppState] = useState('SETUP'); 
+            const [selectedPlayerStats, setSelectedPlayerStats] = useState(null); // Modal de Gráfico Individual
+            
+            // Estado da Partida
             const [time, setTime] = useState(0);
             const [isTimerRunning, setIsTimerRunning] = useState(false);
             const [period, setPeriod] = useState('1º Tempo');
@@ -185,13 +305,11 @@
             const [matchConfig, setMatchConfig] = useState({ durationMinutes: 10, goalLimit: 3 });
             const [showBulkAdd, setShowBulkAdd] = useState(null);
             const [bulkInput, setBulkInput] = useState("");
+            const [historyTab, setHistoryTab] = useState('GAMES'); 
             
-            // Estado para alternar entre "Partidas" e "Classificação" na tela de histórico
-            const [historyTab, setHistoryTab] = useState('GAMES'); // 'GAMES' | 'TABLE'
-
             const getInitialTeams = () => ({
-                A: { name: '', flag: null, color: 'green', goals: 0, corners: 0, throwIns: 0, fouls: 0, shotsTotal: 0, shotsOnTarget: 0, players: [] },
-                B: { name: '', flag: null, color: 'yellow', goals: 0, corners: 0, throwIns: 0, fouls: 0, shotsTotal: 0, shotsOnTarget: 0, players: [] }
+                A: { id: 'A', name: '', flag: null, color: 'green', goals: 0, corners: 0, throwIns: 0, fouls: 0, shotsTotal: 0, shotsOnTarget: 0, players: [] },
+                B: { id: 'B', name: '', flag: null, color: 'yellow', goals: 0, corners: 0, throwIns: 0, fouls: 0, shotsTotal: 0, shotsOnTarget: 0, players: [] }
             });
 
             const [teams, setTeams] = useState(getInitialTeams());
@@ -200,7 +318,18 @@
             const [activeFlagPicker, setActiveFlagPicker] = useState(null);
             const [animatingPlayer, setAnimatingPlayer] = useState(null);
 
-            // AUTENTICAÇÃO
+            // Estados do Torneio
+            const [activeTourney, setActiveTourney] = useState(null); 
+            const [activeTourneyMatch, setActiveTourneyMatch] = useState(null); 
+            const [tourneyTab, setTourneyTab] = useState('JOGOS'); 
+            
+            // Criação de Torneio
+            const [newTourney, setNewTourney] = useState({ name: '', format: 'LEAGUE', doubleRound: false, teams: [] });
+            const [tTeamName, setTTeamName] = useState('');
+            const [tTeamFlag, setTTeamFlag] = useState(null);
+            const [tTeamPlayers, setTTeamPlayers] = useState('');
+
+            // AUTENTICAÇÃO SEGURA
             useEffect(() => {
                 const initAuth = async () => {
                     try {
@@ -214,23 +343,34 @@
                     }
                 };
                 initAuth();
-                const unsubscribe = onAuthStateChanged(auth, (u) => {
-                    if (u) setUser(u);
-                });
+                const unsubscribe = onAuthStateChanged(auth, (u) => { if (u) setUser(u); });
                 return () => unsubscribe();
             }, []);
 
             // ESCUTA DO BANCO DE DADOS
             useEffect(() => {
                 if (!user) return;
-                const ref = collection(db, 'artifacts', appRootId, 'users', user.uid, 'matches');
-                const unsubscribe = onSnapshot(ref, (snap) => {
+                const refMatches = collection(db, 'artifacts', appRootId, 'users', user.uid, 'matches');
+                const unsubMatches = onSnapshot(refMatches, (snap) => {
                     const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                     setMatchHistory(data.sort((a,b) => b.timestamp - a.timestamp));
-                }, (error) => {});
-                return () => unsubscribe();
-            }, [user]);
+                });
 
+                const refTourneys = collection(db, 'artifacts', appRootId, 'users', user.uid, 'tournaments');
+                const unsubTourneys = onSnapshot(refTourneys, (snap) => {
+                    const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                    setTournaments(data.sort((a,b) => b.createdAt - a.createdAt));
+                    
+                    if (activeTourney) {
+                        const updated = data.find(t => t.id === activeTourney.id);
+                        if (updated) setActiveTourney(updated);
+                    }
+                });
+
+                return () => { unsubMatches(); unsubTourneys(); };
+            }, [user, activeTourney?.id]); 
+
+            // CRONÔMETRO
             useEffect(() => {
                 let interval;
                 if (isTimerRunning && appState === 'MATCH') {
@@ -244,27 +384,55 @@
                 return () => clearInterval(interval);
             }, [isTimerRunning, appState]);
 
-            const formatTime = (seconds) => `${Math.floor(seconds / 60).toString().padStart(2, '0')}:${(seconds % 60).toString().padStart(2, '0')}`;
-            
-            const addEvent = (type, desc, color) => {
-                setTimeline(p => [{ time: `${period} - ${Math.floor(time/60)}'`, type, description: desc, colorClass: color }, ...p]);
+            // Lógica para Tabela de Classificação Global (Aba Histórico)
+            const getStandings = () => {
+                const table = {};
+                matchHistory.forEach(m => {
+                    const tA = m.teamA.name.toUpperCase().trim();
+                    const tB = m.teamB.name.toUpperCase().trim();
+                    
+                    if(!table[tA]) table[tA] = { name: m.teamA.name, flag: m.teamA.flag, p:0, v:0, e:0, d:0, gp:0, gc:0, pts:0 };
+                    if(!table[tB]) table[tB] = { name: m.teamB.name, flag: m.teamB.flag, p:0, v:0, e:0, d:0, gp:0, gc:0, pts:0 };
+                    
+                    table[tA].p++; table[tB].p++;
+                    table[tA].gp += m.teamA.goals; table[tA].gc += m.teamB.goals;
+                    table[tB].gp += m.teamB.goals; table[tB].gc += m.teamA.goals;
+                    
+                    if(m.teamA.goals > m.teamB.goals) {
+                        table[tA].v++; table[tA].pts += 3;
+                        table[tB].d++;
+                    } else if(m.teamB.goals > m.teamA.goals) {
+                        table[tB].v++; table[tB].pts += 3;
+                        table[tA].d++;
+                    } else {
+                        table[tA].e++; table[tA].pts += 1;
+                        table[tB].e++; table[tB].pts += 1;
+                    }
+                });
+                
+                return Object.values(table).sort((a,b) => {
+                    if(b.pts !== a.pts) return b.pts - a.pts; 
+                    if(b.v !== a.v) return b.v - a.v; 
+                    const sgA = a.gp - a.gc; const sgB = b.gp - b.gc;
+                    if(sgB !== sgA) return sgB - sgA; 
+                    return b.gp - a.gp; 
+                });
             };
 
-            // ZERAR / REINICIAR PARTIDA
+            const formatTime = (seconds) => `${Math.floor(seconds / 60).toString().padStart(2, '0')}:${(seconds % 60).toString().padStart(2, '0')}`;
+            const addEvent = (type, desc, color) => setTimeline(p => [{ time: `${period} - ${Math.floor(time/60)}'`, type, description: desc, colorClass: color }, ...p]);
+
             const handleResetMatch = () => {
-                if(confirm("Deseja ZERAR a partida? O tempo e o placar voltarão ao início, mas os times escalados serão mantidos.")) {
-                    setIsTimerRunning(false);
-                    setTime(matchConfig.durationMinutes * 60);
-                    setTimeline([]);
+                if(confirm("Deseja ZERAR a partida? O tempo e o placar voltarão ao início, mas os times serão mantidos.")) {
+                    setIsTimerRunning(false); setTime(matchConfig.durationMinutes * 60); setTimeline([]);
                     setTeams(prev => {
-                        const resetPlayers = (players) => players.map(p => ({...p, goals: 0, assists: 0, yellows: 0, reds: 0}));
+                        const resetP = (players) => players.map(p => ({...p, goals: 0, assists: 0, fouls: 0, yellows: 0, reds: 0}));
                         return {
-                            A: { ...prev.A, goals: 0, corners: 0, throwIns: 0, fouls: 0, shotsTotal: 0, shotsOnTarget: 0, players: resetPlayers(prev.A.players) },
-                            B: { ...prev.B, goals: 0, corners: 0, throwIns: 0, fouls: 0, shotsTotal: 0, shotsOnTarget: 0, players: resetPlayers(prev.B.players) }
+                            A: { ...prev.A, goals: 0, corners: 0, throwIns: 0, fouls: 0, shotsTotal: 0, shotsOnTarget: 0, players: resetP(prev.A.players) },
+                            B: { ...prev.B, goals: 0, corners: 0, throwIns: 0, fouls: 0, shotsTotal: 0, shotsOnTarget: 0, players: resetP(prev.B.players) }
                         };
                     });
-                    setMotm(null);
-                    setIsUndoMode(false);
+                    setMotm(null); setIsUndoMode(false);
                 }
             };
 
@@ -275,12 +443,12 @@
 
                 let up = { ...player };
                 let ut = { ...team };
-                setAnimatingPlayer(playerId);
-                setTimeout(() => setAnimatingPlayer(null), 300);
+                setAnimatingPlayer(playerId); setTimeout(() => setAnimatingPlayer(null), 300);
 
                 if (isUndoMode) {
                     if (action === 'GOAL' && up.goals > 0) { up.goals--; ut.goals--; ut.shotsTotal--; ut.shotsOnTarget--; addEvent('ANULADO', `Gol de ${up.name} removido`, 'text-red-400'); }
                     else if (action === 'ASSIST' && up.assists > 0) { up.assists--; addEvent('CORREÇÃO', `Assist. de ${up.name} removida`, 'text-neutral-500'); }
+                    else if (action === 'FOUL' && up.fouls > 0) { up.fouls--; ut.fouls--; addEvent('CORREÇÃO', `Falta de ${up.name} removida`, 'text-neutral-500'); }
                     else if (action === 'YELLOW' && up.yellows > 0) { up.yellows--; if(up.yellows < 2) up.reds = 0; addEvent('CORREÇÃO', `Amarelo de ${up.name} removido`, 'text-neutral-500'); }
                     else if (action === 'RED' && up.reds > 0) { up.reds = 0; addEvent('CORREÇÃO', `Vermelho de ${up.name} removido`, 'text-neutral-500'); }
                 } else {
@@ -293,6 +461,8 @@
                         }
                     } else if (action === 'ASSIST') {
                         up.assists = (up.assists || 0) + 1; playSfx('assist'); addEvent('ASSIST.', `${up.name}`, 'text-blue-400');
+                    } else if (action === 'FOUL') {
+                        up.fouls = (up.fouls || 0) + 1; ut.fouls++; addEvent('FALTA IND.', `${up.name} (${ut.name})`, 'text-orange-500');
                     } else if (action === 'YELLOW') {
                         if (up.reds > 0) return; up.yellows++; addEvent('AMARELO', up.name, 'text-yellow-400');
                         if (up.yellows === 2) { up.reds = 1; addEvent('EXPULSÃO', `${up.name} (2º Amarelo)`, 'text-red-500 font-bold'); }
@@ -325,14 +495,13 @@
 
             const processBulkAdd = (teamId) => {
                 const lines = bulkInput.split('\n').filter(l => l.trim() !== "");
-                const newPlayersList = [];
                 let currentMaxNumber = teams[teamId].players.reduce((max, p) => Math.max(max, p.number || 0), 0);
-                lines.forEach(line => {
+                const newPlayersList = lines.map(line => {
                     const match = line.match(/^(\d+)[- ]*(.+)$/);
                     let num, name;
                     if (match) { num = parseInt(match[1]); name = match[2].trim().toUpperCase(); } 
                     else { currentMaxNumber++; num = currentMaxNumber; name = line.trim().toUpperCase(); }
-                    newPlayersList.push({ id: Math.random().toString(36).substr(2, 9), name, number: num, goals: 0, assists: 0, yellows: 0, reds: 0, historicYellows: 0 });
+                    return { id: Math.random().toString(36).substr(2, 9), name, number: num, goals: 0, assists: 0, fouls: 0, yellows: 0, reds: 0, historicYellows: 0 };
                 });
                 setTeams(p => ({ ...p, [teamId]: { ...p[teamId], players: [...p[teamId].players, ...newPlayersList] } }));
                 setBulkInput(""); setShowBulkAdd(null);
@@ -344,67 +513,177 @@
                 try {
                     const allP = [...teams.A.players, ...teams.B.players];
                     const scorer = allP.reduce((m, p) => (p.goals > (m?.goals || 0) ? p : m), null);
-                    const data = { 
+                    
+                    const matchData = { 
                         timestamp: Date.now(), 
                         dateString: new Date().toLocaleString('pt-BR'), 
                         teamA: teams.A, 
                         teamB: teams.B, 
                         timeline, 
-                        highlights: { motm: motm?.name || '---', topScorer: scorer?.goals > 0 ? scorer.name : '---' } 
+                        highlights: { motm: motm?.name || '---', topScorer: scorer?.goals > 0 ? scorer.name : '---' },
+                        tournamentId: activeTourneyMatch?.tourneyId || null 
                     };
-                    await addDoc(collection(db, 'artifacts', appRootId, 'users', user.uid, 'matches'), data);
-                    setTeams(getInitialTeams()); setTimeline([]); setAppState('HISTORY');
-                } catch(e){} finally { setIsSaving(false); }
-            };
 
-            // Lógica para Tabela de Classificação
-            const getStandings = () => {
-                const table = {};
-                matchHistory.forEach(m => {
-                    const tA = m.teamA.name.toUpperCase().trim();
-                    const tB = m.teamB.name.toUpperCase().trim();
-                    
-                    if(!table[tA]) table[tA] = { name: m.teamA.name, flag: m.teamA.flag, p:0, v:0, e:0, d:0, gp:0, gc:0, pts:0 };
-                    if(!table[tB]) table[tB] = { name: m.teamB.name, flag: m.teamB.flag, p:0, v:0, e:0, d:0, gp:0, gc:0, pts:0 };
-                    
-                    table[tA].p++; table[tB].p++;
-                    table[tA].gp += m.teamA.goals; table[tA].gc += m.teamB.goals;
-                    table[tB].gp += m.teamB.goals; table[tB].gc += m.teamA.goals;
-                    
-                    if(m.teamA.goals > m.teamB.goals) {
-                        table[tA].v++; table[tA].pts += 3;
-                        table[tB].d++;
-                    } else if(m.teamB.goals > m.teamA.goals) {
-                        table[tB].v++; table[tB].pts += 3;
-                        table[tA].d++;
+                    await addDoc(collection(db, 'artifacts', appRootId, 'users', user.uid, 'matches'), matchData);
+
+                    if (activeTourneyMatch && activeTourney) {
+                        const updatedTourney = { ...activeTourney };
+                        const mIndex = updatedTourney.matches.findIndex(m => m.id === activeTourneyMatch.matchId);
+                        if (mIndex > -1) {
+                            updatedTourney.matches[mIndex] = { ...updatedTourney.matches[mIndex], played: true, homeGoals: teams.A.goals, awayGoals: teams.B.goals };
+                        }
+
+                        const updateTourneyPlayers = (tourneyTeamId, matchTeam) => {
+                            const tIndex = updatedTourney.teams.findIndex(t => t.id === tourneyTeamId);
+                            if (tIndex > -1) {
+                                matchTeam.players.forEach(mp => {
+                                    const tpIndex = updatedTourney.teams[tIndex].players.findIndex(p => p.name === mp.name || p.id === mp.id);
+                                    if(tpIndex > -1) {
+                                        updatedTourney.teams[tIndex].players[tpIndex].goals = (updatedTourney.teams[tIndex].players[tpIndex].goals || 0) + mp.goals;
+                                        updatedTourney.teams[tIndex].players[tpIndex].assists = (updatedTourney.teams[tIndex].players[tpIndex].assists || 0) + mp.assists;
+                                        updatedTourney.teams[tIndex].players[tpIndex].fouls = (updatedTourney.teams[tIndex].players[tpIndex].fouls || 0) + (mp.fouls || 0);
+                                        updatedTourney.teams[tIndex].players[tpIndex].yellows = (updatedTourney.teams[tIndex].players[tpIndex].yellows || 0) + mp.yellows;
+                                        updatedTourney.teams[tIndex].players[tpIndex].reds = (updatedTourney.teams[tIndex].players[tpIndex].reds || 0) + mp.reds;
+                                    }
+                                });
+                            }
+                        };
+                        updateTourneyPlayers(teams.A.id, teams.A);
+                        updateTourneyPlayers(teams.B.id, teams.B);
+
+                        await setDoc(doc(db, 'artifacts', appRootId, 'users', user.uid, 'tournaments', updatedTourney.id), updatedTourney);
+                        setActiveTourneyMatch(null);
+                        setTeams(getInitialTeams()); setTimeline([]);
+                        setAppState('TOURNAMENT_DASH');
                     } else {
-                        table[tA].e++; table[tA].pts += 1;
-                        table[tB].e++; table[tB].pts += 1;
+                        setTeams(getInitialTeams()); setTimeline([]);
+                        setAppState('HISTORY');
                     }
-                });
-                
-                return Object.values(table).sort((a,b) => {
-                    if(b.pts !== a.pts) return b.pts - a.pts; // Pontos
-                    if(b.v !== a.v) return b.v - a.v; // Vitórias
-                    const sgA = a.gp - a.gc; const sgB = b.gp - b.gc;
-                    if(sgB !== sgA) return sgB - sgA; // Saldo de Gols
-                    return b.gp - a.gp; // Gols Pró
-                });
+                } catch(e) { console.error("Erro ao salvar:", e); } 
+                finally { setIsSaving(false); }
             };
 
-            // --- UI RENDER ---
+            const handleAddTourneyTeam = () => {
+                if(!tTeamName) return;
+                const players = [];
+                const lines = tTeamPlayers.split('\n').filter(l=>l.trim()!=='');
+                let num = 1;
+                lines.forEach(l => {
+                    const match = l.match(/^(\d+)[- ]*(.+)$/);
+                    if(match) players.push({ id: Math.random().toString(36).substr(2,9), number: parseInt(match[1]), name: match[2].trim().toUpperCase(), goals:0, assists:0, fouls:0, yellows:0, reds:0 });
+                    else players.push({ id: Math.random().toString(36).substr(2,9), number: num++, name: l.trim().toUpperCase(), goals:0, assists:0, fouls:0, yellows:0, reds:0 });
+                });
+                setNewTourney(p => ({ ...p, teams: [...p.teams, { id: Math.random().toString(36).substr(2,9), name: tTeamName, flag: tTeamFlag, players }] }));
+                setTTeamName(''); setTTeamFlag(null); setTTeamPlayers('');
+            };
+
+            const handleGenerateTournament = async () => {
+                if(!newTourney.name || newTourney.teams.length < 2) return alert("Dê um nome e cadastre pelo menos 2 times!");
+                setIsSaving(true);
+                try {
+                    let generatedMatches = [];
+                    if (newTourney.format === 'LEAGUE') generatedMatches = generateLeagueMatches(newTourney.teams, newTourney.doubleRound);
+                    else if (newTourney.format === 'KNOCKOUT') {
+                        let phaseName = newTourney.teams.length > 4 ? 'Oitavas' : (newTourney.teams.length > 2 ? 'Semifinal' : 'Final');
+                        generatedMatches = generateKnockoutPhase(newTourney.teams, phaseName, newTourney.doubleRound);
+                    }
+                    const tourneyData = { ...newTourney, matches: generatedMatches, createdAt: Date.now(), status: 'ACTIVE' };
+                    const docRef = await addDoc(collection(db, 'artifacts', appRootId, 'users', user.uid, 'tournaments'), tourneyData);
+                    setActiveTourney({ id: docRef.id, ...tourneyData });
+                    setNewTourney({ name: '', format: 'LEAGUE', doubleRound: false, teams: [] });
+                    setTourneyTab('JOGOS');
+                    setAppState('TOURNAMENT_DASH');
+                } catch(e) { console.error(e); } finally { setIsSaving(false); }
+            };
+
+            const startTourneyMatch = (match) => {
+                const hT = activeTourney.teams.find(t => t.id === match.homeId);
+                const aT = activeTourney.teams.find(t => t.id === match.awayId);
+                const resetP = (players) => players.map(p => ({...p, goals: 0, assists: 0, fouls: 0, yellows: 0, reds: 0, historicYellows: p.yellows })); 
+                setTeams({
+                    A: { ...hT, goals: 0, corners: 0, throwIns: 0, fouls: 0, shotsTotal: 0, shotsOnTarget: 0, players: resetP(hT.players) },
+                    B: { ...aT, goals: 0, corners: 0, throwIns: 0, fouls: 0, shotsTotal: 0, shotsOnTarget: 0, players: resetP(aT.players) }
+                });
+                setActiveTourneyMatch({ tourneyId: activeTourney.id, matchId: match.id });
+                setTime(matchConfig.durationMinutes * 60);
+                playSfx('start');
+                setAppState('MATCH');
+            };
+
+            const handleAdvanceKnockout = async () => {
+                if(activeTourney.format !== 'KNOCKOUT') return;
+                const playedMatches = activeTourney.matches.filter(m => m.played);
+                if(playedMatches.length === 0) return;
+                const lastRoundName = playedMatches[playedMatches.length - 1].roundName;
+                const matchesOfLastRound = activeTourney.matches.filter(m => m.roundName === lastRoundName);
+                if(!matchesOfLastRound.every(m => m.played)) return alert("Você precisa finalizar todos os jogos desta fase primeiro!");
+                let winners = [];
+                for(let m of matchesOfLastRound) {
+                    if (m.homeGoals > m.awayGoals) winners.push(activeTourney.teams.find(t => t.id === m.homeId));
+                    else if (m.awayGoals > m.homeGoals) winners.push(activeTourney.teams.find(t => t.id === m.awayId));
+                    else {
+                        const homeT = activeTourney.teams.find(t => t.id === m.homeId);
+                        const awayT = activeTourney.teams.find(t => t.id === m.awayId);
+                        const winnerChoice = prompt(`Empate entre ${homeT.name} e ${awayT.name}. Quem avançou nos pênaltis? (Digite 1 para ${homeT.name}, 2 para ${awayT.name})`);
+                        if (winnerChoice === '1') winners.push(homeT); else winners.push(awayT);
+                    }
+                }
+                if(winners.length < 2) return alert("O Torneio acabou! O campeão é " + winners[0]?.name);
+                let nextPhaseName = winners.length > 4 ? 'Quartas' : (winners.length > 2 ? 'Semifinal' : 'Final');
+                const newMatches = generateKnockoutPhase(winners, nextPhaseName, activeTourney.doubleRound);
+                const updatedTourney = { ...activeTourney, matches: [...activeTourney.matches, ...newMatches] };
+                await setDoc(doc(db, 'artifacts', appRootId, 'users', user.uid, 'tournaments', updatedTourney.id), updatedTourney);
+                setActiveTourney(updatedTourney);
+            };
+
+            // --- VIEWS ---
+
             if (appState === 'SETUP') return (
-                <div className="min-h-screen p-2 md:p-6 animate-fade">
-                    <div className="max-w-5xl mx-auto space-y-4">
+                <div className="min-h-screen p-4 md:p-8 flex flex-col justify-center items-center animate-fade bg-[#050505]">
+                    <div className="w-full max-w-4xl flex flex-col items-center flex-1 justify-center">
+                        <Shield size={64} className="text-blue-500 mb-6" />
+                        <h1 className="text-4xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400 uppercase tracking-tighter mb-2 text-center">
+                            Súmula Digital Pro
+                        </h1>
+                        <p className="text-slate-400 font-mono text-sm tracking-widest mb-12 text-center">
+                            <Database size={14} className="inline mr-1 text-green-500"/> SISTEMA OFICIAL DE ARBITRAGEM E TORNEIOS
+                        </p>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-2xl">
+                            <div className="bg-[#0d0d0d] border border-neutral-800 rounded-3xl p-8 flex flex-col items-center text-center shadow-xl hover:border-emerald-500/50 transition-all group cursor-pointer" onClick={()=>setAppState('QUICK_SETUP')}>
+                                <div className="bg-emerald-500/10 p-4 rounded-full mb-6 group-hover:scale-110 transition-transform"><Zap size={40} className="text-emerald-500"/></div>
+                                <h2 className="text-2xl font-black text-white uppercase mb-2">Jogo Rápido</h2>
+                                <p className="text-slate-500 text-sm mb-6">Inicie uma partida avulsa rapidamente. Sem compromisso de campeonato.</p>
+                                <button className="mt-auto bg-emerald-600 text-white font-bold uppercase tracking-widest py-3 px-8 rounded-xl w-full">Iniciar Partida</button>
+                            </div>
+                            <div className="bg-[#0d0d0d] border border-neutral-800 rounded-3xl p-8 flex flex-col items-center text-center shadow-xl hover:border-blue-500/50 transition-all group cursor-pointer" onClick={()=>setAppState('TOURNAMENT_LIST')}>
+                                <div className="bg-blue-500/10 p-4 rounded-full mb-6 group-hover:scale-110 transition-transform"><Trophy size={40} className="text-blue-500"/></div>
+                                <h2 className="text-2xl font-black text-white uppercase mb-2">Modo Torneio</h2>
+                                <p className="text-slate-500 text-sm mb-6">Crie ligas de pontos corridos ou copas mata-mata com tabelas automáticas.</p>
+                                <button className="mt-auto bg-blue-600 text-white font-bold uppercase tracking-widest py-3 px-8 rounded-xl w-full">Gerir Torneios</button>
+                            </div>
+                        </div>
+
+                        <button onClick={()=>setAppState('HISTORY')} className="mt-10 px-8 py-3 rounded-full border border-neutral-800 text-slate-400 font-bold uppercase tracking-widest hover:bg-[#111] hover:text-white transition-colors flex items-center gap-2">
+                            <HistoryIcon size={18}/> Acessar Histórico Geral
+                        </button>
+                    </div>
+                    <FooterCredits />
+                </div>
+            );
+
+            if (appState === 'QUICK_SETUP') return (
+                <div className="min-h-screen p-2 md:p-6 animate-fade flex flex-col">
+                    <div className="max-w-5xl mx-auto space-y-4 flex-1 w-full">
                         {showBulkAdd && (
                             <div className="fixed inset-0 z-[100] modal-overlay flex items-center justify-center p-4">
                                 <div className="bg-[#0d0d0d] border border-neutral-800 w-full max-w-lg rounded-2xl p-6 shadow-2xl animate-fade">
                                     <div className="flex justify-between items-center mb-4">
-                                        <h3 className="text-lg font-black uppercase text-white flex items-center gap-2"><ListPlus size={20} className="text-blue-500" /> Lista de Jogadores - Time {showBulkAdd}</h3>
+                                        <h3 className="text-lg font-black uppercase text-white flex items-center gap-2"><ListPlus size={20} className="text-blue-500" /> Lista de Jogadores</h3>
                                         <button onClick={()=>setShowBulkAdd(null)} className="text-neutral-500 hover:text-white transition-colors"><XCircle size={24}/></button>
                                     </div>
                                     <p className="text-[10px] text-neutral-400 mb-4 uppercase font-bold tracking-widest">Cole um nome por linha (Ex: 10 - Neymar ou apenas Neymar)</p>
-                                    <textarea className="w-full h-64 bg-black border border-neutral-800 rounded-xl p-4 text-sm font-mono text-white outline-none focus:border-blue-500 transition-all" placeholder="Exemplo:&#10;10 - Vinicius Jr&#10;Rodrygo&#10;7 - Alisson" value={bulkInput} onChange={e=>setBulkInput(e.target.value)}></textarea>
+                                    <textarea className="w-full h-64 bg-black border border-neutral-800 rounded-xl p-4 text-sm font-mono text-white outline-none focus:border-blue-500 transition-all" placeholder="Exemplo:&#10;10 - Vinicius Jr&#10;Rodrygo" value={bulkInput} onChange={e=>setBulkInput(e.target.value)}></textarea>
                                     <div className="mt-6 flex gap-3">
                                         <button onClick={()=>setShowBulkAdd(null)} className="flex-1 py-3 rounded-xl border border-neutral-800 font-bold text-xs uppercase hover:bg-neutral-900">Cancelar</button>
                                         <button onClick={()=>processBulkAdd(showBulkAdd)} className="flex-1 py-3 bg-blue-600 rounded-xl font-black text-xs uppercase shadow-lg shadow-blue-900/20 active:scale-95">Importar Lista</button>
@@ -416,10 +695,7 @@
                         <div className="bg-[#0d0d0d] p-4 md:p-6 rounded-2xl border border-neutral-800 flex flex-col md:flex-row justify-between items-center gap-4 relative">
                             <div className="absolute top-0 left-0 w-full h-1 bg-jamaica-gradient rounded-t-2xl"></div>
                             <div className="text-center md:text-left">
-                                <h1 className="text-2xl md:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-yellow-400 uppercase tracking-tighter">Súmula Digital</h1>
-                                <p className="text-[10px] text-neutral-500 font-mono mt-1 flex items-center justify-center md:justify-start gap-2">
-                                    <Database size={12} className={user ? "text-green-500" : "text-yellow-500"}/> Status: {user ? "Nuvem Ativa" : "Conectando..."}
-                                </p>
+                                <h1 className="text-xl md:text-2xl font-black text-white uppercase tracking-tighter flex items-center justify-center md:justify-start gap-2"><Zap className="text-emerald-500"/> Jogo Rápido</h1>
                             </div>
                             <div className="flex gap-2">
                                 <div className="bg-black/50 p-2 rounded-xl border border-neutral-800 flex gap-2">
@@ -427,7 +703,7 @@
                                     <div className="w-px bg-neutral-800 h-6 my-auto"></div>
                                     <div className="flex flex-col"><label className="text-[8px] text-neutral-500 font-bold text-center uppercase">Gols</label><input type="number" className="w-10 bg-transparent text-center text-sm font-bold text-white outline-none" value={matchConfig.goalLimit} onChange={e=>setMatchConfig(p=>({...p, goalLimit: parseInt(e.target.value)||0}))} /></div>
                                 </div>
-                                <button onClick={()=>setAppState('HISTORY')} className="p-3 bg-[#111] rounded-xl border border-neutral-800 text-green-500 active:scale-95"><HistoryIcon size={20}/></button>
+                                <button onClick={()=>setAppState('SETUP')} className="p-3 bg-[#111] rounded-xl border border-neutral-800 text-slate-400 active:scale-95"><ArrowLeft size={20}/></button>
                             </div>
                         </div>
 
@@ -451,10 +727,10 @@
                                             <input type="text" placeholder="NOME DO ATLETA" className="flex-1 bg-[#111] border border-neutral-800 rounded-lg p-2 text-sm text-white uppercase font-bold" value={newPlayer[t].name} onChange={e=>setNewPlayer(p=>({...p,[t]:{...p[t],name:e.target.value}}))} />
                                         </div>
                                         <div className="flex gap-2">
-                                            <input type="number" placeholder="CA ANTERIOR" className="flex-1 bg-[#111] border border-neutral-800 rounded-lg p-2 text-xs text-yellow-400 font-bold" value={newPlayer[t].hist} onChange={e=>setNewPlayer(p=>({...p,[t]:{...p[t],hist:e.target.value}}))} />
+                                            <input type="number" placeholder="CA ANT." className="flex-1 bg-[#111] border border-neutral-800 rounded-lg p-2 text-xs text-yellow-400 font-bold" value={newPlayer[t].hist} onChange={e=>setNewPlayer(p=>({...p,[t]:{...p[t],hist:e.target.value}}))} />
                                             <div className="flex gap-1">
                                                 <button onClick={()=>setShowBulkAdd(t)} className="px-3 py-2 bg-neutral-800 text-blue-400 rounded-lg active:scale-90" title="Lista em Massa"><ListPlus size={18}/></button>
-                                                <button onClick={()=>{const d=newPlayer[t]; if(d.name&&d.number) {const np={id:Math.random().toString(36).substr(2,9),name:d.name.toUpperCase(),number:parseInt(d.number),goals:0,assists:0,yellows:0,reds:0,historicYellows:parseInt(d.hist)||0}; setTeams(p=>({...p,[t]:{...p[t],players:[...p[t].players,np]}})); setNewPlayer(p=>({...p,[t]:{name:'',number:'',hist:''}}));}}} className={`px-5 py-2 rounded-lg font-black text-black active:scale-95 ${t==='A'?'bg-green-500':'bg-yellow-400'}`}><UserPlus size={18}/></button>
+                                                <button onClick={()=>{const d=newPlayer[t]; if(d.name&&d.number) {const np={id:Math.random().toString(36).substr(2,9),name:d.name.toUpperCase(),number:parseInt(d.number),goals:0,assists:0,fouls:0,yellows:0,reds:0,historicYellows:parseInt(d.hist)||0}; setTeams(p=>({...p,[t]:{...p[t],players:[...p[t].players,np]}})); setNewPlayer(p=>({...p,[t]:{name:'',number:'',hist:''}}));}}} className={`px-5 py-2 rounded-lg font-black text-black active:scale-95 ${t==='A'?'bg-green-500':'bg-yellow-400'}`}><UserPlus size={18}/></button>
                                             </div>
                                         </div>
                                     </div>
@@ -470,126 +746,419 @@
                                 </div>
                             ))}
                         </div>
-                        <button onClick={()=>{ if(!teams.A.name||!teams.B.name) return alert("Preencha o nome dos times!"); playSfx('start'); setTime(matchConfig.durationMinutes*60); setAppState('MATCH'); }} className="w-full bg-gradient-to-r from-green-600 to-green-500 text-white text-xl font-black py-5 rounded-2xl shadow-xl active:scale-95 uppercase tracking-widest border border-green-400/30 shadow-green-900/20">Começar Partida Oficial</button>
+                        <button onClick={()=>{ if(!teams.A.name||!teams.B.name) return alert("Preencha o nome dos times!"); playSfx('start'); setTime(matchConfig.durationMinutes*60); setAppState('MATCH'); }} className="w-full bg-gradient-to-r from-emerald-600 to-emerald-500 text-white text-xl font-black py-5 rounded-2xl shadow-xl active:scale-95 uppercase tracking-widest border border-emerald-400/30">Começar Jogo Rápido</button>
                     </div>
+                    <FooterCredits />
                 </div>
             );
 
-            if (appState === 'MATCH') return (
-                <div className="min-h-screen p-2 md:p-4 flex flex-col gap-3">
-                    <div className={`bg-[#0d0d0d] p-4 rounded-2xl border border-neutral-800 shadow-2xl flex flex-col md:flex-row justify-between items-center gap-4 relative overflow-hidden ${isUndoMode?'undo-active':''}`}>
-                        <div className="absolute top-0 left-0 w-full h-1 bg-jamaica-gradient"></div>
+            if (appState === 'TOURNAMENT_LIST') return (
+                <div className="min-h-screen p-4 md:p-8 animate-fade flex flex-col">
+                    <div className="max-w-4xl mx-auto space-y-6 flex-1 w-full">
+                        <div className="flex justify-between items-center border-b border-neutral-800 pb-4">
+                            <h1 className="text-2xl md:text-3xl font-black text-white uppercase flex items-center gap-3"><Trophy size={32} className="text-blue-500"/> MEUS TORNEIOS</h1>
+                            <button onClick={()=>setAppState('SETUP')} className="p-3 bg-neutral-900 border border-neutral-800 rounded-xl active:scale-90"><ArrowLeft size={20}/></button>
+                        </div>
                         
-                        {/* HEADER MOBILE AJUSTADO */}
-                        <div className="flex flex-col md:hidden w-full gap-3">
-                            <div className="flex justify-between items-center w-full">
-                                <button onClick={()=>setIsUndoMode(!isUndoMode)} className={`px-2.5 py-2 rounded-lg text-[10px] font-black uppercase flex items-center gap-1.5 border transition-all shadow-md active:scale-95 ${isUndoMode?'bg-red-600 text-white border-red-500 animate-pulse':'bg-neutral-800 border-neutral-700 text-neutral-400'}`}>
-                                    <Eraser size={16}/> {isUndoMode?'REMOVER EVENTOS':'CORRIGIR ERRO'}
-                                </button>
-                                <div className="flex gap-2">
-                                    <button onClick={handleResetMatch} className="p-2 rounded-lg bg-neutral-800 border border-neutral-700 text-slate-300 active:scale-90" title="Zerar Placar e Tempo"><ArrowsClockwise size={18}/></button>
-                                    <button onClick={()=>{playSfx('end'); setAppState('DASHBOARD');}} className="px-3 py-2 rounded-lg bg-red-600 text-white font-bold text-[10px] flex items-center gap-1 shadow-lg active:scale-90"><Flag size={14}/> FIM</button>
-                                </div>
-                            </div>
-                            <div className="flex justify-between items-center gap-2 w-full">
-                                <button onClick={()=>setTime(t=>t+60)} className="px-3 py-3 rounded-lg bg-neutral-900 border border-neutral-800 text-blue-400 font-bold text-[11px] whitespace-nowrap active:scale-95 flex items-center gap-1"><Plus size={14}/> 1 MIN</button>
-                                <button onClick={()=>setIsTimerRunning(!isTimerRunning)} className={`flex-1 py-3 rounded-lg font-black text-black flex justify-center items-center gap-1.5 text-[11px] shadow-lg active:scale-95 ${isTimerRunning?'bg-yellow-400':'bg-green-500'}`}>
-                                    {isTimerRunning ? <><Pause size={16}/> PAUSAR TEMPO</> : <><Play size={16}/> INICIAR TEMPO</>}
-                                </button>
-                            </div>
+                        <div className="flex justify-end mb-6">
+                            <button onClick={()=>setAppState('TOURNAMENT_CREATE')} className="bg-blue-600 text-white font-bold px-6 py-3 rounded-xl flex items-center gap-2 uppercase tracking-widest text-sm shadow-lg shadow-blue-900/30 hover:bg-blue-500 transition-colors active:scale-95">
+                                <Plus size={16}/> Criar Torneio
+                            </button>
                         </div>
 
-                        {/* HEADER DESKTOP */}
-                        <div className="hidden md:flex w-full items-center justify-between">
-                            <div className="flex gap-2">
-                                <button onClick={()=>setIsUndoMode(!isUndoMode)} className={`px-3 py-2 rounded-lg text-xs font-black uppercase flex items-center gap-2 border transition-all shadow-md active:scale-95 ${isUndoMode?'bg-red-600 text-white border-red-500 animate-pulse':'bg-neutral-800 border-neutral-700 text-neutral-400'}`}>
-                                    <Eraser size={16}/> {isUndoMode?'REMOVER EVENTOS':'CORRIGIR ERRO'}
-                                </button>
-                                <button onClick={handleResetMatch} className="px-3 py-2 rounded-lg bg-neutral-800 border border-neutral-700 text-slate-300 active:scale-95 flex items-center gap-2 text-xs font-bold"><ArrowsClockwise size={16}/> REINICIAR</button>
-                            </div>
-
-                            <div className="flex items-center gap-6">
-                                <div className="flex items-center gap-3">
-                                    <h2 className="text-2xl font-black text-green-500 uppercase truncate max-w-[150px] text-right">{teams.A.name}</h2>
-                                    <FlagImage code={teams.A.flag} className="w-12 h-8" />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {tournaments.map(t => (
+                                <div key={t.id} className="bg-[#0d0d0d] p-6 rounded-2xl border border-neutral-800 hover:border-blue-500/50 transition-all group flex flex-col justify-between shadow-xl">
+                                    <div>
+                                        <div className="flex justify-between items-start mb-2">
+                                            <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded ${t.format==='LEAGUE'?'bg-emerald-500/10 text-emerald-400':'bg-amber-500/10 text-amber-400'}`}>
+                                                {t.format === 'LEAGUE' ? 'Liga (Pontos Corridos)' : 'Copa (Mata-Mata)'}
+                                            </span>
+                                            <span className="text-[10px] text-neutral-500 font-mono">{new Date(t.createdAt).toLocaleDateString('pt-BR')}</span>
+                                        </div>
+                                        <h2 className="text-2xl font-black text-white uppercase mb-4">{t.name}</h2>
+                                        <p className="text-sm text-neutral-400 flex items-center gap-2"><UserPlus size={16}/> {t.teams.length} Times Inscritos</p>
+                                    </div>
+                                    <div className="mt-6 flex justify-between items-center border-t border-neutral-800 pt-4">
+                                        <span className="text-xs font-bold text-neutral-500 uppercase">{t.matches.filter(m=>m.played).length} / {t.matches.length} Jogos</span>
+                                        <div className="flex gap-2">
+                                            <button onClick={()=>{ if(confirm("Apagar o torneio apaga todos os jogos dele. Confirma?")) deleteDoc(doc(db, 'artifacts', appRootId, 'users', user.uid, 'tournaments', t.id)); }} className="p-2 text-neutral-600 hover:text-red-500"><Trash2 size={18}/></button>
+                                            <button onClick={()=>{setActiveTourney(t); setTourneyTab('JOGOS'); setAppState('TOURNAMENT_DASH');}} className="bg-neutral-800 text-blue-400 font-bold px-4 py-2 rounded-lg text-xs uppercase active:scale-95 flex items-center gap-1">Painel <ArrowRight size={14}/></button>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div className="flex flex-col items-center bg-black/40 px-8 py-2 rounded-2xl border border-neutral-800">
-                                    <div className="text-6xl font-black font-mono flex items-center gap-4">{teams.A.goals}<span className="text-neutral-700 text-3xl">:</span>{teams.B.goals}</div>
-                                    <div className="flex items-center gap-2 text-yellow-400 font-mono font-black text-xl mt-1 tracking-tighter"><Clock size={18} className={isTimerRunning?"animate-pulse":""}/> {formatTime(time)}</div>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    <FlagImage code={teams.B.flag} className="w-12 h-8" />
-                                    <h2 className="text-2xl font-black text-yellow-400 uppercase truncate max-w-[150px]">{teams.B.name}</h2>
-                                </div>
-                            </div>
-
-                            <div className="flex gap-2">
-                                <button onClick={()=>setTime(t=>t+60)} className="px-3 py-2 rounded-lg bg-neutral-900 border border-neutral-800 text-blue-400 font-bold text-xs flex items-center gap-1 active:scale-95"><Plus size={14}/> 1 MIN</button>
-                                <button onClick={()=>setIsTimerRunning(!isTimerRunning)} className={`px-4 py-2 rounded-lg font-black text-black flex items-center gap-2 shadow-lg active:scale-95 ${isTimerRunning?'bg-yellow-400':'bg-green-500'}`}>
-                                    {isTimerRunning ? <><Pause size={16}/> PAUSAR</> : <><Play size={16}/> INICIAR TEMPO</>}
-                                </button>
-                                <button onClick={()=>{playSfx('end'); setAppState('DASHBOARD');}} className="px-4 py-2 rounded-lg bg-red-600 text-white font-bold text-xs flex items-center gap-2 shadow-lg active:scale-95"><Flag size={16}/> FIM</button>
-                            </div>
-                        </div>
-
-                        {/* PLACAR MOBILE - VISUALIZAÇÃO APENAS */}
-                        <div className="flex md:hidden w-full items-center justify-between mt-2 px-2 border-t border-neutral-800 pt-4">
-                            <div className="flex flex-col items-center gap-1">
-                                <FlagImage code={teams.A.flag} className="w-8 h-5" />
-                                <h2 className="text-[10px] font-black text-green-500 uppercase truncate w-20 text-center">{teams.A.name}</h2>
-                            </div>
-                            <div className="text-5xl font-black font-mono flex items-center gap-3">
-                                <span>{teams.A.goals}</span><span className="text-neutral-700 text-2xl">:</span><span>{teams.B.goals}</span>
-                            </div>
-                            <div className="flex flex-col items-center gap-1">
-                                <FlagImage code={teams.B.flag} className="w-8 h-5" />
-                                <h2 className="text-[10px] font-black text-yellow-400 uppercase truncate w-20 text-center">{teams.B.name}</h2>
-                            </div>
+                            ))}
+                            {tournaments.length === 0 && <div className="col-span-full text-center py-20 bg-[#0d0d0d] rounded-3xl border border-neutral-900 text-neutral-600 font-mono italic">Você não possui torneios ativos.</div>}
                         </div>
                     </div>
+                    <FooterCredits />
+                </div>
+            );
 
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 flex-1">
-                        {['A', 'B'].map((t) => (
-                            <div key={t} className={`col-span-1 lg:col-span-4 bg-[#0d0d0d] border-t-4 rounded-2xl flex flex-col h-[420px] md:h-auto overflow-hidden ${t==='A'?'border-green-500':'border-yellow-400'}`}>
-                                <div className="p-3 border-b border-neutral-800 text-center font-bold uppercase text-[10px] text-neutral-500 flex items-center justify-center gap-2 uppercase tracking-widest"><FlagImage code={teams[t].flag} className="w-4 h-3"/> {t==='A'?'MANDANTE':'VISITANTE'}</div>
-                                <div className="flex-1 overflow-y-auto p-2 space-y-2 no-scrollbar">
-                                    {teams[t].players.map(p=>(
-                                        <div key={p.id} className={`bg-[#050505] p-2 rounded-xl border border-neutral-800 transition-all ${animatingPlayer===p.id?'animate-pop':''} ${p.reds>0?'opacity-30':''}`}>
-                                            <div className="flex justify-between items-center mb-1.5">
-                                                <div className="flex items-center gap-2"><span className={`font-mono text-[9px] px-1.5 py-0.5 rounded text-black font-black ${t==='A'?'bg-green-500':'bg-yellow-400'}`}>{p.number}</span><span className="font-bold text-[11px] text-white uppercase truncate max-w-[80px]">{p.name}</span></div>
-                                                <div className="flex gap-1 items-center">{motm?.id===p.id&&<Award size={14} className="text-yellow-400"/>}{p.assists>0&&<span className="text-[10px] text-blue-400 font-black"><Handshake size={12}/>{p.assists}</span>}{Array.from({length:p.goals||0}).map((_,i)=><span key={i} className="text-[10px]">⚽</span>)}{Array.from({length:p.yellows||0}).map((_,i)=><div key={i} className="w-1.5 h-2.5 bg-yellow-400 rounded-sm shadow-sm shadow-yellow-500/20"></div>)}{p.reds>0&&<div className="w-1.5 h-2.5 bg-red-500 rounded-sm shadow-sm shadow-red-500/20"></div>}</div>
+            if (appState === 'TOURNAMENT_CREATE') return (
+                <div className="min-h-screen p-2 md:p-6 animate-fade flex flex-col">
+                    <div className="max-w-4xl mx-auto space-y-6 flex-1 w-full">
+                        <div className="flex justify-between items-center border-b border-neutral-800 pb-4">
+                            <h1 className="text-2xl md:text-3xl font-black text-white uppercase flex items-center gap-3"><Trophy size={28} className="text-blue-500"/> NOVO TORNEIO</h1>
+                            <button onClick={()=>setAppState('TOURNAMENT_LIST')} className="p-3 bg-neutral-900 border border-neutral-800 rounded-xl active:scale-90"><ArrowLeft size={20}/></button>
+                        </div>
+
+                        <div className="bg-[#0d0d0d] p-6 rounded-2xl border border-neutral-800 shadow-xl space-y-6">
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold text-neutral-400 uppercase tracking-widest">Nome da Competição</label>
+                                <input type="text" className="w-full bg-[#111] border border-neutral-800 rounded-xl p-4 text-white text-xl font-bold uppercase outline-none focus:border-blue-500" placeholder="Ex: Copa Interclasse 2026" value={newTourney.name} onChange={e=>setNewTourney({...newTourney, name: e.target.value})}/>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold text-neutral-400 uppercase tracking-widest">Formato</label>
+                                    <div className="flex gap-2">
+                                        <button onClick={()=>setNewTourney({...newTourney, format: 'LEAGUE'})} className={`flex-1 py-3 rounded-xl border font-bold text-sm uppercase transition-all flex justify-center items-center gap-2 ${newTourney.format==='LEAGUE'?'bg-emerald-600 border-emerald-500 text-white':'bg-[#111] border-neutral-800 text-neutral-500'}`}><ListNumbers size={18}/> Pontos Corridos</button>
+                                        <button onClick={()=>setNewTourney({...newTourney, format: 'KNOCKOUT'})} className={`flex-1 py-3 rounded-xl border font-bold text-sm uppercase transition-all flex justify-center items-center gap-2 ${newTourney.format==='KNOCKOUT'?'bg-amber-600 border-amber-500 text-white':'bg-[#111] border-neutral-800 text-neutral-500'}`}><BracketsAngle size={18}/> Mata-Mata</button>
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold text-neutral-400 uppercase tracking-widest">Rodadas</label>
+                                    <div className="flex gap-2">
+                                        <button onClick={()=>setNewTourney({...newTourney, doubleRound: false})} className={`flex-1 py-3 rounded-xl border font-bold text-sm uppercase transition-all ${!newTourney.doubleRound?'bg-blue-600 border-blue-500 text-white':'bg-[#111] border-neutral-800 text-neutral-500'}`}>Turno Único</button>
+                                        <button onClick={()=>setNewTourney({...newTourney, doubleRound: true})} className={`flex-1 py-3 rounded-xl border font-bold text-sm uppercase transition-all ${newTourney.doubleRound?'bg-blue-600 border-blue-500 text-white':'bg-[#111] border-neutral-800 text-neutral-500'}`}>Ida e Volta</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="bg-[#0d0d0d] p-6 rounded-2xl border border-neutral-800 shadow-xl space-y-6">
+                            <h2 className="text-lg font-black text-white uppercase tracking-widest flex items-center gap-2"><Shield size={20} className="text-blue-500"/> Cadastro de Times ({newTourney.teams.length})</h2>
+                            
+                            <div className="bg-[#111] p-4 rounded-xl border border-neutral-800 flex flex-col gap-4">
+                                <div className="flex gap-4 items-center">
+                                    <div className="relative">
+                                        <button onClick={()=>setActiveFlagPicker(activeFlagPicker==='T'?null:'T')} className="w-12 h-8 md:w-16 md:h-11 shadow-lg active:scale-90 transition-transform"><FlagImage code={tTeamFlag} className="w-full h-full" /></button>
+                                        {activeFlagPicker==='T' && (
+                                            <div className="absolute top-12 left-0 z-50 bg-[#1a1a1a] border border-neutral-700 rounded-xl p-2 grid grid-cols-4 gap-2 w-64 h-48 overflow-y-auto no-scrollbar shadow-2xl">
+                                                {COUNTRY_FLAGS.map(c=>(<button key={c.code} onClick={()=>{setTTeamFlag(c.code);setActiveFlagPicker(null)}} className="p-1 hover:bg-neutral-800 rounded-lg"><FlagImage code={c.code} className="w-full h-7" /></button>))}
                                             </div>
-                                            {(p.reds === 0 || isUndoMode) && (
-                                                <div className="grid grid-cols-5 gap-1 pt-1.5 border-t border-neutral-900">
-                                                    {isUndoMode ? <div className="py-1.5"></div> : <button onClick={()=>setMotm(p)} className="py-1.5 bg-[#111] text-neutral-500 rounded flex justify-center active:scale-90"><Star size={12}/></button>}
-                                                    <button onClick={()=>handlePlayerAction(t,p.id,'GOAL')} className={`py-1.5 rounded font-black text-[10px] flex justify-center items-center active:scale-90 ${isUndoMode?'bg-red-900/20 text-red-500':'bg-neutral-800 text-green-500'}`}>{isUndoMode?'-⚽':'⚽'}</button>
-                                                    <button onClick={()=>handlePlayerAction(t,p.id,'ASSIST')} className={`py-1.5 rounded font-black text-[10px] flex justify-center items-center active:scale-90 ${isUndoMode?'bg-red-900/20 text-red-500':'bg-neutral-800 text-blue-400'}`}>{isUndoMode?'-🤝':'🤝'}</button>
-                                                    <button onClick={()=>handlePlayerAction(t,p.id,'YELLOW')} className={`py-1.5 rounded font-black text-[10px] flex justify-center items-center active:scale-90 ${isUndoMode?'bg-red-900/20 text-red-500':'bg-neutral-800 text-yellow-500'}`}>{isUndoMode?'-🟨':'🟨'}</button>
-                                                    <button onClick={()=>handlePlayerAction(t,p.id,'RED')} className={`py-1.5 rounded font-black text-[10px] flex justify-center items-center active:scale-90 ${isUndoMode?'bg-red-900/20 text-red-500':'bg-neutral-800 text-red-500'}`}>{isUndoMode?'-🟥':'🟥'}</button>
+                                        )}
+                                    </div>
+                                    <input type="text" className="flex-1 bg-black border border-neutral-800 rounded-xl p-3 text-white uppercase font-bold outline-none focus:border-blue-500" placeholder="Nome do Time" value={tTeamName} onChange={e=>setTTeamName(e.target.value)} />
+                                </div>
+                                <div>
+                                    <label className="text-[10px] text-neutral-500 uppercase font-bold tracking-widest mb-1 block">Elenco (Um jogador por linha. Ex: 10 Neymar)</label>
+                                    <textarea className="w-full h-32 bg-black border border-neutral-800 rounded-xl p-3 text-sm font-mono text-neutral-300 outline-none focus:border-blue-500" placeholder="Insira os jogadores..." value={tTeamPlayers} onChange={e=>setTTeamPlayers(e.target.value)}></textarea>
+                                </div>
+                                <button onClick={handleAddTourneyTeam} className="w-full py-3 bg-blue-600 text-white font-black uppercase text-xs rounded-xl active:scale-95 shadow-lg shadow-blue-900/20">Adicionar Time ao Torneio</button>
+                            </div>
+
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                                {newTourney.teams.map(t => (
+                                    <div key={t.id} className="bg-[#111] border border-neutral-800 p-3 rounded-xl flex items-center justify-between">
+                                        <div className="flex items-center gap-2"><FlagImage code={t.flag} className="w-6 h-4"/> <div className="flex flex-col"><span className="text-xs font-bold text-white uppercase truncate max-w-[100px]">{t.name}</span><span className="text-[9px] text-neutral-500 font-mono">{t.players.length} Jogadores</span></div></div>
+                                        <button onClick={()=>setNewTourney(p=>({...p, teams: p.teams.filter(xt=>xt.id!==t.id)}))} className="text-neutral-600 hover:text-red-500"><Trash2 size={16}/></button>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        <button onClick={handleGenerateTournament} disabled={isSaving} className="w-full py-5 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white font-black text-lg uppercase tracking-widest rounded-2xl shadow-xl active:scale-95 disabled:opacity-50">
+                            {isSaving ? 'Gerando...' : 'GERAR TABELA OFICIAL'}
+                        </button>
+                    </div>
+                    <FooterCredits />
+                </div>
+            );
+
+            if (appState === 'TOURNAMENT_DASH' && activeTourney) {
+                const isLeague = activeTourney.format === 'LEAGUE';
+                return (
+                    <div className="min-h-screen p-2 md:p-6 animate-fade flex flex-col">
+                        
+                        {/* --- MODAL DE ESTATÍSTICAS DO JOGADOR --- */}
+                        {selectedPlayerStats && (
+                            <div className="fixed inset-0 z-[200] modal-overlay flex items-center justify-center p-4 animate-fade">
+                                <div className="bg-[#0d0d0d] border border-neutral-800 w-full max-w-sm rounded-3xl p-6 shadow-2xl relative">
+                                    <button onClick={() => setSelectedPlayerStats(null)} className="absolute top-4 right-4 text-neutral-500 hover:text-white transition-colors"><XCircle size={24}/></button>
+                                    <div className="text-center mb-6 mt-2">
+                                        <div className="w-16 h-16 bg-neutral-900 border border-neutral-800 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl font-black text-neutral-500">#{selectedPlayerStats.number}</div>
+                                        <h3 className="text-xl font-black uppercase text-white truncate px-2">{selectedPlayerStats.name}</h3>
+                                        <p className="text-[10px] text-neutral-500 font-mono mt-1 tracking-widest">ÍNDICE DE DESEMPENHO</p>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <PlayerBar label="Gols Marcados" value={selectedPlayerStats.goals} max={10} color="bg-emerald-500" />
+                                        <PlayerBar label="Assistências" value={selectedPlayerStats.assists} max={10} color="bg-blue-500" />
+                                        <PlayerBar label="Faltas Cometidas" value={selectedPlayerStats.fouls} max={15} color="bg-orange-500" />
+                                        <PlayerBar label="Cartões Amarelos" value={selectedPlayerStats.yellows} max={5} color="bg-yellow-400" />
+                                        <PlayerBar label="Cartões Vermelhos" value={selectedPlayerStats.reds} max={2} color="bg-red-500" />
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="max-w-5xl mx-auto space-y-4 flex-1 w-full">
+                            <div className="flex justify-between items-center bg-[#0d0d0d] p-4 rounded-2xl border border-neutral-800 shadow-xl">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-3 bg-blue-500/10 rounded-xl"><Trophy size={24} className="text-blue-500"/></div>
+                                    <div>
+                                        <h1 className="text-xl md:text-2xl font-black text-white uppercase">{activeTourney.name}</h1>
+                                        <p className="text-[10px] text-neutral-500 font-mono uppercase">{isLeague ? 'PONTOS CORRIDOS' : 'MATA-MATA'} • {activeTourney.teams.length} TIMES</p>
+                                    </div>
+                                </div>
+                                <button onClick={()=>setAppState('TOURNAMENT_LIST')} className="p-3 bg-neutral-900 border border-neutral-800 rounded-xl active:scale-90"><ArrowLeft size={20}/></button>
+                            </div>
+
+                            {/* TABS */}
+                            <div className="flex bg-[#0d0d0d] p-1.5 rounded-xl border border-neutral-800">
+                                {isLeague && <button onClick={()=>setTourneyTab('TABLE')} className={`flex-1 py-2.5 rounded-lg text-xs font-black uppercase transition-all ${tourneyTab==='TABLE'?'bg-blue-600 text-white shadow-lg':'text-neutral-500 hover:bg-neutral-900'}`}>Classificação</button>}
+                                <button onClick={()=>setTourneyTab('JOGOS')} className={`flex-1 py-2.5 rounded-lg text-xs font-black uppercase transition-all ${tourneyTab==='JOGOS'?'bg-blue-600 text-white shadow-lg':'text-neutral-500 hover:bg-neutral-900'}`}>Confrontos</button>
+                                <button onClick={()=>setTourneyTab('STATS')} className={`flex-1 py-2.5 rounded-lg text-xs font-black uppercase transition-all ${tourneyTab==='STATS'?'bg-blue-600 text-white shadow-lg':'text-neutral-500 hover:bg-neutral-900'}`}>Estatísticas</button>
+                            </div>
+
+                            {/* CONTEÚDO DA TAB */}
+                            {tourneyTab === 'TABLE' && isLeague && (
+                                <div className="bg-[#0d0d0d] border border-neutral-800 rounded-2xl overflow-hidden shadow-xl animate-fade">
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-left text-sm text-slate-300">
+                                            <thead className="bg-neutral-900/80 text-[10px] uppercase font-black text-neutral-500">
+                                                <tr>
+                                                    <th className="px-4 py-4 text-center">Pos</th>
+                                                    <th className="px-4 py-4">Time</th>
+                                                    <th className="px-3 py-4 text-center">Pts</th>
+                                                    <th className="px-3 py-4 text-center">P</th>
+                                                    <th className="px-3 py-4 text-center">V</th>
+                                                    <th className="px-3 py-4 text-center">E</th>
+                                                    <th className="px-3 py-4 text-center">D</th>
+                                                    <th className="px-3 py-4 text-center">GP</th>
+                                                    <th className="px-3 py-4 text-center">GC</th>
+                                                    <th className="px-3 py-4 text-center">SG</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-neutral-800/50">
+                                                {getTourneyStandings(activeTourney).map((team, idx) => (
+                                                    <tr key={team.id} className="hover:bg-neutral-800/30 transition-colors">
+                                                        <td className="px-4 py-3 text-center font-bold text-neutral-500">{idx + 1}º</td>
+                                                        <td className="px-4 py-3 font-bold text-white flex items-center gap-2">
+                                                            <FlagImage code={team.flag} className="w-6 h-4" />
+                                                            <span className="truncate max-w-[100px] md:max-w-[200px]">{team.name}</span>
+                                                        </td>
+                                                        <td className="px-3 py-3 text-center font-black text-green-500">{team.pts}</td>
+                                                        <td className="px-3 py-3 text-center font-mono">{team.p}</td>
+                                                        <td className="px-3 py-3 text-center font-mono text-neutral-400">{team.v}</td>
+                                                        <td className="px-3 py-3 text-center font-mono text-neutral-400">{team.e}</td>
+                                                        <td className="px-3 py-3 text-center font-mono text-neutral-400">{team.d}</td>
+                                                        <td className="px-3 py-3 text-center font-mono text-neutral-400">{team.gp}</td>
+                                                        <td className="px-3 py-3 text-center font-mono text-neutral-400">{team.gc}</td>
+                                                        <td className="px-3 py-3 text-center font-mono font-bold text-white">{team.gp - team.gc}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            )}
+
+                            {tourneyTab === 'JOGOS' && (
+                                <div className="space-y-6 animate-fade">
+                                    {Object.entries(activeTourney.matches.reduce((acc, m) => {
+                                        if(!acc[m.roundName]) acc[m.roundName] = [];
+                                        acc[m.roundName].push(m); return acc;
+                                    }, {})).map(([roundName, matches]) => (
+                                        <div key={roundName} className="bg-[#0d0d0d] border border-neutral-800 rounded-2xl p-4 shadow-lg">
+                                            <h3 className="text-xs font-black text-neutral-500 uppercase tracking-widest mb-4 border-b border-neutral-800 pb-2">{roundName}</h3>
+                                            <div className="space-y-2">
+                                                {matches.map(m => {
+                                                    const hT = activeTourney.teams.find(t=>t.id===m.homeId);
+                                                    const aT = activeTourney.teams.find(t=>t.id===m.awayId);
+                                                    if(!hT || !aT) return null;
+                                                    return (
+                                                        <div key={m.id} className="flex flex-col md:flex-row items-center justify-between bg-[#111] border border-neutral-800 rounded-xl p-3 gap-3 hover:border-neutral-700 transition-colors">
+                                                            <div className="flex items-center gap-3 w-full md:w-auto flex-1">
+                                                                <div className="flex-1 flex justify-end items-center gap-2"><span className="text-xs font-bold text-white uppercase truncate">{hT.name}</span><FlagImage code={hT.flag} className="w-6 h-4"/></div>
+                                                                
+                                                                {m.played ? (
+                                                                    <div className="px-3 py-1 bg-black rounded-lg border border-neutral-800 text-lg font-black font-mono w-16 text-center">{m.homeGoals} <span className="text-neutral-600 text-sm">x</span> {m.awayGoals}</div>
+                                                                ) : (
+                                                                    <div className="px-3 py-1 bg-black rounded-lg border border-neutral-800 text-xs font-black font-mono w-16 text-center text-neutral-600">-- x --</div>
+                                                                )}
+
+                                                                <div className="flex-1 flex justify-start items-center gap-2"><FlagImage code={aT.flag} className="w-6 h-4"/><span className="text-xs font-bold text-white uppercase truncate">{aT.name}</span></div>
+                                                            </div>
+                                                            
+                                                            {!m.played && (
+                                                                <button onClick={()=>startTourneyMatch(m)} className="w-full md:w-auto bg-emerald-600 hover:bg-emerald-500 text-white font-black text-[10px] uppercase tracking-widest px-4 py-2 rounded-lg flex items-center justify-center gap-1 active:scale-95 shadow-lg shadow-emerald-900/20"><Play size={12}/> Jogar</button>
+                                                            )}
+                                                            {m.played && (
+                                                                <div className="w-full md:w-auto flex justify-center"><span className="text-[10px] font-bold text-neutral-500 uppercase bg-neutral-900 px-3 py-1 rounded-lg">Encerrado</span></div>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    ))}
+
+                                    {!isLeague && (
+                                        <button onClick={handleAdvanceKnockout} className="w-full py-4 bg-amber-600 text-white font-black uppercase text-sm rounded-xl shadow-xl active:scale-95 flex items-center justify-center gap-2">
+                                            <Swords size={20}/> Avançar Vencedores (Gerar Próx. Fase)
+                                        </button>
+                                    )}
+                                </div>
+                            )}
+
+                            {tourneyTab === 'STATS' && (
+                                <div className="bg-[#0d0d0d] border border-neutral-800 rounded-2xl p-6 shadow-xl animate-fade">
+                                    <p className="text-[10px] text-neutral-500 font-bold uppercase tracking-widest mb-6 text-center">Toque em um jogador para ver o gráfico de desempenho</p>
+                                    <h3 className="text-lg font-black text-white uppercase mb-4 flex items-center gap-2"><Target className="text-emerald-500"/> Artilharia Geral</h3>
+                                    <div className="space-y-3">
+                                        {(() => {
+                                            const allP = [];
+                                            activeTourney.teams.forEach(t => t.players.forEach(p => allP.push({...p, teamName: t.name, flag: t.flag})));
+                                            const topScorers = allP.filter(p => p.goals > 0).sort((a,b) => b.goals - a.goals);
+                                            if(topScorers.length === 0) return <p className="text-neutral-500 text-sm font-mono italic">Nenhum gol marcado no torneio.</p>;
+                                            return topScorers.map((p, idx) => (
+                                                <div key={p.id} onClick={() => setSelectedPlayerStats(p)} className="flex items-center justify-between bg-[#111] hover:bg-neutral-900 border border-neutral-800 p-3 rounded-xl cursor-pointer transition-colors">
+                                                    <div className="flex items-center gap-3">
+                                                        <span className="w-6 text-center font-bold text-neutral-500 text-sm">{idx+1}º</span>
+                                                        <FlagImage code={p.flag} className="w-6 h-4"/>
+                                                        <div className="flex flex-col">
+                                                            <span className="font-bold text-white text-sm uppercase flex items-center gap-1">{p.name} <Activity size={12} className="text-neutral-600"/></span>
+                                                            <span className="text-[9px] text-neutral-500 uppercase">{p.teamName}</span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="text-2xl font-black text-emerald-500 font-mono">{p.goals} <span className="text-xs text-neutral-500">Gols</span></div>
                                                 </div>
-                                            )}
+                                            ));
+                                        })()}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                        <FooterCredits />
+                    </div>
+                );
+            }
+
+            if (appState === 'MATCH') return (
+                <div className="min-h-screen p-2 md:p-4 flex flex-col gap-3">
+                    <div className="flex-1 flex flex-col gap-3 w-full">
+                        <div className={`bg-[#0d0d0d] p-4 rounded-2xl border border-neutral-800 shadow-2xl flex flex-col md:flex-row justify-between items-center gap-4 relative overflow-hidden ${isUndoMode?'undo-active':''}`}>
+                            <div className="absolute top-0 left-0 w-full h-1 bg-jamaica-gradient"></div>
+                            
+                            {activeTourneyMatch && <div className="absolute top-0 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-[9px] font-bold px-4 py-0.5 rounded-b-lg shadow-md uppercase tracking-widest">{activeTourney.name}</div>}
+                            
+                            <div className="flex flex-col md:hidden w-full gap-3 mt-2">
+                                <div className="flex justify-between items-center w-full">
+                                    <button onClick={()=>setIsUndoMode(!isUndoMode)} className={`px-2.5 py-2 rounded-lg text-[10px] font-black uppercase flex items-center gap-1.5 border transition-all shadow-md active:scale-95 ${isUndoMode?'bg-red-600 text-white border-red-500 animate-pulse':'bg-neutral-800 border-neutral-700 text-neutral-400'}`}>
+                                        <Eraser size={16}/> {isUndoMode?'REMOVER EVENTOS':'CORRIGIR ERRO'}
+                                    </button>
+                                    <div className="flex gap-2">
+                                        <button onClick={handleResetMatch} className="p-2 rounded-lg bg-neutral-800 border border-neutral-700 text-slate-300 active:scale-90" title="Zerar Placar e Tempo"><ArrowsClockwise size={18}/></button>
+                                        <button onClick={saveMatch} disabled={isSaving} className="px-3 py-2 rounded-lg bg-red-600 text-white font-bold text-[10px] flex items-center gap-1 shadow-lg active:scale-90">{isSaving?<Clock size={14}/>:<Flag size={14}/>} FIM</button>
+                                    </div>
+                                </div>
+                                <div className="flex justify-between items-center gap-2 w-full">
+                                    <button onClick={()=>setTime(t=>t+60)} className="px-3 py-3 rounded-lg bg-neutral-900 border border-neutral-800 text-blue-400 font-bold text-[11px] whitespace-nowrap active:scale-95 flex items-center gap-1"><Plus size={14}/> 1 MIN</button>
+                                    <button onClick={()=>setIsTimerRunning(!isTimerRunning)} className={`flex-1 py-3 rounded-lg font-black text-black flex justify-center items-center gap-1.5 text-[11px] shadow-lg active:scale-95 ${isTimerRunning?'bg-yellow-400':'bg-green-500'}`}>
+                                        {isTimerRunning ? <><Pause size={16}/> PAUSAR TEMPO</> : <><Play size={16}/> INICIAR TEMPO</>}
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="hidden md:flex w-full items-center justify-between mt-2">
+                                <div className="flex gap-2">
+                                    <button onClick={()=>setIsUndoMode(!isUndoMode)} className={`px-3 py-2 rounded-lg text-xs font-black uppercase flex items-center gap-2 border transition-all shadow-md active:scale-95 ${isUndoMode?'bg-red-600 text-white border-red-500 animate-pulse':'bg-neutral-800 border-neutral-700 text-neutral-400'}`}>
+                                        <Eraser size={16}/> {isUndoMode?'REMOVER EVENTOS':'CORRIGIR ERRO'}
+                                    </button>
+                                    <button onClick={handleResetMatch} className="px-3 py-2 rounded-lg bg-neutral-800 border border-neutral-700 text-slate-300 active:scale-95 flex items-center gap-2 text-xs font-bold"><ArrowsClockwise size={16}/> REINICIAR</button>
+                                </div>
+
+                                <div className="flex items-center gap-6">
+                                    <div className="flex items-center gap-3">
+                                        <h2 className="text-2xl font-black text-green-500 uppercase truncate max-w-[150px] text-right">{teams.A.name}</h2>
+                                        <FlagImage code={teams.A.flag} className="w-12 h-8" />
+                                    </div>
+                                    <div className="flex flex-col items-center bg-black/40 px-8 py-2 rounded-2xl border border-neutral-800">
+                                        <div className="text-6xl font-black font-mono flex items-center gap-4">{teams.A.goals}<span className="text-neutral-700 text-3xl">:</span>{teams.B.goals}</div>
+                                        <div className="flex items-center gap-2 text-yellow-400 font-mono font-black text-xl mt-1 tracking-tighter"><Clock size={18} className={isTimerRunning?"animate-pulse":""}/> {formatTime(time)}</div>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <FlagImage code={teams.B.flag} className="w-12 h-8" />
+                                        <h2 className="text-2xl font-black text-yellow-400 uppercase truncate max-w-[150px]">{teams.B.name}</h2>
+                                    </div>
+                                </div>
+
+                                <div className="flex gap-2">
+                                    <button onClick={()=>setTime(t=>t+60)} className="px-3 py-2 rounded-lg bg-neutral-900 border border-neutral-800 text-blue-400 font-bold text-xs flex items-center gap-1 active:scale-95"><Plus size={14}/> 1 MIN</button>
+                                    <button onClick={()=>setIsTimerRunning(!isTimerRunning)} className={`px-4 py-2 rounded-lg font-black text-black flex items-center gap-2 shadow-lg active:scale-95 ${isTimerRunning?'bg-yellow-400':'bg-green-500'}`}>
+                                        {isTimerRunning ? <><Pause size={16}/> PAUSAR</> : <><Play size={16}/> INICIAR TEMPO</>}
+                                    </button>
+                                    <button onClick={saveMatch} disabled={isSaving} className="px-4 py-2 rounded-lg bg-red-600 text-white font-bold text-xs flex items-center gap-2 shadow-lg active:scale-95 disabled:opacity-50">{isSaving?<Clock size={16}/>:<Flag size={16}/>} FIM</button>
+                                </div>
+                            </div>
+
+                            <div className="flex md:hidden w-full items-center justify-between mt-2 px-2 border-t border-neutral-800 pt-4">
+                                <div className="flex flex-col items-center gap-1">
+                                    <FlagImage code={teams.A.flag} className="w-8 h-5" />
+                                    <h2 className="text-[10px] font-black text-green-500 uppercase truncate w-20 text-center">{teams.A.name}</h2>
+                                </div>
+                                <div className="text-5xl font-black font-mono flex items-center gap-3">
+                                    <span>{teams.A.goals}</span><span className="text-neutral-700 text-2xl">:</span><span>{teams.B.goals}</span>
+                                </div>
+                                <div className="flex flex-col items-center gap-1">
+                                    <FlagImage code={teams.B.flag} className="w-8 h-5" />
+                                    <h2 className="text-[10px] font-black text-yellow-400 uppercase truncate w-20 text-center">{teams.B.name}</h2>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 flex-1">
+                            {['A', 'B'].map((t) => (
+                                <div key={t} className={`col-span-1 lg:col-span-4 bg-[#0d0d0d] border-t-4 rounded-2xl flex flex-col h-[420px] md:h-auto overflow-hidden ${t==='A'?'border-green-500':'border-yellow-400'}`}>
+                                    <div className="p-3 border-b border-neutral-800 text-center font-bold uppercase text-[10px] text-neutral-500 flex items-center justify-center gap-2 uppercase tracking-widest"><FlagImage code={teams[t].flag} className="w-4 h-3"/> {t==='A'?'MANDANTE':'VISITANTE'}</div>
+                                    <div className="flex-1 overflow-y-auto p-2 space-y-2 no-scrollbar">
+                                        {teams[t].players.map(p=>(
+                                            <div key={p.id} className={`bg-[#050505] p-2 rounded-xl border border-neutral-800 transition-all ${animatingPlayer===p.id?'animate-pop':''} ${p.reds>0?'opacity-30':''}`}>
+                                                <div className="flex justify-between items-center mb-1.5">
+                                                    <div className="flex items-center gap-2"><span className={`font-mono text-[9px] px-1.5 py-0.5 rounded text-black font-black ${t==='A'?'bg-green-500':'bg-yellow-400'}`}>{p.number}</span><span className="font-bold text-[11px] text-white uppercase truncate max-w-[80px]">{p.name}</span></div>
+                                                    <div className="flex gap-1 items-center">
+                                                        {motm?.id===p.id&&<Award size={14} className="text-yellow-400"/>}
+                                                        {Array.from({length:p.goals||0}).map((_,i)=><span key={`g${i}`} className="text-[10px]">⚽</span>)}
+                                                        {Array.from({length:p.fouls||0}).map((_,i)=><span key={`f${i}`} className="text-[10px] opacity-70">❗</span>)}
+                                                        {Array.from({length:p.yellows||0}).map((_,i)=><div key={`y${i}`} className="w-1.5 h-2.5 bg-yellow-400 rounded-sm shadow-sm shadow-yellow-500/20"></div>)}
+                                                        {p.reds>0&&<div className="w-1.5 h-2.5 bg-red-500 rounded-sm shadow-sm shadow-red-500/20"></div>}
+                                                    </div>
+                                                </div>
+                                                {(p.reds === 0 || isUndoMode) && (
+                                                    <div className="grid grid-cols-6 gap-1 pt-1.5 border-t border-neutral-900">
+                                                        {isUndoMode ? <div className="py-1.5"></div> : <button onClick={()=>setMotm(p)} className="py-1.5 bg-[#111] text-neutral-500 rounded flex justify-center active:scale-90" title="Melhor da Partida"><Star size={12}/></button>}
+                                                        <button onClick={()=>handlePlayerAction(t,p.id,'GOAL')} className={`py-1.5 rounded font-black text-[10px] flex justify-center items-center active:scale-90 ${isUndoMode?'bg-red-900/20 text-red-500':'bg-neutral-800 text-green-500'}`} title="Gol">{isUndoMode?'-⚽':'⚽'}</button>
+                                                        <button onClick={()=>handlePlayerAction(t,p.id,'ASSIST')} className={`py-1.5 rounded font-black text-[10px] flex justify-center items-center active:scale-90 ${isUndoMode?'bg-red-900/20 text-red-500':'bg-neutral-800 text-blue-400'}`} title="Assistência">{isUndoMode?'-🤝':'🤝'}</button>
+                                                        <button onClick={()=>handlePlayerAction(t,p.id,'FOUL')} className={`py-1.5 rounded font-black text-[10px] flex justify-center items-center active:scale-90 ${isUndoMode?'bg-red-900/20 text-red-500':'bg-neutral-800 text-orange-500'}`} title="Falta Individual">{isUndoMode?'-❗':'❗'}</button>
+                                                        <button onClick={()=>handlePlayerAction(t,p.id,'YELLOW')} className={`py-1.5 rounded font-black text-[10px] flex justify-center items-center active:scale-90 ${isUndoMode?'bg-red-900/20 text-red-500':'bg-neutral-800 text-yellow-500'}`} title="Cartão Amarelo">{isUndoMode?'-🟨':'🟨'}</button>
+                                                        <button onClick={()=>handlePlayerAction(t,p.id,'RED')} className={`py-1.5 rounded font-black text-[10px] flex justify-center items-center active:scale-90 ${isUndoMode?'bg-red-900/20 text-red-500':'bg-neutral-800 text-red-500'}`}>{isUndoMode?'-🟥':'🟥'}</button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="grid grid-cols-6 gap-1 p-2 bg-black/40 border-t border-neutral-800">
+                                        <button onClick={()=>{ if(isUndoMode) { if(teams[t].corners > 0) setTeams(prev=>({...prev, [t]: {...prev[t], corners: prev[t].corners - 1}})); } else { setTeams(prev=>({...prev, [t]: {...prev[t], corners: prev[t].corners + 1}})); addEvent('ESCANTEIO', teams[t].name, 'text-neutral-400'); } }} className={`col-span-2 py-2 rounded-lg border border-neutral-800 text-[8px] font-bold uppercase active:scale-95 ${isUndoMode?'text-red-500 bg-red-950/20':'bg-neutral-800 text-green-400'}`}><Target size={12}/> {teams[t].corners}</button>
+                                        <button onClick={()=>{ if(isUndoMode) { if(teams[t].throwIns > 0) setTeams(prev=>({...prev, [t]: {...prev[t], throwIns: prev[t].throwIns - 1}})); } else { setTeams(prev=>({...prev, [t]: {...prev[t], throwIns: prev[t].throwIns + 1}})); addEvent('LATERAL', teams[t].name, 'text-neutral-400'); } }} className={`col-span-2 py-2 rounded-lg border border-neutral-800 text-[8px] font-bold uppercase active:scale-95 ${isUndoMode?'text-red-500 bg-red-950/20':'bg-neutral-800 text-yellow-400'}`}><ArrowRight size={12}/> {teams[t].throwIns}</button>
+                                        <button onClick={()=>{ if(isUndoMode) { if(teams[t].fouls > 0) setTeams(prev=>({...prev, [t]: {...prev[t], fouls: prev[t].fouls - 1}})); } else { setTeams(prev=>({...prev, [t]: {...prev[t], fouls: prev[t].fouls + 1}})); addEvent('FALTA', teams[t].name, 'text-orange-500'); } }} className={`col-span-2 py-2 rounded-lg border border-neutral-800 text-[8px] font-bold uppercase active:scale-95 ${isUndoMode?'text-red-500 bg-red-950/20':'bg-neutral-800 text-orange-500'}`}><AlertTriangle size={12}/> {teams[t].fouls}</button>
+                                        <button onClick={()=>{ if(isUndoMode) { setTeams(prev=>({...prev, [t]: {...prev[t], shotsTotal: Math.max(0, prev[t].shotsTotal - 1), shotsOnTarget: Math.max(0, prev[t].shotsOnTarget - 1)}})); } else { playSfx('shot'); setTeams(prev=>({...prev, [t]: {...prev[t], shotsTotal: prev[t].shotsTotal + 1, shotsOnTarget: prev[t].shotsOnTarget + 1}})); addEvent('ALVO', teams[t].name, 'text-green-400'); } }} className={`col-span-3 py-2 rounded-lg border border-neutral-800 text-[9px] font-bold uppercase active:scale-95 ${isUndoMode?'text-red-500 bg-red-950/20':'bg-neutral-800 text-blue-400'}`}>{isUndoMode?'- ALVO':'ALVO'}</button>
+                                        <button onClick={()=>{ if(isUndoMode) { setTeams(prev=>({...prev, [t]: {...prev[t], shotsTotal: Math.max(0, prev[t].shotsTotal - 1)}})); } else { playSfx('shot'); setTeams(prev=>({...prev, [t]: {...prev[t], shotsTotal: prev[t].shotsTotal + 1}})); addEvent('FORA', teams[t].name, 'text-neutral-500'); } }} className={`col-span-3 py-2 rounded-lg border border-neutral-800 text-[9px] font-bold uppercase active:scale-95 ${isUndoMode?'text-red-500 bg-red-950/20':'bg-neutral-800 text-neutral-500'}`}>{isUndoMode?'- FORA':'FORA'}</button>
+                                    </div>
+                                </div>
+                            ))}
+                            <div className="col-span-1 lg:col-span-4 bg-[#0d0d0d] border border-neutral-800 rounded-2xl flex flex-col h-[150px] md:h-auto overflow-hidden">
+                                <div className="p-3 border-b border-neutral-800 text-center font-bold uppercase text-[9px] text-neutral-500">ÚLTIMOS EVENTOS</div>
+                                <div className="flex-1 overflow-y-auto p-2 space-y-1.5 no-scrollbar font-mono text-[9px]">
+                                    {timeline.map((it, idx) => (
+                                        <div key={idx} className="bg-black/30 p-2 rounded-lg border border-neutral-900 animate-fade flex justify-between">
+                                            <span className="text-neutral-500">{it.time}</span>
+                                            <span className={`${it.colorClass} font-black`}>{it.type}</span>
+                                            <span className="text-neutral-400 uppercase truncate w-24 text-right">{it.description}</span>
                                         </div>
                                     ))}
                                 </div>
-                                <div className="grid grid-cols-6 gap-1 p-2 bg-black/40 border-t border-neutral-800">
-                                    <button onClick={()=>{ if(isUndoMode) { if(teams[t].corners > 0) setTeams(prev=>({...prev, [t]: {...prev[t], corners: prev[t].corners - 1}})); } else { setTeams(prev=>({...prev, [t]: {...prev[t], corners: prev[t].corners + 1}})); addEvent('ESCANTEIO', teams[t].name, 'text-neutral-400'); } }} className={`col-span-2 py-2 rounded-lg border border-neutral-800 text-[8px] font-bold uppercase active:scale-95 ${isUndoMode?'text-red-500 bg-red-950/20':'bg-neutral-800 text-green-400'}`}><Target size={12}/> {teams[t].corners}</button>
-                                    <button onClick={()=>{ if(isUndoMode) { if(teams[t].throwIns > 0) setTeams(prev=>({...prev, [t]: {...prev[t], throwIns: prev[t].throwIns - 1}})); } else { setTeams(prev=>({...prev, [t]: {...prev[t], throwIns: prev[t].throwIns + 1}})); addEvent('LATERAL', teams[t].name, 'text-neutral-400'); } }} className={`col-span-2 py-2 rounded-lg border border-neutral-800 text-[8px] font-bold uppercase active:scale-95 ${isUndoMode?'text-red-500 bg-red-950/20':'bg-neutral-800 text-yellow-400'}`}><ArrowRight size={12}/> {teams[t].throwIns}</button>
-                                    <button onClick={()=>{ if(isUndoMode) { if(teams[t].fouls > 0) setTeams(prev=>({...prev, [t]: {...prev[t], fouls: prev[t].fouls - 1}})); } else { setTeams(prev=>({...prev, [t]: {...prev[t], fouls: prev[t].fouls + 1}})); addEvent('FALTA', teams[t].name, 'text-orange-500'); } }} className={`col-span-2 py-2 rounded-lg border border-neutral-800 text-[8px] font-bold uppercase active:scale-95 ${isUndoMode?'text-red-500 bg-red-950/20':'bg-neutral-800 text-orange-500'}`}><AlertTriangle size={12}/> {teams[t].fouls}</button>
-                                    <button onClick={()=>{ if(isUndoMode) { setTeams(prev=>({...prev, [t]: {...prev[t], shotsTotal: Math.max(0, prev[t].shotsTotal - 1), shotsOnTarget: Math.max(0, prev[t].shotsOnTarget - 1)}})); } else { playSfx('shot'); setTeams(prev=>({...prev, [t]: {...prev[t], shotsTotal: prev[t].shotsTotal + 1, shotsOnTarget: prev[t].shotsOnTarget + 1}})); addEvent('ALVO', teams[t].name, 'text-green-400'); } }} className={`col-span-3 py-2 rounded-lg border border-neutral-800 text-[9px] font-bold uppercase active:scale-95 ${isUndoMode?'text-red-500 bg-red-950/20':'bg-neutral-800 text-blue-400'}`}>{isUndoMode?'- ALVO':'ALVO'}</button>
-                                    <button onClick={()=>{ if(isUndoMode) { setTeams(prev=>({...prev, [t]: {...prev[t], shotsTotal: Math.max(0, prev[t].shotsTotal - 1)}})); } else { playSfx('shot'); setTeams(prev=>({...prev, [t]: {...prev[t], shotsTotal: prev[t].shotsTotal + 1}})); addEvent('FORA', teams[t].name, 'text-neutral-500'); } }} className={`col-span-3 py-2 rounded-lg border border-neutral-800 text-[9px] font-bold uppercase active:scale-95 ${isUndoMode?'text-red-500 bg-red-950/20':'bg-neutral-800 text-neutral-500'}`}>{isUndoMode?'- FORA':'FORA'}</button>
-                                </div>
-                            </div>
-                        ))}
-                        <div className="col-span-1 lg:col-span-4 bg-[#0d0d0d] border border-neutral-800 rounded-2xl flex flex-col h-[150px] md:h-auto overflow-hidden">
-                            <div className="p-3 border-b border-neutral-800 text-center font-bold uppercase text-[9px] text-neutral-500">ÚLTIMOS EVENTOS</div>
-                            <div className="flex-1 overflow-y-auto p-2 space-y-1.5 no-scrollbar font-mono text-[9px]">
-                                {timeline.map((it, idx) => (
-                                    <div key={idx} className="bg-black/30 p-2 rounded-lg border border-neutral-900 animate-fade flex justify-between">
-                                        <span className="text-neutral-500">{it.time}</span>
-                                        <span className={`${it.colorClass} font-black`}>{it.type}</span>
-                                        <span className="text-neutral-400 uppercase truncate w-24 text-right">{it.description}</span>
-                                    </div>
-                                ))}
                             </div>
                         </div>
                     </div>
@@ -597,9 +1166,32 @@
             );
 
             if (appState === 'DASHBOARD') return (
-                <div className="min-h-screen p-4 md:p-8 animate-fade">
-                    <div className="max-w-3xl mx-auto space-y-6">
+                <div className="min-h-screen p-4 md:p-8 animate-fade flex flex-col">
+                    {/* --- MODAL DE ESTATÍSTICAS DO JOGADOR --- */}
+                    {selectedPlayerStats && (
+                        <div className="fixed inset-0 z-[200] modal-overlay flex items-center justify-center p-4 animate-fade">
+                            <div className="bg-[#0d0d0d] border border-neutral-800 w-full max-w-sm rounded-3xl p-6 shadow-2xl relative">
+                                <button onClick={() => setSelectedPlayerStats(null)} className="absolute top-4 right-4 text-neutral-500 hover:text-white transition-colors"><XCircle size={24}/></button>
+                                <div className="text-center mb-6 mt-2">
+                                    <div className="w-16 h-16 bg-neutral-900 border border-neutral-800 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl font-black text-neutral-500">#{selectedPlayerStats.number}</div>
+                                    <h3 className="text-xl font-black uppercase text-white truncate px-2">{selectedPlayerStats.name}</h3>
+                                    <p className="text-[10px] text-neutral-500 font-mono mt-1 tracking-widest">ÍNDICE DE DESEMPENHO DA PARTIDA</p>
+                                </div>
+                                <div className="space-y-2">
+                                    <PlayerBar label="Gols Marcados" value={selectedPlayerStats.goals} max={10} color="bg-emerald-500" />
+                                    <PlayerBar label="Assistências" value={selectedPlayerStats.assists} max={10} color="bg-blue-500" />
+                                    <PlayerBar label="Faltas Cometidas" value={selectedPlayerStats.fouls} max={10} color="bg-orange-500" />
+                                    <PlayerBar label="Cartões Amarelos" value={selectedPlayerStats.yellows} max={2} color="bg-yellow-400" />
+                                    <PlayerBar label="Cartões Vermelhos" value={selectedPlayerStats.reds} max={1} color="bg-red-500" />
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="max-w-3xl mx-auto space-y-6 flex-1 w-full">
                         <h1 className="text-3xl font-black text-white uppercase text-center tracking-widest">Relatório Final</h1>
+                        <p className="text-[10px] text-neutral-500 font-bold uppercase tracking-widest mb-6 text-center">Toque em um jogador para ver o gráfico de desempenho</p>
+                        
                         <div className="bg-[#0d0d0d] border border-neutral-800 rounded-3xl p-6 relative overflow-hidden shadow-2xl">
                             <div className="absolute top-0 left-0 w-full h-1 bg-jamaica-gradient"></div>
                             <div className="flex justify-between items-center mb-8 pb-4 border-b border-neutral-800">
@@ -618,9 +1210,31 @@
                                 <StatBar label="CHUTES AO ALVO" valA={teams.A.shotsOnTarget} valB={teams.B.shotsOnTarget} />
                                 <StatBar label="ESCANTEIOS" valA={teams.A.corners} valB={teams.B.corners} />
                                 <StatBar label="LATERAIS" valA={teams.A.throwIns} valB={teams.B.throwIns} />
-                                <StatBar label="FALTAS" valA={teams.A.fouls} valB={teams.B.fouls} />
-                                <StatBar label="AMARELOS" valA={teams.A.players.reduce((a,b)=>a+b.yellows,0)} valB={teams.B.players.reduce((a,b)=>a+b.yellows,0)} />
-                                <StatBar label="VERMELHOS" valA={teams.A.players.reduce((a,b)=>a+b.reds,0)} valB={teams.B.players.reduce((a,b)=>a+b.reds,0)} />
+                                <StatBar label="FALTAS COLETIVAS" valA={teams.A.fouls} valB={teams.B.fouls} />
+                                <StatBar label="AMARELOS" valA={teams.A.players.reduce((a,b)=>a+(b.yellows||0),0)} valB={teams.B.players.reduce((a,b)=>a+(b.yellows||0),0)} />
+                                <StatBar label="VERMELHOS" valA={teams.A.players.reduce((a,b)=>a+(b.reds||0),0)} valB={teams.B.players.reduce((a,b)=>a+(b.reds||0),0)} />
+                            </div>
+
+                            <div className="h-48 overflow-y-auto no-scrollbar border-t border-neutral-800 pt-4 font-mono text-[10px] space-y-2 mt-6">
+                                <p className="text-neutral-500 font-black border-b border-neutral-900 pb-1 uppercase">Elenco e Desempenho</p>
+                                <div className="grid grid-cols-2 gap-8">
+                                    <div className="space-y-1">
+                                        {teams.A.players.map(p=>(
+                                            <div key={p.id} onClick={() => setSelectedPlayerStats(p)} className="flex justify-between text-green-500/80 cursor-pointer hover:bg-neutral-900 p-1.5 rounded transition-colors group">
+                                                <span>#{p.number} {p.name} <Activity size={10} className="inline ml-1 opacity-0 group-hover:opacity-100 transition-opacity text-white"/></span>
+                                                <span>⚽{p.goals} 🤝{p.assists||0} ❗{p.fouls||0}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="space-y-1">
+                                        {teams.B.players.map(p=>(
+                                            <div key={p.id} onClick={() => setSelectedPlayerStats(p)} className="flex justify-between text-yellow-500/80 cursor-pointer hover:bg-neutral-900 p-1.5 rounded transition-colors group">
+                                                <span>#{p.number} {p.name} <Activity size={10} className="inline ml-1 opacity-0 group-hover:opacity-100 transition-opacity text-white"/></span>
+                                                <span>⚽{p.goals} 🤝{p.assists||0} ❗{p.fouls||0}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <div className="flex flex-col md:flex-row gap-4 justify-center">
@@ -628,22 +1242,44 @@
                             <button onClick={saveMatch} disabled={isSaving} className="flex-1 py-4 bg-gradient-to-r from-green-600 to-green-500 text-white font-black rounded-2xl uppercase text-sm shadow-xl active:scale-95 disabled:opacity-50">{isSaving?'SALVANDO...':'SALVAR PARTIDA'}</button>
                         </div>
                     </div>
+                    <FooterCredits />
                 </div>
             );
 
             if (appState === 'HISTORY') return (
-                <div className="min-h-screen p-4 md:p-8 animate-fade">
-                    <div className="max-w-4xl mx-auto space-y-6">
+                <div className="min-h-screen p-4 md:p-8 animate-fade flex flex-col">
+                    {/* --- MODAL DE ESTATÍSTICAS DO JOGADOR --- */}
+                    {selectedPlayerStats && (
+                        <div className="fixed inset-0 z-[200] modal-overlay flex items-center justify-center p-4 animate-fade">
+                            <div className="bg-[#0d0d0d] border border-neutral-800 w-full max-w-sm rounded-3xl p-6 shadow-2xl relative">
+                                <button onClick={() => setSelectedPlayerStats(null)} className="absolute top-4 right-4 text-neutral-500 hover:text-white transition-colors"><XCircle size={24}/></button>
+                                <div className="text-center mb-6 mt-2">
+                                    <div className="w-16 h-16 bg-neutral-900 border border-neutral-800 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl font-black text-neutral-500">#{selectedPlayerStats.number}</div>
+                                    <h3 className="text-xl font-black uppercase text-white truncate px-2">{selectedPlayerStats.name}</h3>
+                                    <p className="text-[10px] text-neutral-500 font-mono mt-1 tracking-widest">ÍNDICE DE DESEMPENHO DA PARTIDA</p>
+                                </div>
+                                <div className="space-y-2">
+                                    <PlayerBar label="Gols Marcados" value={selectedPlayerStats.goals} max={10} color="bg-emerald-500" />
+                                    <PlayerBar label="Assistências" value={selectedPlayerStats.assists} max={10} color="bg-blue-500" />
+                                    <PlayerBar label="Faltas Cometidas" value={selectedPlayerStats.fouls} max={10} color="bg-orange-500" />
+                                    <PlayerBar label="Cartões Amarelos" value={selectedPlayerStats.yellows} max={2} color="bg-yellow-400" />
+                                    <PlayerBar label="Cartões Vermelhos" value={selectedPlayerStats.reds} max={1} color="bg-red-500" />
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="max-w-4xl mx-auto space-y-6 flex-1 w-full">
                         <div className="flex flex-col md:flex-row justify-between items-center border-b border-neutral-800 pb-4 gap-4">
                             <div className="flex items-center gap-3">
                                 <HistoryIcon size={32} className="text-green-500"/>
-                                <h1 className="text-2xl md:text-3xl font-black text-white uppercase tracking-widest">ARQUIVO DIGITAL</h1>
+                                <h1 className="text-2xl md:text-3xl font-black text-white uppercase tracking-widest">HISTÓRICO GERAL</h1>
                             </div>
                             <div className="flex gap-2 w-full md:w-auto">
                                 {!selectedMatch && (
                                     <div className="flex bg-[#111] p-1 rounded-xl border border-neutral-800 flex-1 md:flex-none">
                                         <button onClick={()=>setHistoryTab('GAMES')} className={`flex-1 px-4 py-2 rounded-lg text-[10px] font-black transition-all ${historyTab==='GAMES'?'bg-neutral-800 text-white':'text-neutral-500'}`}>PARTIDAS</button>
-                                        <button onClick={()=>setHistoryTab('TABLE')} className={`flex-1 px-4 py-2 rounded-lg text-[10px] font-black transition-all ${historyTab==='TABLE'?'bg-neutral-800 text-white':'text-neutral-500'}`}>CLASSIFICAÇÃO</button>
+                                        <button onClick={()=>setHistoryTab('TABLE')} className={`flex-1 px-4 py-2 rounded-lg text-[10px] font-black transition-all ${historyTab==='TABLE'?'bg-neutral-800 text-white':'text-neutral-500'}`}>CLASSIFICAÇÃO GERAL</button>
                                     </div>
                                 )}
                                 <button onClick={()=>setAppState('SETUP')} className="p-3 bg-neutral-900 border border-neutral-800 rounded-xl active:scale-90"><ArrowLeft size={20}/></button>
@@ -660,18 +1296,28 @@
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4 mb-8">
                                     <StatBar label="GOLS" valA={selectedMatch.teamA.goals} valB={selectedMatch.teamB.goals} />
-                                    <StatBar label="FALTAS" valA={selectedMatch.teamA.fouls} valB={selectedMatch.teamB.fouls} />
+                                    <StatBar label="FALTAS COLETIVAS" valA={selectedMatch.teamA.fouls} valB={selectedMatch.teamB.fouls} />
                                     <StatBar label="ESCANTEIOS" valA={selectedMatch.teamA.corners} valB={selectedMatch.teamB.corners} />
                                     <StatBar label="CHUTES" valA={selectedMatch.teamA.shotsTotal || 0} valB={selectedMatch.teamB.shotsTotal || 0} />
                                 </div>
                                 <div className="h-48 overflow-y-auto no-scrollbar border-t border-neutral-800 pt-4 font-mono text-[10px] space-y-2">
-                                    <p className="text-neutral-500 font-black border-b border-neutral-900 pb-1 uppercase">Elenco e Desempenho</p>
+                                    <p className="text-neutral-500 font-black border-b border-neutral-900 pb-1 uppercase">Elenco e Desempenho (Clique para Ver Gráficos)</p>
                                     <div className="grid grid-cols-2 gap-8">
                                         <div className="space-y-1">
-                                            {selectedMatch.teamA.players.map(p=>(<div key={p.id} className="flex justify-between text-green-500/80"><span>#{p.number} {p.name}</span><span>⚽{p.goals} 🤝{p.assists||0}</span></div>))}
+                                            {selectedMatch.teamA.players.map(p=>(
+                                                <div key={p.id} onClick={() => setSelectedPlayerStats(p)} className="flex justify-between text-green-500/80 cursor-pointer hover:bg-neutral-900 p-1.5 rounded transition-colors group">
+                                                    <span>#{p.number} {p.name} <Activity size={10} className="inline ml-1 opacity-0 group-hover:opacity-100 transition-opacity text-white"/></span>
+                                                    <span>⚽{p.goals} 🤝{p.assists||0} ❗{p.fouls||0}</span>
+                                                </div>
+                                            ))}
                                         </div>
                                         <div className="space-y-1">
-                                            {selectedMatch.teamB.players.map(p=>(<div key={p.id} className="flex justify-between text-yellow-500/80"><span>#{p.number} {p.name}</span><span>⚽{p.goals} 🤝{p.assists||0}</span></div>))}
+                                            {selectedMatch.teamB.players.map(p=>(
+                                                <div key={p.id} onClick={() => setSelectedPlayerStats(p)} className="flex justify-between text-yellow-500/80 cursor-pointer hover:bg-neutral-900 p-1.5 rounded transition-colors group">
+                                                    <span>#{p.number} {p.name} <Activity size={10} className="inline ml-1 opacity-0 group-hover:opacity-100 transition-opacity text-white"/></span>
+                                                    <span>⚽{p.goals} 🤝{p.assists||0} ❗{p.fouls||0}</span>
+                                                </div>
+                                            ))}
                                         </div>
                                     </div>
                                 </div>
@@ -734,6 +1380,7 @@
                             </div>
                         )}
                     </div>
+                    <FooterCredits />
                 </div>
             );
         }
