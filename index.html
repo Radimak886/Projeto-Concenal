@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Rad CBF</title>
+    <title>RAD CBF</title>
     
     <!-- Bibliotecas Base -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -141,20 +141,31 @@
             return <img src={`https://flagcdn.com/${code}.svg`} className={`object-cover rounded shadow-sm border border-neutral-800 ${className}`} />;
         };
 
-        // --- COMPONENTE GRÁFICO ---
+        // --- COMPONENTE GRÁFICO CORRIGIDO (Zero Neutro) ---
         const StatBar = ({ label, valA, valB }) => {
-            const total = (valA || 0) + (valB || 0) || 1;
-            const pctA = ((valA || 0) / total) * 100;
+            const numA = valA || 0;
+            const numB = valB || 0;
+            const total = numA + numB;
+            
+            // Se ambos forem zero, a barra fica 50/50 com cor cinza neutra
+            const isZeroZero = total === 0;
+            const pctA = isZeroZero ? 50 : (numA / total) * 100;
+            
+            const colorClassA = isZeroZero ? 'bg-neutral-800' : 'bg-green-500';
+            const colorClassB = isZeroZero ? 'bg-neutral-800' : 'bg-yellow-400';
+            const textClassA = isZeroZero ? 'text-neutral-600' : 'text-green-500';
+            const textClassB = isZeroZero ? 'text-neutral-600' : 'text-yellow-400';
+
             return (
                 <div className="mb-3 w-full">
                     <div className="flex justify-between items-center text-[10px] font-bold text-neutral-300 mb-1 uppercase tracking-tighter px-1">
-                        <span className="w-8 font-mono text-base text-green-500">{valA || 0}</span>
+                        <span className={`w-8 font-mono text-base ${textClassA}`}>{numA}</span>
                         <span className="flex-1 text-center">{label}</span>
-                        <span className="w-8 text-right font-mono text-base text-yellow-400">{valB || 0}</span>
+                        <span className={`w-8 text-right font-mono text-base ${textClassB}`}>{numB}</span>
                     </div>
                     <div className="h-1.5 w-full bg-[#111] rounded-full flex overflow-hidden border border-neutral-900">
-                        <div style={{ width: `${pctA}%` }} className="h-full bg-green-500 transition-all duration-700"></div>
-                        <div style={{ width: `${100 - pctA}%` }} className="h-full bg-yellow-400 transition-all duration-700"></div>
+                        <div style={{ width: `${pctA}%` }} className={`h-full transition-all duration-700 ${colorClassA}`}></div>
+                        <div style={{ width: `${100 - pctA}%` }} className={`h-full transition-all duration-700 ${colorClassB}`}></div>
                     </div>
                 </div>
             );
@@ -174,6 +185,9 @@
             const [matchConfig, setMatchConfig] = useState({ durationMinutes: 10, goalLimit: 3 });
             const [showBulkAdd, setShowBulkAdd] = useState(null);
             const [bulkInput, setBulkInput] = useState("");
+            
+            // Estado para alternar entre "Partidas" e "Classificação" na tela de histórico
+            const [historyTab, setHistoryTab] = useState('GAMES'); // 'GAMES' | 'TABLE'
 
             const getInitialTeams = () => ({
                 A: { name: '', flag: null, color: 'green', goals: 0, corners: 0, throwIns: 0, fouls: 0, shotsTotal: 0, shotsOnTarget: 0, players: [] },
@@ -341,6 +355,41 @@
                     await addDoc(collection(db, 'artifacts', appRootId, 'users', user.uid, 'matches'), data);
                     setTeams(getInitialTeams()); setTimeline([]); setAppState('HISTORY');
                 } catch(e){} finally { setIsSaving(false); }
+            };
+
+            // Lógica para Tabela de Classificação
+            const getStandings = () => {
+                const table = {};
+                matchHistory.forEach(m => {
+                    const tA = m.teamA.name.toUpperCase().trim();
+                    const tB = m.teamB.name.toUpperCase().trim();
+                    
+                    if(!table[tA]) table[tA] = { name: m.teamA.name, flag: m.teamA.flag, p:0, v:0, e:0, d:0, gp:0, gc:0, pts:0 };
+                    if(!table[tB]) table[tB] = { name: m.teamB.name, flag: m.teamB.flag, p:0, v:0, e:0, d:0, gp:0, gc:0, pts:0 };
+                    
+                    table[tA].p++; table[tB].p++;
+                    table[tA].gp += m.teamA.goals; table[tA].gc += m.teamB.goals;
+                    table[tB].gp += m.teamB.goals; table[tB].gc += m.teamA.goals;
+                    
+                    if(m.teamA.goals > m.teamB.goals) {
+                        table[tA].v++; table[tA].pts += 3;
+                        table[tB].d++;
+                    } else if(m.teamB.goals > m.teamA.goals) {
+                        table[tB].v++; table[tB].pts += 3;
+                        table[tA].d++;
+                    } else {
+                        table[tA].e++; table[tA].pts += 1;
+                        table[tB].e++; table[tB].pts += 1;
+                    }
+                });
+                
+                return Object.values(table).sort((a,b) => {
+                    if(b.pts !== a.pts) return b.pts - a.pts; // Pontos
+                    if(b.v !== a.v) return b.v - a.v; // Vitórias
+                    const sgA = a.gp - a.gc; const sgB = b.gp - b.gc;
+                    if(sgB !== sgA) return sgB - sgA; // Saldo de Gols
+                    return b.gp - a.gp; // Gols Pró
+                });
             };
 
             // --- UI RENDER ---
@@ -576,7 +625,7 @@
                         </div>
                         <div className="flex flex-col md:flex-row gap-4 justify-center">
                             <button onClick={()=>setAppState('SETUP')} className="flex-1 py-4 bg-neutral-900 border border-neutral-800 rounded-2xl text-white font-black uppercase text-sm active:scale-95">DESCARTAR</button>
-                            <button onClick={saveMatch} disabled={isSaving} className="flex-1 py-4 bg-gradient-to-r from-green-600 to-green-500 text-white font-black rounded-2xl uppercase text-sm shadow-xl active:scale-95 disabled:opacity-50">{isSaving?'SALVANDO...':'SALVAR NO FIREBASE'}</button>
+                            <button onClick={saveMatch} disabled={isSaving} className="flex-1 py-4 bg-gradient-to-r from-green-600 to-green-500 text-white font-black rounded-2xl uppercase text-sm shadow-xl active:scale-95 disabled:opacity-50">{isSaving?'SALVANDO...':'SALVAR PARTIDA'}</button>
                         </div>
                     </div>
                 </div>
@@ -585,10 +634,22 @@
             if (appState === 'HISTORY') return (
                 <div className="min-h-screen p-4 md:p-8 animate-fade">
                     <div className="max-w-4xl mx-auto space-y-6">
-                        <div className="flex justify-between items-center border-b border-neutral-800 pb-4">
-                            <h1 className="text-3xl font-black text-white uppercase flex items-center gap-3"><HistoryIcon size={32} className="text-green-500"/> HISTÓRICO DIGITAL</h1>
-                            <button onClick={()=>setAppState('SETUP')} className="p-3 bg-neutral-900 border border-neutral-800 rounded-xl active:scale-90"><ArrowLeft size={20}/></button>
+                        <div className="flex flex-col md:flex-row justify-between items-center border-b border-neutral-800 pb-4 gap-4">
+                            <div className="flex items-center gap-3">
+                                <HistoryIcon size={32} className="text-green-500"/>
+                                <h1 className="text-2xl md:text-3xl font-black text-white uppercase tracking-widest">ARQUIVO DIGITAL</h1>
+                            </div>
+                            <div className="flex gap-2 w-full md:w-auto">
+                                {!selectedMatch && (
+                                    <div className="flex bg-[#111] p-1 rounded-xl border border-neutral-800 flex-1 md:flex-none">
+                                        <button onClick={()=>setHistoryTab('GAMES')} className={`flex-1 px-4 py-2 rounded-lg text-[10px] font-black transition-all ${historyTab==='GAMES'?'bg-neutral-800 text-white':'text-neutral-500'}`}>PARTIDAS</button>
+                                        <button onClick={()=>setHistoryTab('TABLE')} className={`flex-1 px-4 py-2 rounded-lg text-[10px] font-black transition-all ${historyTab==='TABLE'?'bg-neutral-800 text-white':'text-neutral-500'}`}>CLASSIFICAÇÃO</button>
+                                    </div>
+                                )}
+                                <button onClick={()=>setAppState('SETUP')} className="p-3 bg-neutral-900 border border-neutral-800 rounded-xl active:scale-90"><ArrowLeft size={20}/></button>
+                            </div>
                         </div>
+
                         {selectedMatch ? (
                             <div className="bg-[#0d0d0d] p-6 rounded-3xl border border-neutral-800 animate-fade relative overflow-hidden">
                                 <div className="absolute top-0 left-0 w-full h-1 bg-jamaica-gradient"></div>
@@ -616,14 +677,57 @@
                                 </div>
                                 <button onClick={()=>setSelectedMatch(null)} className="mt-6 w-full py-4 bg-neutral-900 border border-neutral-800 rounded-2xl font-black uppercase text-sm">FECHAR SÚMULA</button>
                             </div>
+                        ) : historyTab === 'TABLE' ? (
+                            <div className="bg-[#0d0d0d] border border-neutral-800 rounded-2xl overflow-hidden shadow-xl animate-fade">
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-left text-sm text-slate-300">
+                                        <thead className="bg-neutral-900/80 text-[10px] uppercase font-black text-neutral-500">
+                                            <tr>
+                                                <th className="px-4 py-4 text-center">Pos</th>
+                                                <th className="px-4 py-4">Time</th>
+                                                <th className="px-3 py-4 text-center">Pts</th>
+                                                <th className="px-3 py-4 text-center">P</th>
+                                                <th className="px-3 py-4 text-center">V</th>
+                                                <th className="px-3 py-4 text-center">E</th>
+                                                <th className="px-3 py-4 text-center">D</th>
+                                                <th className="px-3 py-4 text-center">GP</th>
+                                                <th className="px-3 py-4 text-center">GC</th>
+                                                <th className="px-3 py-4 text-center">SG</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-neutral-800/50">
+                                            {getStandings().map((team, idx) => (
+                                                <tr key={idx} className="hover:bg-neutral-800/30 transition-colors">
+                                                    <td className="px-4 py-3 text-center font-bold text-neutral-500">{idx + 1}º</td>
+                                                    <td className="px-4 py-3 font-bold text-white flex items-center gap-2">
+                                                        <FlagImage code={team.flag} className="w-6 h-4" />
+                                                        <span className="truncate max-w-[100px] md:max-w-[200px]">{team.name}</span>
+                                                    </td>
+                                                    <td className="px-3 py-3 text-center font-black text-green-500">{team.pts}</td>
+                                                    <td className="px-3 py-3 text-center font-mono">{team.p}</td>
+                                                    <td className="px-3 py-3 text-center font-mono text-neutral-400">{team.v}</td>
+                                                    <td className="px-3 py-3 text-center font-mono text-neutral-400">{team.e}</td>
+                                                    <td className="px-3 py-3 text-center font-mono text-neutral-400">{team.d}</td>
+                                                    <td className="px-3 py-3 text-center font-mono text-neutral-400">{team.gp}</td>
+                                                    <td className="px-3 py-3 text-center font-mono text-neutral-400">{team.gc}</td>
+                                                    <td className="px-3 py-3 text-center font-mono font-bold text-white">{team.gp - team.gc}</td>
+                                                </tr>
+                                            ))}
+                                            {getStandings().length === 0 && (
+                                                <tr><td colSpan="10" className="px-4 py-10 text-center font-mono italic text-neutral-600">Nenhum dado para a classificação.</td></tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
                         ) : (
-                            <div className="space-y-4">
+                            <div className="space-y-4 animate-fade">
                                 {matchHistory.map(m=>(
                                     <div key={m.id} onClick={()=>setSelectedMatch(m)} className="bg-[#0d0d0d] p-5 rounded-2xl border border-neutral-800 flex justify-between items-center hover:border-green-500 transition-all cursor-pointer group shadow-xl">
-                                        <div className="flex flex-col"><span className="text-[10px] text-neutral-600 font-mono mb-1">{m.dateString}</span><div className="flex items-center gap-2 text-green-500 font-black text-sm uppercase"><FlagImage code={m.teamA.flag} className="w-8 h-5"/> {m.teamA.name}</div></div>
+                                        <div className="flex flex-col"><span className="text-[10px] text-neutral-600 font-mono mb-1">{m.dateString}</span><div className="flex items-center gap-2 text-green-500 font-black text-sm uppercase"><FlagImage code={m.teamA.flag} className="w-8 h-5"/> <span className="truncate w-20 md:w-full">{m.teamA.name}</span></div></div>
                                         <div className="text-3xl font-black text-white">{m.teamA.goals} - {m.teamB.goals}</div>
-                                        <div className="flex flex-col items-end"><div className="flex items-center gap-2 text-yellow-400 font-black text-sm uppercase">{m.teamB.name} <FlagImage code={m.teamB.flag} className="w-8 h-5"/></div></div>
-                                        <button onClick={(e)=>{ e.stopPropagation(); if(confirm("Apagar súmula permanentemente?")) deleteDoc(doc(db, 'artifacts', appRootId, 'users', user.uid, 'matches', m.id)); }} className="ml-4 p-3 text-neutral-700 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all"><Trash2 size={20}/></button>
+                                        <div className="flex flex-col items-end"><div className="flex items-center gap-2 text-yellow-400 font-black text-sm uppercase"><span className="truncate w-20 md:w-full text-right">{m.teamB.name}</span> <FlagImage code={m.teamB.flag} className="w-8 h-5"/></div></div>
+                                        <button onClick={(e)=>{ e.stopPropagation(); if(confirm("Apagar súmula permanentemente?")) deleteDoc(doc(db, 'artifacts', appRootId, 'users', user.uid, 'matches', m.id)); }} className="ml-4 p-3 text-neutral-700 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all hidden md:block"><Trash2 size={20}/></button>
                                     </div>
                                 ))}
                                 {matchHistory.length === 0 && <div className="text-center py-20 bg-[#0d0d0d] rounded-3xl border border-neutral-900 text-neutral-600 font-mono italic">Nenhum registro no banco de dados.</div>}
