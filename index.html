@@ -33,6 +33,9 @@
         input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
         
         .bg-jamaica-gradient { background: linear-gradient(to right, #22c55e, #eab308, #000); }
+
+        /* Estilo do Modal de Lista */
+        .modal-overlay { background-color: rgba(0,0,0,0.85); backdrop-filter: blur(4px); }
     </style>
 </head>
 <body>
@@ -53,6 +56,7 @@
         const Activity = ({size}) => <i className="ph-fill ph-activity" style={{fontSize: size}}></i>;
         const Award = ({size}) => <i className="ph-fill ph-medal" style={{fontSize: size}}></i>;
         const UserPlus = ({size}) => <i className="ph-fill ph-user-plus" style={{fontSize: size}}></i>;
+        const ListPlus = ({size}) => <i className="ph-fill ph-list-plus" style={{fontSize: size}}></i>;
         const ArrowRight = ({size}) => <i className="ph-bold ph-arrow-right" style={{fontSize: size}}></i>;
         const Trash2 = ({size}) => <i className="ph-fill ph-trash" style={{fontSize: size}}></i>;
         const Pause = ({size}) => <i className="ph-fill ph-pause" style={{fontSize: size}}></i>;
@@ -67,10 +71,11 @@
         const Plus = ({size}) => <i className="ph-bold ph-plus" style={{fontSize: size}}></i>;
         const Handshake = ({size}) => <i className="ph-fill ph-handshake" style={{fontSize: size}}></i>;
         const Eraser = ({size}) => <i className="ph-fill ph-eraser" style={{fontSize: size}}></i>;
+        const XCircle = ({size}) => <i className="ph-fill ph-x-circle" style={{fontSize: size}}></i>;
 
-        // --- CONFIGURAÇÃO FIREBASE (Credenciais do Kelvin) ---
+        // --- CONFIGURAÇÃO FIREBASE ---
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
+        import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
         import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
         const firebaseConfig = {
@@ -88,7 +93,7 @@
         const db = getFirestore(app);
         const appRootId = "arbitragem-kelvin-final"; 
 
-        // --- SISTEMA DE ÁUDIO MAKER ---
+        // --- SISTEMA DE ÁUDIO ---
         let audioCtx = null;
         const initAudio = () => {
             if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -119,7 +124,7 @@
             } catch (e) {}
         };
 
-        // --- BANDEIRAS ---
+        // --- PAÍSES ---
         const COUNTRY_FLAGS = [
             { code: 'br', name: 'Brasil' }, { code: 'jm', name: 'Jamaica' },
             { code: 'ar', name: 'Argentina' }, { code: 'uy', name: 'Uruguai' },
@@ -136,7 +141,6 @@
             return <img src={`https://flagcdn.com/${code}.svg`} className={`object-cover rounded shadow-sm border border-neutral-800 ${className}`} />;
         };
 
-        // --- COMPONENTE GRÁFICO ---
         const StatBar = ({ label, valA, valB }) => {
             const total = valA + valB || 1;
             const pctA = (valA / total) * 100;
@@ -168,6 +172,10 @@
             const [isUndoMode, setIsUndoMode] = useState(false);
             const [matchConfig, setMatchConfig] = useState({ durationMinutes: 10, goalLimit: 3 });
 
+            // Estados para Bulk Add
+            const [showBulkAdd, setShowBulkAdd] = useState(null); // 'A' ou 'B' ou null
+            const [bulkInput, setBulkInput] = useState("");
+
             const getInitialTeams = () => ({
                 A: { name: '', flag: null, color: 'green', goals: 0, corners: 0, throwIns: 0, fouls: 0, shotsTotal: 0, shotsOnTarget: 0, players: [] },
                 B: { name: '', flag: null, color: 'yellow', goals: 0, corners: 0, throwIns: 0, fouls: 0, shotsTotal: 0, shotsOnTarget: 0, players: [] }
@@ -179,41 +187,20 @@
             const [activeFlagPicker, setActiveFlagPicker] = useState(null);
             const [animatingPlayer, setAnimatingPlayer] = useState(null);
 
-            // CORREÇÃO DA AUTENTICAÇÃO COM FALLBACK PARA PROJETOS PRÓPRIOS
             useEffect(() => {
-                const initAuth = async () => {
-                    try {
-                        // Tenta usar o token customizado do ambiente (funciona no sandbox)
-                        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                            try {
-                                await signInWithCustomToken(auth, __initial_auth_token);
-                            } catch (tokenErr) {
-                                // Se o token não bater com o projeto do usuário (mismatch), usa o anônimo
-                                await signInAnonymously(auth);
-                            }
-                        } else {
-                            await signInAnonymously(auth);
-                        }
-                    } catch (e) {
-                        console.error("Erro fatal na configuração de autenticação:", e);
-                    }
-                };
-                initAuth();
                 const unsubscribe = onAuthStateChanged(auth, (u) => {
                     if (u) setUser(u);
+                    else signInAnonymously(auth);
                 });
                 return () => unsubscribe();
             }, []);
 
-            // ESCUTA DO BANCO DE DADOS (APENAS APÓS AUTH)
             useEffect(() => {
                 if (!user) return;
                 const ref = collection(db, 'artifacts', appRootId, 'users', user.uid, 'matches');
                 const unsubscribe = onSnapshot(ref, (snap) => {
                     const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                     setMatchHistory(data.sort((a,b) => b.timestamp - a.timestamp));
-                }, (error) => {
-                    console.error("Erro ao buscar histórico no Firestore:", error);
                 });
                 return () => unsubscribe();
             }, [user]);
@@ -266,7 +253,6 @@
                 setTeams(p => ({ ...p, [teamId]: { ...ut, players: ut.players.map(pl => pl.id === playerId ? up : pl) } }));
             };
 
-            const formatTime = (seconds) => `${Math.floor(seconds / 60).toString().padStart(2, '0')}:${(seconds % 60).toString().padStart(2, '0')}`;
             const addEvent = (type, desc, color) => {
                 setTimeline(p => [{ time: `${period} - ${Math.floor(time/60)}'`, type, description: desc, colorClass: color }, ...p]);
             };
@@ -277,38 +263,85 @@
                 try {
                     const allP = [...teams.A.players, ...teams.B.players];
                     const scorer = allP.reduce((m, p) => (p.goals > (m?.goals || 0) ? p : m), null);
-                    const data = { 
-                        timestamp: Date.now(), 
-                        dateString: new Date().toLocaleString('pt-BR'), 
-                        teamA: teams.A, 
-                        teamB: teams.B, 
-                        timeline, 
-                        highlights: { motm: motm?.name || '---', topScorer: scorer?.goals > 0 ? scorer.name : '---' } 
-                    };
+                    const data = { timestamp: Date.now(), dateString: new Date().toLocaleString('pt-BR'), teamA: teams.A, teamB: teams.B, timeline, highlights: { motm: motm?.name || '---', topScorer: scorer?.goals > 0 ? scorer.name : '---' } };
                     await addDoc(collection(db, 'artifacts', appRootId, 'users', user.uid, 'matches'), data);
                     setTeams(getInitialTeams()); setTimeline([]); setAppState('HISTORY');
-                } catch(e){
-                    console.error("Erro ao salvar no banco:", e);
-                } finally { setIsSaving(false); }
+                } catch(e){} finally { setIsSaving(false); }
+            };
+
+            const processBulkAdd = (teamId) => {
+                const lines = bulkInput.split('\n').filter(l => l.trim() !== "");
+                const newPlayersList = [];
+                let currentMaxNumber = teams[teamId].players.reduce((max, p) => Math.max(max, p.number), 0);
+
+                lines.forEach(line => {
+                    // Tenta extrair número e nome (ex: "10 - Neymar" ou "10 Neymar")
+                    const match = line.match(/^(\d+)[- ]*(.+)$/);
+                    let num, name;
+                    if (match) {
+                        num = parseInt(match[1]);
+                        name = match[2].trim().toUpperCase();
+                    } else {
+                        currentMaxNumber++;
+                        num = currentMaxNumber;
+                        name = line.trim().toUpperCase();
+                    }
+
+                    newPlayersList.push({
+                        id: Math.random().toString(36).substr(2, 9),
+                        name,
+                        number: num,
+                        goals: 0, assists: 0, yellows: 0, reds: 0, historicYellows: 0
+                    });
+                });
+
+                setTeams(p => ({ ...p, [teamId]: { ...p[teamId], players: [...p[teamId].players, ...newPlayersList] } }));
+                setBulkInput("");
+                setShowBulkAdd(null);
             };
 
             // --- UI RENDER ---
             if (appState === 'SETUP') return (
                 <div className="min-h-screen p-2 md:p-6 animate-fade">
                     <div className="max-w-5xl mx-auto space-y-4">
+                        {/* Modal Bulk Add */}
+                        {showBulkAdd && (
+                            <div className="fixed inset-0 z-[100] modal-overlay flex items-center justify-center p-4">
+                                <div className="bg-[#0d0d0d] border border-neutral-800 w-full max-w-lg rounded-2xl p-6 shadow-2xl animate-fade">
+                                    <div className="flex justify-between items-center mb-4">
+                                        <h3 className="text-lg font-black uppercase text-white flex items-center gap-2">
+                                            <ListPlus size={20} className="text-blue-500" /> Adição por Lista - Time {showBulkAdd}
+                                        </h3>
+                                        <button onClick={()=>setShowBulkAdd(null)} className="text-neutral-500"><XCircle size={24}/></button>
+                                    </div>
+                                    <p className="text-[10px] text-neutral-400 mb-4 uppercase font-bold">Dica: Um nome por linha. Formatos aceitos: "Nome" ou "10 - Nome".</p>
+                                    <textarea 
+                                        className="w-full h-64 bg-black border border-neutral-800 rounded-xl p-4 text-sm font-mono text-white outline-none focus:border-blue-500"
+                                        placeholder="Exemplo:&#10;Neymar&#10;10 - Vinicius Jr&#10;Rodrygo"
+                                        value={bulkInput}
+                                        onChange={e=>setBulkInput(e.target.value)}
+                                    ></textarea>
+                                    <div className="mt-6 flex gap-3">
+                                        <button onClick={()=>setShowBulkAdd(null)} className="flex-1 py-3 rounded-xl border border-neutral-800 font-bold text-xs uppercase">Cancelar</button>
+                                        <button onClick={()=>processBulkAdd(showBulkAdd)} className="flex-1 py-3 bg-blue-600 rounded-xl font-black text-xs uppercase shadow-lg shadow-blue-900/20">Importar Lista</button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
                         <div className="bg-[#0d0d0d] p-4 md:p-6 rounded-2xl border border-neutral-800 flex flex-col md:flex-row justify-between items-center gap-4 relative">
                             <div className="absolute top-0 left-0 w-full h-1 bg-jamaica-gradient rounded-t-2xl"></div>
                             <div className="text-center md:text-left">
                                 <h1 className="text-2xl md:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-yellow-400 uppercase tracking-tighter">Súmula Digital</h1>
                                 <p className="text-[10px] text-neutral-500 font-mono mt-1 flex items-center justify-center md:justify-start gap-2">
-                                    <Database size={12} className={user ? "text-green-500" : "text-yellow-500"}/> Nuvem: {user ? <span className="text-green-400">Conectada</span> : <span className="text-yellow-500">Conectando...</span>}
+                                    <Database size={12} className={user ? "text-green-500" : "text-yellow-500"}/> Nuvem: {user ? "Conectada" : "Sincronizando..."}
                                 </p>
                             </div>
                             <div className="flex gap-2">
                                 <div className="bg-black/50 p-2 rounded-xl border border-neutral-800 flex gap-2">
-                                    <div className="flex flex-col"><label className="text-[8px] text-neutral-500 font-bold text-center uppercase">Tempo</label><input type="number" className="w-10 bg-transparent text-center text-sm font-bold text-white outline-none" value={matchConfig.durationMinutes} onChange={e=>setMatchConfig(p=>({...p, durationMinutes: parseInt(e.target.value)||0}))} /></div>
+                                    <div className="flex flex-col"><label className="text-[8px] text-neutral-500 font-bold text-center">TEMPO</label><input type="number" className="w-10 bg-transparent text-center text-sm font-bold text-white outline-none" value={matchConfig.durationMinutes} onChange={e=>setMatchConfig(p=>({...p, durationMinutes: parseInt(e.target.value)||0}))} /></div>
                                     <div className="w-px bg-neutral-800 h-6 my-auto"></div>
-                                    <div className="flex flex-col"><label className="text-[8px] text-neutral-500 font-bold text-center uppercase">Gols</label><input type="number" className="w-10 bg-transparent text-center text-sm font-bold text-white outline-none" value={matchConfig.goalLimit} onChange={e=>setMatchConfig(p=>({...p, goalLimit: parseInt(e.target.value)||0}))} /></div>
+                                    <div className="flex flex-col"><label className="text-[8px] text-neutral-500 font-bold text-center">GOLS</label><input type="number" className="w-10 bg-transparent text-center text-sm font-bold text-white outline-none" value={matchConfig.goalLimit} onChange={e=>setMatchConfig(p=>({...p, goalLimit: parseInt(e.target.value)||0}))} /></div>
                                 </div>
                                 <button onClick={()=>setAppState('HISTORY')} className="p-3 bg-[#111] rounded-xl border border-neutral-800 text-green-500 active:scale-95"><HistoryIcon size={20}/></button>
                             </div>
@@ -321,7 +354,7 @@
                                         <div className="relative">
                                             <button onClick={()=>setActiveFlagPicker(activeFlagPicker===t?null:t)} className="w-12 h-8 md:w-16 md:h-11 shadow-lg active:scale-90 transition-transform"><FlagImage code={teams[t].flag} className="w-full h-full" /></button>
                                             {activeFlagPicker===t && (
-                                                <div className="absolute top-12 left-0 z-50 bg-[#1a1a1a] border border-neutral-700 rounded-xl p-2 grid grid-cols-4 gap-2 w-64 h-48 overflow-y-auto no-scrollbar shadow-2xl">
+                                                <div className="absolute top-12 left-0 z-50 bg-[#1a1a1a] border border-neutral-800 rounded-xl p-2 grid grid-cols-4 gap-2 w-64 h-48 overflow-y-auto no-scrollbar shadow-2xl">
                                                     {COUNTRY_FLAGS.map(c=>(<button key={c.code} onClick={()=>{setTeams(p=>({...p,[t]:{...p[t],flag:c.code}}));setActiveFlagPicker(null)}} className="p-1 hover:bg-neutral-800 rounded-lg"><FlagImage code={c.code} className="w-full h-7" /></button>))}
                                                 </div>
                                             )}
@@ -335,7 +368,11 @@
                                         </div>
                                         <div className="flex gap-2">
                                             <input type="number" placeholder="C.A. ANTERIOR" className="flex-1 bg-[#111] border border-neutral-800 rounded-lg p-2 text-xs text-yellow-400 font-bold" value={newPlayer[t].hist} onChange={e=>setNewPlayer(p=>({...p,[t]:{...p[t],hist:e.target.value}}))} />
-                                            <button onClick={()=>{const d=newPlayer[t]; if(d.name&&d.number) {const np={id:Math.random().toString(36).substr(2,9),name:d.name.toUpperCase(),number:parseInt(d.number),goals:0,assists:0,yellows:0,reds:0,historicYellows:parseInt(d.hist)||0}; setTeams(p=>({...p,[t]:{...p[t],players:[...p[t].players,np]}})); setNewPlayer(p=>({...p,[t]:{name:'',number:'',hist:''}}));}}} className={`px-8 py-2 rounded-lg font-black text-black active:scale-95 ${t==='A'?'bg-green-500':'bg-yellow-400'}`}><UserPlus size={18}/></button>
+                                            
+                                            <div className="flex gap-1">
+                                                <button onClick={()=>setShowBulkAdd(t)} className="px-3 py-2 bg-neutral-800 text-blue-400 rounded-lg active:scale-90" title="Adicionar por Lista"><ListPlus size={18}/></button>
+                                                <button onClick={()=>{const d=newPlayer[t]; if(d.name&&d.number) {const np={id:Math.random().toString(36).substr(2,9),name:d.name.toUpperCase(),number:parseInt(d.number),goals:0,assists:0,yellows:0,reds:0,historicYellows:parseInt(d.hist)||0}; setTeams(p=>({...p,[t]:{...p[t],players:[...p[t].players,np]}})); setNewPlayer(p=>({...p,[t]:{name:'',number:'',hist:''}}));}}} className={`px-5 py-2 rounded-lg font-black text-black active:scale-95 ${t==='A'?'bg-green-500':'bg-yellow-400'}`}><UserPlus size={18}/></button>
+                                            </div>
                                         </div>
                                     </div>
                                     <div className="p-3 h-52 overflow-y-auto space-y-2 no-scrollbar">
@@ -345,6 +382,7 @@
                                                 <button onClick={()=>setTeams(p_=>({...p_,[t]:{...p_[t],players:p_[t].players.filter(pl=>pl.id!==p.id)}}))} className="p-2 text-neutral-600 hover:text-red-500 active:scale-90"><Trash2 size={16}/></button>
                                             </div>
                                         ))}
+                                        {teams[t].players.length === 0 && <div className="h-full flex flex-col items-center justify-center text-neutral-800 py-10 uppercase font-black opacity-20"><Shield size={40}/><span className="text-xs">Time Vazio</span></div>}
                                     </div>
                                 </div>
                             ))}
@@ -393,7 +431,7 @@
                                             </div>
                                             {p.reds===0 && (
                                                 <div className="grid grid-cols-5 gap-1 pt-1.5 border-t border-neutral-900">
-                                                    {!isUndoMode && <button onClick={()=>setMotm(p)} className="flex-1 py-1.5 bg-[#111] text-neutral-500 rounded flex justify-center"><i className="ph-bold ph-star text-xs"></i></button>}
+                                                    {!isUndoMode && <button onClick={()=>setMotm(p)} className="py-1.5 bg-[#111] text-neutral-500 rounded flex justify-center"><i className="ph-bold ph-star text-xs"></i></button>}
                                                     <button onClick={()=>handlePlayerAction(t,p.id,'GOAL')} className={`py-1.5 rounded font-black text-[10px] flex justify-center items-center ${isUndoMode?'bg-red-900/20 text-red-500':'bg-neutral-800 text-green-500'}`}>{isUndoMode?'-⚽':'⚽'}</button>
                                                     <button onClick={()=>handlePlayerAction(t,p.id,'ASSIST')} className={`py-1.5 rounded font-black text-[10px] flex justify-center items-center ${isUndoMode?'bg-red-900/20 text-red-500':'bg-neutral-800 text-blue-400'}`}>{isUndoMode?'-🤝':'🤝'}</button>
                                                     <button onClick={()=>handlePlayerAction(t,p.id,'YELLOW')} className={`py-1.5 rounded font-black text-[10px] flex justify-center items-center ${isUndoMode?'bg-red-900/20 text-red-500':'bg-neutral-800 text-yellow-500'}`}>{isUndoMode?'-🟨':'🟨'}</button>
