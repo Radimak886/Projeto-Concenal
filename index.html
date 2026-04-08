@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="pt-PT">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Súmula Digital Ultimate</title>
+    <title>Súmula Digital Pro - Kelvin</title>
     
     <!-- Bibliotecas Base -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -13,23 +13,26 @@
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
 
     <style>
-        body { margin: 0; padding: 0; background-color: #050505; color: #e5e5e5; }
+        body { margin: 0; padding: 0; background-color: #050505; color: #e5e5e5; font-family: sans-serif; overflow-x: hidden; }
         
-        /* Animações Customizadas */
-        @keyframes fadeInUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes pop { 0% { transform: scale(1); } 50% { transform: scale(1.03); } 100% { transform: scale(1); } }
-        @keyframes slideInRight { from { opacity: 0; transform: translateX(15px); } to { opacity: 1; transform: translateX(0); } }
+        /* Animações Premium */
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes pop { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes pulseRed { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); } 70% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
         
-        .animate-fade-in-up { animation: fadeInUp 0.4s ease-out forwards; }
+        .animate-fade { animation: fadeInUp 0.3s ease-out forwards; }
         .animate-pop { animation: pop 0.2s ease-out; }
-        .animate-slide-in { animation: slideInRight 0.3s ease-out forwards; }
-        
-        .stagger-1 { animation-delay: 0.1s; opacity: 0; }
-        .stagger-2 { animation-delay: 0.2s; opacity: 0; }
-        .stagger-3 { animation-delay: 0.3s; opacity: 0; }
+        .animate-slide { animation: slideIn 0.3s ease-out forwards; }
+        .undo-active { animation: pulseRed 2s infinite; border-color: #ef4444 !important; }
         
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        input[type="number"]::-webkit-inner-spin-button, 
+        input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        
+        .bg-jamaica-gradient { background: linear-gradient(to right, #22c55e, #eab308, #000); }
     </style>
 </head>
 <body>
@@ -38,955 +41,478 @@
     <script type="text/babel" data-type="module">
         const { useState, useEffect, useRef } = React;
         
-        // --- ÍCONES (Substitutos do Lucide para HTML) ---
-        const Play = ({size, className}) => <i className={`ph-fill ph-play ${className||''}`} style={{fontSize: size}}></i>;
-        const Square = ({size, className}) => <i className={`ph-fill ph-square ${className||''}`} style={{fontSize: size}}></i>;
-        const Trophy = ({size, className}) => <i className={`ph-fill ph-trophy ${className||''}`} style={{fontSize: size}}></i>;
-        const Shield = ({size, className}) => <i className={`ph-fill ph-shield-check ${className||''}`} style={{fontSize: size}}></i>;
-        const Target = ({size, className}) => <i className={`ph-fill ph-target ${className||''}`} style={{fontSize: size}}></i>;
-        const AlertTriangle = ({size, className}) => <i className={`ph-fill ph-warning ${className||''}`} style={{fontSize: size}}></i>;
+        // --- ÍCONES PHOSPHOR ---
+        const Play = ({size}) => <i className="ph-fill ph-play" style={{fontSize: size}}></i>;
+        const Square = ({size}) => <i className="ph-fill ph-square" style={{fontSize: size}}></i>;
+        const Trophy = ({size}) => <i className="ph-fill ph-trophy" style={{fontSize: size}}></i>;
+        const Shield = ({size}) => <i className="ph-fill ph-shield-check" style={{fontSize: size}}></i>;
+        const Target = ({size}) => <i className="ph-fill ph-target" style={{fontSize: size}}></i>;
+        const AlertTriangle = ({size}) => <i className="ph-fill ph-warning" style={{fontSize: size}}></i>;
         const Clock = ({size, className}) => <i className={`ph-fill ph-clock ${className||''}`} style={{fontSize: size}}></i>;
-        const Zap = ({size, className}) => <i className={`ph-fill ph-lightning ${className||''}`} style={{fontSize: size}}></i>;
-        const Activity = ({size, className}) => <i className={`ph-fill ph-activity ${className||''}`} style={{fontSize: size}}></i>;
-        const Award = ({size, className}) => <i className={`ph-fill ph-medal ${className||''}`} style={{fontSize: size}}></i>;
-        const UserPlus = ({size, className}) => <i className={`ph-fill ph-user-plus ${className||''}`} style={{fontSize: size}}></i>;
-        const ArrowRight = ({size, className}) => <i className={`ph-bold ph-arrow-right ${className||''}`} style={{fontSize: size}}></i>;
-        const Trash2 = ({size, className}) => <i className={`ph-fill ph-trash ${className||''}`} style={{fontSize: size}}></i>;
-        const Pause = ({size, className}) => <i className={`ph-fill ph-pause ${className||''}`} style={{fontSize: size}}></i>;
-        const FastForward = ({size, className}) => <i className={`ph-fill ph-fast-forward ${className||''}`} style={{fontSize: size}}></i>;
-        const Flag = ({size, className}) => <i className={`ph-fill ph-flag ${className||''}`} style={{fontSize: size}}></i>;
+        const Zap = ({size}) => <i className="ph-fill ph-lightning" style={{fontSize: size}}></i>;
+        const Activity = ({size}) => <i className="ph-fill ph-activity" style={{fontSize: size}}></i>;
+        const Award = ({size}) => <i className="ph-fill ph-medal" style={{fontSize: size}}></i>;
+        const UserPlus = ({size}) => <i className="ph-fill ph-user-plus" style={{fontSize: size}}></i>;
+        const ArrowRight = ({size}) => <i className="ph-bold ph-arrow-right" style={{fontSize: size}}></i>;
+        const Trash2 = ({size}) => <i className="ph-fill ph-trash" style={{fontSize: size}}></i>;
+        const Pause = ({size}) => <i className="ph-fill ph-pause" style={{fontSize: size}}></i>;
+        const FastForward = ({size}) => <i className="ph-fill ph-fast-forward" style={{fontSize: size}}></i>;
+        const Flag = ({size}) => <i className="ph-fill ph-flag" style={{fontSize: size}}></i>;
         const Database = ({size, className}) => <i className={`ph-fill ph-database ${className||''}`} style={{fontSize: size}}></i>;
-        const History = ({size, className}) => <i className={`ph-bold ph-clock-counter-clockwise ${className||''}`} style={{fontSize: size}}></i>;
-        const ArrowLeft = ({size, className}) => <i className={`ph-bold ph-arrow-left ${className||''}`} style={{fontSize: size}}></i>;
-        const Crosshair = ({size, className}) => <i className={`ph-bold ph-crosshair ${className||''}`} style={{fontSize: size}}></i>;
-        const Wind = ({size, className}) => <i className={`ph-bold ph-wind ${className||''}`} style={{fontSize: size}}></i>;
-        const FileText = ({size, className}) => <i className={`ph-fill ph-file-text ${className||''}`} style={{fontSize: size}}></i>;
-        const Users = ({size, className}) => <i className={`ph-fill ph-users ${className||''}`} style={{fontSize: size}}></i>;
-        const Plus = ({size, className}) => <i className={`ph-bold ph-plus ${className||''}`} style={{fontSize: size}}></i>;
+        const HistoryIcon = ({size}) => <i className="ph-bold ph-clock-counter-clockwise" style={{fontSize: size}}></i>;
+        const ArrowLeft = ({size}) => <i className="ph-bold ph-arrow-left" style={{fontSize: size}}></i>;
+        const Crosshair = ({size}) => <i className="ph-bold ph-crosshair" style={{fontSize: size}}></i>;
+        const Wind = ({size}) => <i className="ph-bold ph-wind" style={{fontSize: size}}></i>;
+        const FileText = ({size}) => <i className="ph-fill ph-file-text" style={{fontSize: size}}></i>;
+        const Plus = ({size}) => <i className="ph-bold ph-plus" style={{fontSize: size}}></i>;
+        const Handshake = ({size}) => <i className="ph-fill ph-handshake" style={{fontSize: size}}></i>;
+        const Eraser = ({size}) => <i className="ph-fill ph-eraser" style={{fontSize: size}}></i>;
 
-        // --- CONFIGURAÇÃO FIREBASE (Versão Web/Módulo) ---
+        // --- CONFIGURAÇÃO FIREBASE (Credenciais do Kelvin) ---
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
         import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-        const app = Object.keys(firebaseConfig).length > 0 ? initializeApp(firebaseConfig) : null;
-        const auth = app ? getAuth(app) : null;
-        const db = app ? getFirestore(app) : null;
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = {
+            apiKey: "AIzaSyBwgLd5qV_cClw7VGKUq3j5rdzRzNoc_68",
+            authDomain: "arbitragem-8f746.firebaseapp.com",
+            projectId: "arbitragem-8f746",
+            storageBucket: "arbitragem-8f746.firebasestorage.app",
+            messagingSenderId: "816911924211",
+            appId: "1:816911924211:web:1fb487f5d13b75ad30b086",
+            measurementId: "G-LM7BLGMHQL"
+        };
+        
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const appRootId = "arbitragem-kelvin-final"; 
 
-        // --- SISTEMA DE AUDIO (APITO) ---
+        // --- SISTEMA DE ÁUDIO MAKER ---
         let audioCtx = null;
         const initAudio = () => {
-        if (!audioCtx) {
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        }
-        if (audioCtx.state === 'suspended') {
-            audioCtx.resume();
-        }
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
         };
 
-        const playWhistle = (type) => {
-        try {
-            initAudio();
-            const playBeep = (startTime, duration) => {
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.type = 'square';
-            osc.frequency.setValueAtTime(1400, startTime);
-            osc.frequency.setValueAtTime(1800, startTime + 0.1);
-            gain.gain.setValueAtTime(0.3, startTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            osc.start(startTime);
-            osc.stop(startTime + duration);
-            };
-            const now = audioCtx.currentTime;
-            if (type === 'start') {
-            playBeep(now, 0.6);
-            } else if (type === 'end') {
-            playBeep(now, 0.4);
-            playBeep(now + 0.5, 0.4);
-            playBeep(now + 1.0, 1.2);
-            }
-        } catch (e) { console.log('Erro de áudio', e); }
+        const playSfx = (type) => {
+            try {
+                initAudio();
+                const now = audioCtx.currentTime;
+                const playNote = (freq, start, duration, wave='square') => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = wave;
+                    osc.frequency.setValueAtTime(freq, start);
+                    gain.gain.setValueAtTime(0.08, start);
+                    gain.gain.exponentialRampToValueAtTime(0.001, start + duration);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(start);
+                    osc.stop(start + duration);
+                };
+                if (type === 'start') playNote(1000, now, 0.4);
+                else if (type === 'end') { playNote(1000, now, 0.3); playNote(1000, now+0.4, 0.3); playNote(1000, now+0.8, 1.0); }
+                else if (type === 'goal') { playNote(523, now, 0.15, 'triangle'); playNote(659, now+0.1, 0.15, 'triangle'); playNote(784, now+0.2, 0.4, 'triangle'); }
+                else if (type === 'assist') { playNote(1200, now, 0.1, 'sine'); playNote(1600, now+0.05, 0.2, 'sine'); }
+                else if (type === 'shot') { playNote(800, now, 0.05); playNote(400, now+0.05, 0.1); }
+            } catch (e) {}
         };
 
-        // --- LISTA DE BANDEIRAS ---
+        // --- BANDEIRAS ---
         const COUNTRY_FLAGS = [
-        { id: 'BR', emoji: '🇧🇷', name: 'Brasil' },
-        { id: 'JM', emoji: '🇯🇲', name: 'Jamaica' },
-        { id: 'AR', emoji: '🇦🇷', name: 'Argentina' },
-        { id: 'UY', emoji: '🇺🇾', name: 'Uruguai' },
-        { id: 'CO', emoji: '🇨🇴', name: 'Colômbia' },
-        { id: 'CL', emoji: '🇨🇱', name: 'Chile' },
-        { id: 'PE', emoji: '🇵🇪', name: 'Peru' },
-        { id: 'US', emoji: '🇺🇸', name: 'EUA' },
-        { id: 'MX', emoji: '🇲🇽', name: 'México' },
-        { id: 'CA', emoji: '🇨🇦', name: 'Canadá' },
-        { id: 'EN', emoji: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', name: 'Inglaterra' },
-        { id: 'ES', emoji: '🇪🇸', name: 'Espanha' },
-        { id: 'FR', emoji: '🇫🇷', name: 'França' },
-        { id: 'DE', emoji: '🇩🇪', name: 'Alemanha' },
-        { id: 'IT', emoji: '🇮🇹', name: 'Itália' },
-        { id: 'PT', emoji: '🇵🇹', name: 'Portugal' },
-        { id: 'NL', emoji: '🇳🇱', name: 'Holanda' },
-        { id: 'BE', emoji: '🇧🇪', name: 'Bélgica' },
-        { id: 'JP', emoji: '🇯🇵', name: 'Japão' },
-        { id: 'KR', emoji: '🇰🇷', name: 'Coreia do Sul' },
-        { id: 'SN', emoji: '🇸🇳', name: 'Senegal' },
-        { id: 'MA', emoji: '🇲🇦', name: 'Marrocos' }
+            { code: 'br', name: 'Brasil' }, { code: 'jm', name: 'Jamaica' },
+            { code: 'ar', name: 'Argentina' }, { code: 'uy', name: 'Uruguai' },
+            { code: 'co', name: 'Colômbia' }, { code: 'cl', name: 'Chile' },
+            { code: 'pe', name: 'Peru' }, { code: 'us', name: 'EUA' },
+            { code: 'mx', name: 'México' }, { code: 'ca', name: 'Canadá' },
+            { code: 'gb-eng', name: 'Inglaterra' }, { code: 'es', name: 'Espanha' },
+            { code: 'fr', name: 'França' }, { code: 'de', name: 'Alemanha' },
+            { code: 'it', name: 'Itália' }, { code: 'pt', name: 'Portugal' }
         ];
 
-        // --- COMPONENTE GRÁFICO GLOBAL ---
-        const StatLine = ({ label, valA, valB }) => {
-        const total = valA + valB || 1;
-        const pctA = (valA / total) * 100;
-        const pctB = (valB / total) * 100;
-        return (
-            <div className="mb-4 md:mb-5 w-full">
-            <div className="flex justify-between items-center text-[10px] md:text-xs font-bold text-white mb-1.5 uppercase tracking-widest px-1">
-                <span className="w-6 md:w-8 font-mono text-base md:text-lg text-green-500">{valA}</span>
-                <span className="text-neutral-400 text-center flex-1">{label}</span>
-                <span className="w-6 md:w-8 text-right font-mono text-base md:text-lg text-yellow-400">{valB}</span>
-            </div>
-            <div className="h-1.5 md:h-2 w-full bg-[#0a0a0a] rounded-full flex overflow-hidden border border-neutral-800">
-                <div style={{ width: `${pctA}%` }} className="h-full bg-green-500 transition-all duration-1000"></div>
-                <div style={{ width: `${pctB}%` }} className="h-full bg-yellow-400 transition-all duration-1000"></div>
-            </div>
-            </div>
-        );
+        const FlagImage = ({ code, className }) => {
+            if (!code) return <div className={`bg-neutral-800 flex items-center justify-center rounded ${className}`}><i className="ph ph-flag text-neutral-600"></i></div>;
+            return <img src={`https://flagcdn.com/${code}.svg`} className={`object-cover rounded shadow-sm border border-neutral-800 ${className}`} />;
+        };
+
+        // --- COMPONENTE GRÁFICO ---
+        const StatBar = ({ label, valA, valB }) => {
+            const total = valA + valB || 1;
+            const pctA = (valA / total) * 100;
+            return (
+                <div className="mb-3 w-full">
+                    <div className="flex justify-between items-center text-[10px] font-bold text-neutral-300 mb-1 uppercase tracking-tighter px-1">
+                        <span className="w-8 font-mono text-base text-green-500">{valA}</span>
+                        <span className="flex-1 text-center">{label}</span>
+                        <span className="w-8 text-right font-mono text-base text-yellow-400">{valB}</span>
+                    </div>
+                    <div className="h-1.5 w-full bg-[#111] rounded-full flex overflow-hidden border border-neutral-900">
+                        <div style={{ width: `${pctA}%` }} className="h-full bg-green-500 transition-all duration-700"></div>
+                        <div style={{ width: `${100 - pctA}%` }} className="h-full bg-yellow-400 transition-all duration-700"></div>
+                    </div>
+                </div>
+            );
         };
 
         function App() {
-        // --- ESTADOS ---
-        const [user, setUser] = useState(null);
-        const [matchHistory, setMatchHistory] = useState([]);
-        const [selectedMatch, setSelectedMatch] = useState(null); 
-        const [isSaving, setIsSaving] = useState(false);
+            const [user, setUser] = useState(null);
+            const [matchHistory, setMatchHistory] = useState([]);
+            const [selectedMatch, setSelectedMatch] = useState(null);
+            const [isSaving, setIsSaving] = useState(false);
+            const [appState, setAppState] = useState('SETUP'); 
+            const [time, setTime] = useState(0);
+            const [isTimerRunning, setIsTimerRunning] = useState(false);
+            const [period, setPeriod] = useState('1º Tempo');
+            const [timeline, setTimeline] = useState([]);
+            const [isUndoMode, setIsUndoMode] = useState(false);
+            const [matchConfig, setMatchConfig] = useState({ durationMinutes: 10, goalLimit: 3 });
 
-        const [appState, setAppState] = useState('SETUP'); 
-        const [time, setTime] = useState(0);
-        const [isTimerRunning, setIsTimerRunning] = useState(false);
-        const [period, setPeriod] = useState('1º Tempo');
-        const [timeline, setTimeline] = useState([]);
-        const timelineEndRef = useRef(null);
-
-        const getInitialTeams = () => ({
-            A: { name: '', flag: '🏳️', color: 'green', goals: 0, corners: 0, throwIns: 0, fouls: 0, shotsTotal: 0, shotsOnTarget: 0, players: [] },
-            B: { name: '', flag: '🏴', color: 'yellow', goals: 0, corners: 0, throwIns: 0, fouls: 0, shotsTotal: 0, shotsOnTarget: 0, players: [] }
-        });
-
-        const [teams, setTeams] = useState(getInitialTeams());
-        const [motm, setMotm] = useState(null);
-        const [newPlayer, setNewPlayer] = useState({ A: { name: '', number: '', hist: '' }, B: { name: '', number: '', hist: '' } });
-        const [activeFlagPicker, setActiveFlagPicker] = useState(null);
-        const [animatingPlayer, setAnimatingPlayer] = useState(null); 
-        
-        // NOVA CONFIGURAÇÃO DA PARTIDA
-        const [matchConfig, setMatchConfig] = useState({ durationMinutes: 10, goalLimit: 3 });
-
-        // --- EFEITOS DB ---
-        useEffect(() => {
-            if (!auth) return;
-            const initAuth = async () => {
-            try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                await signInAnonymously(auth);
-                }
-            } catch (error) {}
-            };
-            initAuth();
-            const unsubscribe = onAuthStateChanged(auth, setUser);
-            return () => unsubscribe();
-        }, []);
-
-        useEffect(() => {
-            if (!user || !db) return;
-            const matchesRef = collection(db, 'artifacts', appId, 'users', user.uid, 'matches');
-            const unsubscribe = onSnapshot(matchesRef, (snapshot) => {
-            const history = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            history.sort((a, b) => b.timestamp - a.timestamp);
-            setMatchHistory(history);
-            }, (error) => {
-            console.error("Erro na escuta do Firestore:", error);
+            const getInitialTeams = () => ({
+                A: { name: '', flag: null, color: 'green', goals: 0, corners: 0, throwIns: 0, fouls: 0, shotsTotal: 0, shotsOnTarget: 0, players: [] },
+                B: { name: '', flag: null, color: 'yellow', goals: 0, corners: 0, throwIns: 0, fouls: 0, shotsTotal: 0, shotsOnTarget: 0, players: [] }
             });
-            return () => unsubscribe();
-        }, [user]);
 
-        // --- CRONÔMETRO REGRESSIVO ---
-        useEffect(() => {
-            let interval;
-            if (isTimerRunning && appState === 'MATCH') {
-            interval = setInterval(() => {
-                setTime(t => {
-                if (t <= 1) {
-                    clearInterval(interval);
-                    setIsTimerRunning(false);
-                    playWhistle('end');
-                    return 0;
-                }
-                return t - 1;
+            const [teams, setTeams] = useState(getInitialTeams());
+            const [motm, setMotm] = useState(null);
+            const [newPlayer, setNewPlayer] = useState({ A: { name: '', number: '', hist: '' }, B: { name: '', number: '', hist: '' } });
+            const [activeFlagPicker, setActiveFlagPicker] = useState(null);
+            const [animatingPlayer, setAnimatingPlayer] = useState(null);
+
+            // CORREÇÃO DA AUTENTICAÇÃO COM FALLBACK PARA PROJETOS PRÓPRIOS
+            useEffect(() => {
+                const initAuth = async () => {
+                    try {
+                        // Tenta usar o token customizado do ambiente (funciona no sandbox)
+                        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                            try {
+                                await signInWithCustomToken(auth, __initial_auth_token);
+                            } catch (tokenErr) {
+                                // Se o token não bater com o projeto do usuário (mismatch), usa o anônimo
+                                await signInAnonymously(auth);
+                            }
+                        } else {
+                            await signInAnonymously(auth);
+                        }
+                    } catch (e) {
+                        console.error("Erro fatal na configuração de autenticação:", e);
+                    }
+                };
+                initAuth();
+                const unsubscribe = onAuthStateChanged(auth, (u) => {
+                    if (u) setUser(u);
                 });
-            }, 1000);
-            } else {
-            clearInterval(interval);
-            }
-            return () => clearInterval(interval);
-        }, [isTimerRunning, appState]);
+                return () => unsubscribe();
+            }, []);
 
-        const formatTime = (seconds) => `${Math.floor(seconds / 60).toString().padStart(2, '0')}:${(seconds % 60).toString().padStart(2, '0')}`;
-        const getMatchMinute = () => `${period} - ${Math.floor(time / 60)}'`;
+            // ESCUTA DO BANCO DE DADOS (APENAS APÓS AUTH)
+            useEffect(() => {
+                if (!user) return;
+                const ref = collection(db, 'artifacts', appRootId, 'users', user.uid, 'matches');
+                const unsubscribe = onSnapshot(ref, (snap) => {
+                    const data = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                    setMatchHistory(data.sort((a,b) => b.timestamp - a.timestamp));
+                }, (error) => {
+                    console.error("Erro ao buscar histórico no Firestore:", error);
+                });
+                return () => unsubscribe();
+            }, [user]);
 
-        const addEvent = (type, description, colorClass) => {
-            setTimeline(prev => [...prev, { time: getMatchMinute(), type, description, colorClass }]);
-        };
+            useEffect(() => {
+                let interval;
+                if (isTimerRunning && appState === 'MATCH') {
+                    interval = setInterval(() => {
+                        setTime(t => {
+                            if (t <= 1) { playSfx('end'); setIsTimerRunning(false); return 0; }
+                            return t - 1;
+                        });
+                    }, 1000);
+                } else clearInterval(interval);
+                return () => clearInterval(interval);
+            }, [isTimerRunning, appState]);
 
-        const triggerPopAnimation = (playerId) => {
-            setAnimatingPlayer(playerId);
-            setTimeout(() => setAnimatingPlayer(null), 300);
-        };
+            const handlePlayerAction = (teamId, playerId, action) => {
+                const team = teams[teamId];
+                const player = team.players.find(p => p.id === playerId);
+                if (!player) return;
 
-        const handleEndGame = () => {
-            setIsTimerRunning(false);
-            playWhistle('end');
-            setTimeout(() => setAppState('DASHBOARD'), 1000);
-        };
+                let up = { ...player };
+                let ut = { ...team };
+                setAnimatingPlayer(playerId);
+                setTimeout(() => setAnimatingPlayer(null), 300);
 
-        // --- MOTOR LÓGICO ---
-        const handlePlayerAction = (teamId, playerId, action) => {
-            const team = teams[teamId];
-            const player = team.players.find(p => p.id === playerId);
-            if (!player) return;
-
-            let updatedPlayer = { ...player };
-            let updatedTeam = { ...team };
-            triggerPopAnimation(playerId);
-
-            if (action === 'GOAL') {
-            updatedPlayer.goals += 1;
-            updatedTeam.goals += 1;
-            updatedTeam.shotsTotal += 1;
-            updatedTeam.shotsOnTarget += 1;
-            addEvent('GOL', `${player.name} (${team.name})`, 'text-green-400 font-bold');
-            
-            // VERIFICA LIMITE DE GOLS PARA ENCERRAR A PARTIDA
-            if (matchConfig.goalLimit > 0 && updatedTeam.goals >= matchConfig.goalLimit) {
-                setTeams(prev => ({
-                ...prev,
-                [teamId]: { ...updatedTeam, players: updatedTeam.players.map(p => p.id === playerId ? updatedPlayer : p) }
-                }));
-                handleEndGame();
-                return;
-            }
-            } 
-            else if (action === 'YELLOW') {
-            if (updatedPlayer.reds > 0) return;
-            updatedPlayer.yellows += 1;
-            addEvent('Amarelo', `${player.name}`, 'text-yellow-400');
-
-            if (updatedPlayer.yellows === 2) {
-                updatedPlayer.reds = 1;
-                addEvent('Expulsão', `${player.name} (2º Amarelo)`, 'text-red-500 font-bold');
-            }
-
-            if ((updatedPlayer.historicYellows + updatedPlayer.yellows) % 3 === 0) {
-                addEvent('Alerta', `${player.name} suspenso do próx. jogo`, 'text-orange-400');
-                updatedPlayer.suspendedNext = true;
-            }
-            } 
-            else if (action === 'RED') {
-            if (updatedPlayer.reds > 0) return;
-            updatedPlayer.reds = 1;
-            addEvent('Vermelho', `${player.name} expulso diretam.`, 'text-red-500 font-bold');
-            }
-
-            setTeams(prev => ({
-            ...prev,
-            [teamId]: { ...updatedTeam, players: updatedTeam.players.map(p => p.id === playerId ? updatedPlayer : p) }
-            }));
-        };
-
-        const handleTeamAction = (teamId, action) => {
-            setTeams(prev => ({ ...prev, [teamId]: { ...prev[teamId], [action]: prev[teamId][action] + 1 } }));
-            const labels = { 
-            corners: ['Escanteio', 'text-green-400'], 
-            throwIns: ['Lateral', 'text-yellow-400'], 
-            fouls: ['Falta', 'text-orange-400'] 
-            };
-            if (labels[action]) {
-            addEvent(labels[action][0], `Para: ${teams[teamId].name}`, labels[action][1]);
-            }
-        };
-
-        const handleShot = (teamId, isOnTarget) => {
-            setTeams(prev => {
-            const team = prev[teamId];
-            return {
-                ...prev,
-                [teamId]: {
-                ...team,
-                shotsTotal: team.shotsTotal + 1,
-                shotsOnTarget: isOnTarget ? team.shotsOnTarget + 1 : team.shotsOnTarget
+                if (isUndoMode) {
+                    if (action === 'GOAL' && up.goals > 0) { up.goals--; ut.goals--; ut.shotsTotal--; ut.shotsOnTarget--; addEvent('ANULADO', `Gol de ${up.name} removido`, 'text-red-400'); }
+                    else if (action === 'ASSIST' && up.assists > 0) { up.assists--; addEvent('CORREÇÃO', `Assist. de ${up.name} removida`, 'text-neutral-500'); }
+                    else if (action === 'YELLOW' && up.yellows > 0) { up.yellows--; if(up.yellows < 2) up.reds = 0; addEvent('CORREÇÃO', `Amarelo de ${up.name} removido`, 'text-neutral-500'); }
+                    else if (action === 'RED' && up.reds > 0) { up.reds = 0; addEvent('CORREÇÃO', `Vermelho de ${up.name} removido`, 'text-neutral-500'); }
+                } else {
+                    if (action === 'GOAL') {
+                        up.goals++; ut.goals++; ut.shotsTotal++; ut.shotsOnTarget++; playSfx('goal');
+                        addEvent('GOL', `${up.name} (${ut.name})`, 'text-green-400 font-bold');
+                        if (matchConfig.goalLimit > 0 && ut.goals >= matchConfig.goalLimit) {
+                            setTeams(p => ({ ...p, [teamId]: { ...ut, players: ut.players.map(pl => pl.id === playerId ? up : pl) } }));
+                            playSfx('end'); setIsTimerRunning(false); setTimeout(() => setAppState('DASHBOARD'), 1000); return;
+                        }
+                    } else if (action === 'ASSIST') {
+                        up.assists = (up.assists || 0) + 1; playSfx('assist'); addEvent('ASSIST.', `${up.name}`, 'text-blue-400');
+                    } else if (action === 'YELLOW') {
+                        if (up.reds > 0) return; up.yellows++; addEvent('AMARELO', up.name, 'text-yellow-400');
+                        if (up.yellows === 2) { up.reds = 1; addEvent('EXPULSÃO', `${up.name} (2º Amarelo)`, 'text-red-500 font-bold'); }
+                    } else if (action === 'RED') {
+                        if (up.reds > 0) return; up.reds = 1; addEvent('VERMELHO', `${up.name} expulso`, 'text-red-500 font-bold');
+                    }
                 }
-            };
-            });
-            addEvent(isOnTarget ? 'No Alvo' : 'Pra Fora', `Finalização: ${teams[teamId].name}`, isOnTarget ? 'text-green-400' : 'text-neutral-400');
-        };
-
-        const handleAddPlayer = (teamId) => {
-            const data = newPlayer[teamId];
-            if (!data.name || !data.number) return;
-            
-            const newP = {
-            id: Math.random().toString(36).substr(2, 9),
-            name: data.name.toUpperCase(),
-            number: parseInt(data.number),
-            goals: 0, yellows: 0, reds: 0,
-            historicYellows: parseInt(data.hist) || 0,
-            suspendedNext: false
+                setTeams(p => ({ ...p, [teamId]: { ...ut, players: ut.players.map(pl => pl.id === playerId ? up : pl) } }));
             };
 
-            setTeams(prev => ({ ...prev, [teamId]: { ...prev[teamId], players: [...prev[teamId].players, newP] } }));
-            setNewPlayer(prev => ({ ...prev, [teamId]: { name: '', number: '', hist: '' } }));
-        };
+            const formatTime = (seconds) => `${Math.floor(seconds / 60).toString().padStart(2, '0')}:${(seconds % 60).toString().padStart(2, '0')}`;
+            const addEvent = (type, desc, color) => {
+                setTimeline(p => [{ time: `${period} - ${Math.floor(time/60)}'`, type, description: desc, colorClass: color }, ...p]);
+            };
 
-        const removePlayer = (teamId, playerId) => {
-            setTeams(prev => ({ ...prev, [teamId]: { ...prev[teamId], players: prev[teamId].players.filter(p => p.id !== playerId) } }));
-        };
+            const saveMatch = async () => {
+                if(!user) return;
+                setIsSaving(true);
+                try {
+                    const allP = [...teams.A.players, ...teams.B.players];
+                    const scorer = allP.reduce((m, p) => (p.goals > (m?.goals || 0) ? p : m), null);
+                    const data = { 
+                        timestamp: Date.now(), 
+                        dateString: new Date().toLocaleString('pt-BR'), 
+                        teamA: teams.A, 
+                        teamB: teams.B, 
+                        timeline, 
+                        highlights: { motm: motm?.name || '---', topScorer: scorer?.goals > 0 ? scorer.name : '---' } 
+                    };
+                    await addDoc(collection(db, 'artifacts', appRootId, 'users', user.uid, 'matches'), data);
+                    setTeams(getInitialTeams()); setTimeline([]); setAppState('HISTORY');
+                } catch(e){
+                    console.error("Erro ao salvar no banco:", e);
+                } finally { setIsSaving(false); }
+            };
 
-        // --- PERSISTÊNCIA NO DB ---
-        const saveMatchToDatabase = async () => {
-            if (!user || !db) return;
-            setIsSaving(true);
-            try {
-            const matchesRef = collection(db, 'artifacts', appId, 'users', user.uid, 'matches');
-            const allPlayers = [...teams.A.players, ...teams.B.players];
-            const topScorer = allPlayers.reduce((max, p) => p.goals > max.goals ? p : max, allPlayers[0] || {goals: 0});
-
-            await addDoc(matchesRef, {
-                timestamp: Date.now(),
-                dateString: new Date().toLocaleDateString('pt-BR') + ' ' + new Date().toLocaleTimeString('pt-BR'),
-                teamA: teams.A, 
-                teamB: teams.B, 
-                timeline: timeline, 
-                highlights: {
-                motm: motm ? motm.name : 'Nenhum',
-                topScorer: topScorer?.goals > 0 ? topScorer.name : 'Nenhum'
-                }
-            });
-            
-            setTeams(getInitialTeams());
-            setTimeline([]);
-            setTime(0);
-            setPeriod('1º Tempo');
-            setMotm(null);
-            setAppState('HISTORY'); 
-            } catch (error) {
-            console.error("Erro ao salvar:", error);
-            } finally {
-            setIsSaving(false);
-            }
-        };
-
-        const deleteMatch = async (e, matchId) => {
-            e.stopPropagation(); 
-            if (!user || !db) return;
-            if (confirm("Confirma a exclusão permanente desta súmula?")) {
-            try {
-                await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'matches', matchId));
-                if(selectedMatch && selectedMatch.id === matchId) setSelectedMatch(null);
-            } catch (error) {}
-            }
-        };
-
-        // ==========================================
-        // TELA 1 - SETUP
-        // ==========================================
-        if (appState === 'SETUP') {
-            return (
-            <div className="min-h-screen p-2 md:p-6 overflow-x-hidden">
-                <div className="max-w-6xl mx-auto space-y-4 md:space-y-8">
-                <div className="animate-fade-in-up flex flex-col md:flex-row justify-between items-center bg-[#0d0d0d]/90 backdrop-blur-xl p-4 md:p-6 rounded-[1rem] md:rounded-[1.5rem] border border-neutral-800 shadow-xl gap-3 relative z-20">
-                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-green-500 via-yellow-400 to-black rounded-t-[1rem]"></div>
-                    
-                    <div className="text-center md:text-left">
-                    <h1 className="text-2xl md:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-yellow-400 uppercase tracking-tighter">
-                        Súmula Digital
-                    </h1>
-                    <p className="text-neutral-400 font-mono text-[10px] md:text-xs mt-1 flex items-center justify-center md:justify-start gap-1.5">
-                        <Database size={12} className={user ? "text-green-500" : "text-yellow-500"}/>
-                        Nuvem: {user ? <span className="text-green-400 font-bold">Conectado</span> : <span className="text-yellow-400">Aguardando...</span>}
-                    </p>
-                    </div>
-
-                    <div className="flex w-full md:w-auto gap-2">
-                    <div className="flex items-center gap-2 bg-[#050505] p-2 rounded-xl border border-neutral-800">
-                        <div className="flex flex-col">
-                        <label className="text-[9px] text-neutral-500 uppercase font-bold px-1">Tempo (Min)</label>
-                        <input type="number" className="w-12 bg-transparent text-white font-mono text-center outline-none text-sm" value={matchConfig.durationMinutes} onChange={e => setMatchConfig(p => ({...p, durationMinutes: parseInt(e.target.value) || 0}))} title="Duração total (Retroativo)" />
+            // --- UI RENDER ---
+            if (appState === 'SETUP') return (
+                <div className="min-h-screen p-2 md:p-6 animate-fade">
+                    <div className="max-w-5xl mx-auto space-y-4">
+                        <div className="bg-[#0d0d0d] p-4 md:p-6 rounded-2xl border border-neutral-800 flex flex-col md:flex-row justify-between items-center gap-4 relative">
+                            <div className="absolute top-0 left-0 w-full h-1 bg-jamaica-gradient rounded-t-2xl"></div>
+                            <div className="text-center md:text-left">
+                                <h1 className="text-2xl md:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-yellow-400 uppercase tracking-tighter">Súmula Digital</h1>
+                                <p className="text-[10px] text-neutral-500 font-mono mt-1 flex items-center justify-center md:justify-start gap-2">
+                                    <Database size={12} className={user ? "text-green-500" : "text-yellow-500"}/> Nuvem: {user ? <span className="text-green-400">Conectada</span> : <span className="text-yellow-500">Conectando...</span>}
+                                </p>
+                            </div>
+                            <div className="flex gap-2">
+                                <div className="bg-black/50 p-2 rounded-xl border border-neutral-800 flex gap-2">
+                                    <div className="flex flex-col"><label className="text-[8px] text-neutral-500 font-bold text-center uppercase">Tempo</label><input type="number" className="w-10 bg-transparent text-center text-sm font-bold text-white outline-none" value={matchConfig.durationMinutes} onChange={e=>setMatchConfig(p=>({...p, durationMinutes: parseInt(e.target.value)||0}))} /></div>
+                                    <div className="w-px bg-neutral-800 h-6 my-auto"></div>
+                                    <div className="flex flex-col"><label className="text-[8px] text-neutral-500 font-bold text-center uppercase">Gols</label><input type="number" className="w-10 bg-transparent text-center text-sm font-bold text-white outline-none" value={matchConfig.goalLimit} onChange={e=>setMatchConfig(p=>({...p, goalLimit: parseInt(e.target.value)||0}))} /></div>
+                                </div>
+                                <button onClick={()=>setAppState('HISTORY')} className="p-3 bg-[#111] rounded-xl border border-neutral-800 text-green-500 active:scale-95"><HistoryIcon size={20}/></button>
+                            </div>
                         </div>
-                        <div className="w-px h-6 bg-neutral-800 mx-1"></div>
-                        <div className="flex flex-col">
-                        <label className="text-[9px] text-neutral-500 uppercase font-bold px-1">Finaliza c/ Gols</label>
-                        <input type="number" className="w-12 bg-transparent text-white font-mono text-center outline-none text-sm" value={matchConfig.goalLimit} onChange={e => setMatchConfig(p => ({...p, goalLimit: parseInt(e.target.value) || 0}))} title="Finaliza o jogo com X gols" />
+
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                            {['A', 'B'].map((t) => (
+                                <div key={t} className="bg-[#0d0d0d] rounded-2xl border border-neutral-800 flex flex-col overflow-visible shadow-lg animate-fade">
+                                    <div className={`p-3 md:p-5 border-b border-neutral-800 flex items-center gap-4 ${t==='A'?'bg-green-500/5':'bg-yellow-500/5'}`}>
+                                        <div className="relative">
+                                            <button onClick={()=>setActiveFlagPicker(activeFlagPicker===t?null:t)} className="w-12 h-8 md:w-16 md:h-11 shadow-lg active:scale-90 transition-transform"><FlagImage code={teams[t].flag} className="w-full h-full" /></button>
+                                            {activeFlagPicker===t && (
+                                                <div className="absolute top-12 left-0 z-50 bg-[#1a1a1a] border border-neutral-700 rounded-xl p-2 grid grid-cols-4 gap-2 w-64 h-48 overflow-y-auto no-scrollbar shadow-2xl">
+                                                    {COUNTRY_FLAGS.map(c=>(<button key={c.code} onClick={()=>{setTeams(p=>({...p,[t]:{...p[t],flag:c.code}}));setActiveFlagPicker(null)}} className="p-1 hover:bg-neutral-800 rounded-lg"><FlagImage code={c.code} className="w-full h-7" /></button>))}
+                                                </div>
+                                            )}
+                                        </div>
+                                        <input className="bg-transparent text-xl md:text-3xl font-black text-white outline-none w-full uppercase placeholder-neutral-800" value={teams[t].name} onChange={e=>setTeams(p=>({...p,[t]:{...p[t],name:e.target.value.toUpperCase()}}))} placeholder="NOME DO TIME" />
+                                    </div>
+                                    <div className="p-4 bg-black/20 border-b border-neutral-800 space-y-3">
+                                        <div className="flex gap-2">
+                                            <input type="number" placeholder="Nº" className="w-14 bg-[#111] border border-neutral-800 rounded-lg p-2 text-center text-sm text-white font-mono" value={newPlayer[t].number} onChange={e=>setNewPlayer(p=>({...p,[t]:{...p[t],number:e.target.value}}))} />
+                                            <input type="text" placeholder="NOME DO ATLETA" className="flex-1 bg-[#111] border border-neutral-800 rounded-lg p-2 text-sm text-white uppercase font-bold" value={newPlayer[t].name} onChange={e=>setNewPlayer(p=>({...p,[t]:{...p[t],name:e.target.value}}))} />
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <input type="number" placeholder="C.A. ANTERIOR" className="flex-1 bg-[#111] border border-neutral-800 rounded-lg p-2 text-xs text-yellow-400 font-bold" value={newPlayer[t].hist} onChange={e=>setNewPlayer(p=>({...p,[t]:{...p[t],hist:e.target.value}}))} />
+                                            <button onClick={()=>{const d=newPlayer[t]; if(d.name&&d.number) {const np={id:Math.random().toString(36).substr(2,9),name:d.name.toUpperCase(),number:parseInt(d.number),goals:0,assists:0,yellows:0,reds:0,historicYellows:parseInt(d.hist)||0}; setTeams(p=>({...p,[t]:{...p[t],players:[...p[t].players,np]}})); setNewPlayer(p=>({...p,[t]:{name:'',number:'',hist:''}}));}}} className={`px-8 py-2 rounded-lg font-black text-black active:scale-95 ${t==='A'?'bg-green-500':'bg-yellow-400'}`}><UserPlus size={18}/></button>
+                                        </div>
+                                    </div>
+                                    <div className="p-3 h-52 overflow-y-auto space-y-2 no-scrollbar">
+                                        {teams[t].players.map(p=>(
+                                            <div key={p.id} className="flex justify-between items-center bg-[#111] p-3 rounded-xl border border-neutral-800 animate-slide">
+                                                <div className="flex items-center gap-3"><span className={`font-mono text-xs px-2 py-1 rounded text-black font-black ${t==='A'?'bg-green-500':'bg-yellow-400'}`}>{p.number}</span><span className="font-bold text-sm text-white uppercase">{p.name}</span></div>
+                                                <button onClick={()=>setTeams(p_=>({...p_,[t]:{...p_[t],players:p_[t].players.filter(pl=>pl.id!==p.id)}}))} className="p-2 text-neutral-600 hover:text-red-500 active:scale-90"><Trash2 size={16}/></button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            ))}
                         </div>
-                    </div>
-                    <button onClick={() => { setSelectedMatch(null); setAppState('HISTORY'); }} className="flex justify-center items-center gap-2 bg-[#171717] hover:bg-neutral-800 border border-neutral-700 px-4 py-2.5 rounded-xl transition-all active:scale-95 text-xs md:text-sm font-bold text-white">
-                        <History size={14} className="text-green-400" />
-                    </button>
+                        <button onClick={()=>{ if(!teams.A.name||!teams.B.name) return alert("Defina os times!"); playSfx('start'); setTime(matchConfig.durationMinutes*60); setAppState('MATCH'); }} className="w-full bg-gradient-to-r from-green-600 to-green-500 text-white text-xl font-black py-5 rounded-2xl shadow-xl active:scale-95 uppercase tracking-widest border border-green-400/30">Começar Jogo Oficial</button>
                     </div>
                 </div>
+            );
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-8">
-                    {['A', 'B'].map((t, index) => (
-                    <div key={t} className={`animate-fade-in-up stagger-${index + 1} bg-[#0d0d0d] rounded-[1rem] md:rounded-[1.5rem] border border-neutral-800 flex flex-col overflow-visible shadow-lg`}>
-                        <div className={`p-3 md:p-5 border-b border-neutral-800 flex items-center gap-3 rounded-t-[1rem] md:rounded-t-[1.5rem] relative ${t==='A' ? 'bg-gradient-to-br from-green-950/40 to-transparent' : 'bg-gradient-to-br from-yellow-950/30 to-transparent'}`}>
-                        
-                        <div className="relative flex-shrink-0">
-                            <button 
-                            onClick={() => setActiveFlagPicker(activeFlagPicker === t ? null : t)}
-                            className="text-3xl md:text-5xl hover:scale-105 transition-transform filter drop-shadow-md"
-                            >
-                            {teams[t].flag}
-                            </button>
-                            
-                            {activeFlagPicker === t && (
-                            <div className="absolute top-12 left-0 z-50 bg-[#1a1a1a] border border-neutral-700 rounded-xl p-2 shadow-2xl grid grid-cols-4 gap-1.5 w-56 md:w-72 h-48 overflow-y-auto no-scrollbar animate-fade-in-up">
-                                <div className="col-span-4 text-[9px] md:text-[10px] text-neutral-400 font-bold uppercase mb-1 border-b border-neutral-700 pb-1 sticky top-0 bg-[#1a1a1a]">Escolha a Nação</div>
-                                {COUNTRY_FLAGS.map(country => (
-                                <button 
-                                    key={country.id} 
-                                    onClick={() => {
-                                    setTeams(prev => ({...prev, [t]: {...prev[t], flag: country.emoji}}));
-                                    setActiveFlagPicker(null);
-                                    }}
-                                    className="text-xl md:text-2xl hover:bg-neutral-800 p-1.5 rounded-lg transition-colors flex justify-center items-center active:scale-90"
-                                >
-                                    {country.emoji}
-                                </button>
-                                ))}
-                            </div>
-                            )}
-                        </div>
-
-                        <input 
-                            className="bg-transparent text-xl md:text-3xl font-black text-white outline-none w-full uppercase placeholder-neutral-700 tracking-tighter"
-                            value={teams[t].name}
-                            onChange={(e) => setTeams(prev => ({...prev, [t]: {...prev[t], name: e.target.value.toUpperCase()}}))}
-                            placeholder="NOME DA EQUIPE"
-                        />
-                        </div>
-
-                        <div className="p-3 md:p-5 bg-[#050505] border-b border-neutral-800">
-                        <div className="flex flex-col gap-2">
+            if (appState === 'MATCH') return (
+                <div className="min-h-screen p-2 md:p-4 flex flex-col gap-3">
+                    <div className={`bg-[#0d0d0d] p-4 rounded-2xl border border-neutral-800 shadow-2xl flex flex-col md:flex-row justify-between items-center gap-4 relative overflow-hidden ${isUndoMode?'undo-active':''}`}>
+                        <div className="absolute top-0 left-0 w-full h-1 bg-jamaica-gradient"></div>
+                        <div className="flex md:hidden w-full justify-between items-center">
+                            <button onClick={()=>setIsUndoMode(!isUndoMode)} className={`px-2 py-1 rounded text-[9px] font-black uppercase flex items-center gap-1 border ${isUndoMode?'bg-red-500 border-red-300 text-white':'bg-neutral-800 border-neutral-700 text-neutral-400'}`}><Eraser size={12}/>{isUndoMode?'CORREÇÃO':'NORMAL'}</button>
                             <div className="flex gap-2">
-                            <input type="number" placeholder="Nº" className="w-14 bg-[#171717] border border-neutral-700 rounded-lg p-2 text-center text-sm text-white focus:border-green-500 outline-none font-mono" value={newPlayer[t].number} onChange={e => setNewPlayer(p => ({...p, [t]: {...p[t], number: e.target.value}}))} />
-                            <input type="text" placeholder="Nome do Atleta" className="flex-1 bg-[#171717] border border-neutral-700 rounded-lg p-2 text-sm text-white focus:border-green-500 outline-none uppercase" value={newPlayer[t].name} onChange={e => setNewPlayer(p => ({...p, [t]: {...p[t], name: e.target.value}}))} />
-                            </div>
-                            <div className="flex gap-2">
-                            <input type="number" placeholder="CA Ant." className="flex-1 bg-[#171717] border border-neutral-700 rounded-lg p-2 text-center text-sm text-yellow-400 focus:border-green-500 outline-none font-mono" value={newPlayer[t].hist} onChange={e => setNewPlayer(p => ({...p, [t]: {...p[t], hist: e.target.value}}))} />
-                            <button onClick={() => handleAddPlayer(t)} className={`px-4 py-2 text-black rounded-lg flex items-center justify-center transition-all active:scale-95 font-black ${t==='A' ? 'bg-green-500' : 'bg-yellow-400'}`}>
-                                <UserPlus size={18}/>
-                            </button>
+                                <button onClick={()=>setTime(t=>t+60)} className="p-2 rounded-lg bg-neutral-900 border border-neutral-800 text-blue-400"><Plus size={16}/></button>
+                                <button onClick={()=>setIsTimerRunning(!isTimerRunning)} className={`p-2 rounded-lg text-black ${isTimerRunning?'bg-yellow-400':'bg-green-500'}`}>{isTimerRunning?<Pause size={16}/>:<Play size={16}/>}</button>
+                                <button onClick={()=>{playSfx('end'); setAppState('DASHBOARD');}} className="p-2 rounded-lg bg-red-600 text-white"><Flag size={16}/></button>
                             </div>
                         </div>
+                        <div className="flex w-full md:w-auto items-center justify-between md:justify-end gap-3 flex-1">
+                            <h2 className="text-xl md:text-3xl font-black text-green-500 uppercase truncate max-w-[150px]">{teams.A.name}</h2>
+                            <FlagImage code={teams.A.flag} className="w-10 h-7 md:w-16 md:h-11" />
                         </div>
-                        
-                        <div className="p-3 md:p-5 h-[200px] md:h-[280px] overflow-y-auto space-y-2 no-scrollbar">
-                        {teams[t].players.map((p, idx) => (
-                            <div key={p.id} className="animate-slide-in flex justify-between items-center bg-[#111] p-2.5 rounded-lg border border-neutral-800" style={{animationDelay: `${idx * 0.05}s`}}>
-                            <div className="flex items-center gap-3">
-                                <span className={`font-mono text-xs md:text-sm px-2 py-1 rounded-md border min-w-[2.5rem] text-center text-black font-black ${t==='A' ? 'bg-green-500 border-green-600' : 'bg-yellow-400 border-yellow-500'}`}>
-                                {p.number}
-                                </span>
-                                <div className="flex flex-col">
-                                <span className="font-bold text-xs md:text-sm text-white tracking-wide">{p.name}</span>
-                                {p.historicYellows > 0 && (
-                                    <span className="text-[8px] md:text-[10px] uppercase font-bold text-yellow-400 mt-0.5">
-                                    {p.historicYellows} CA Ant.
-                                    </span>
-                                )}
+                        <div className="flex flex-col items-center bg-black/40 px-6 py-2 rounded-2xl border border-neutral-800 w-full md:w-auto relative">
+                            <button onClick={()=>setIsUndoMode(!isUndoMode)} className={`hidden md:flex absolute -top-3 px-3 py-1 rounded-full text-[9px] font-bold border transition-all ${isUndoMode ? 'bg-red-500 text-white border-red-400' : 'bg-neutral-800 text-neutral-500 border-neutral-700'}`}><Eraser size={10}/> {isUndoMode ? 'CORREÇÃO ATIVA' : 'MODO NORMAL'}</button>
+                            <div className="text-5xl md:text-7xl font-black font-mono flex items-center gap-4">{teams.A.goals}<span className="text-neutral-700 text-3xl">:</span>{teams.B.goals}</div>
+                            <div className="flex items-center gap-2 text-yellow-400 font-mono font-black text-xl mt-1 md:text-2xl"><Clock size={18} className={isTimerRunning?"animate-pulse":""}/> {formatTime(time)}</div>
+                        </div>
+                        <div className="flex w-full md:w-auto items-center justify-between md:justify-start gap-3 flex-1 flex-row-reverse md:flex-row">
+                            <h2 className="text-xl md:text-3xl font-black text-yellow-400 uppercase truncate max-w-[150px]">{teams.B.name}</h2>
+                            <FlagImage code={teams.B.flag} className="w-10 h-7 md:w-16 md:h-11" />
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 flex-1">
+                        {['A', 'B'].map((t) => (
+                            <div key={t} className={`col-span-1 lg:col-span-4 bg-[#0d0d0d] border-t-4 rounded-2xl flex flex-col h-[420px] md:h-auto overflow-hidden ${t==='A'?'border-green-500':'border-yellow-400'}`}>
+                                <div className="p-3 border-b border-neutral-800 text-center font-bold uppercase text-[10px] text-neutral-500 flex items-center justify-center gap-2 uppercase tracking-widest"><FlagImage code={teams[t].flag} className="w-4 h-3"/> {t==='A'?'MANDANTE':'VISITANTE'}</div>
+                                <div className="flex-1 overflow-y-auto p-2 space-y-2 no-scrollbar">
+                                    {teams[t].players.map(p=>(
+                                        <div key={p.id} className={`bg-[#050505] p-2 rounded-xl border border-neutral-800 transition-all ${animatingPlayer===p.id?'animate-pop':''} ${p.reds>0?'opacity-30':''}`}>
+                                            <div className="flex justify-between items-center mb-1.5">
+                                                <div className="flex items-center gap-2"><span className={`font-mono text-[9px] px-1.5 py-0.5 rounded text-black font-black ${t==='A'?'bg-green-500':'bg-yellow-400'}`}>{p.number}</span><span className="font-bold text-[11px] text-white uppercase truncate max-w-[80px]">{p.name}</span></div>
+                                                <div className="flex gap-1 items-center">{motm?.id===p.id&&<Award size={14} className="text-yellow-400"/>}{p.assists>0&&<span className="text-[10px] text-blue-400 font-black"><Handshake size={12}/>{p.assists}</span>}{Array.from({length:p.goals}).map((_,i)=><span key={i} className="text-[10px]">⚽</span>)}{Array.from({length:p.yellows}).map((_,i)=><div key={i} className="w-1.5 h-2.5 bg-yellow-400 rounded-sm shadow-sm shadow-yellow-500/20"></div>)}{p.reds>0&&<div className="w-1.5 h-2.5 bg-red-500 rounded-sm shadow-sm shadow-red-500/20"></div>}</div>
+                                            </div>
+                                            {p.reds===0 && (
+                                                <div className="grid grid-cols-5 gap-1 pt-1.5 border-t border-neutral-900">
+                                                    {!isUndoMode && <button onClick={()=>setMotm(p)} className="flex-1 py-1.5 bg-[#111] text-neutral-500 rounded flex justify-center"><i className="ph-bold ph-star text-xs"></i></button>}
+                                                    <button onClick={()=>handlePlayerAction(t,p.id,'GOAL')} className={`py-1.5 rounded font-black text-[10px] flex justify-center items-center ${isUndoMode?'bg-red-900/20 text-red-500':'bg-neutral-800 text-green-500'}`}>{isUndoMode?'-⚽':'⚽'}</button>
+                                                    <button onClick={()=>handlePlayerAction(t,p.id,'ASSIST')} className={`py-1.5 rounded font-black text-[10px] flex justify-center items-center ${isUndoMode?'bg-red-900/20 text-red-500':'bg-neutral-800 text-blue-400'}`}>{isUndoMode?'-🤝':'🤝'}</button>
+                                                    <button onClick={()=>handlePlayerAction(t,p.id,'YELLOW')} className={`py-1.5 rounded font-black text-[10px] flex justify-center items-center ${isUndoMode?'bg-red-900/20 text-red-500':'bg-neutral-800 text-yellow-500'}`}>{isUndoMode?'-🟨':'🟨'}</button>
+                                                    <button onClick={()=>handlePlayerAction(t,p.id,'RED')} className={`py-1.5 rounded font-black text-[10px] flex justify-center items-center ${isUndoMode?'bg-red-900/20 text-red-500':'bg-neutral-800 text-red-500'}`}>{isUndoMode?'-🟥':'🟥'}</button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
                                 </div>
-                            </div>
-                            <button onClick={() => removePlayer(t, p.id)} className="p-2 text-neutral-600 hover:text-red-500 bg-[#1a1a1a] rounded-md transition-all active:scale-90"><Trash2 size={16}/></button>
+                                <div className="grid grid-cols-6 gap-1 p-2 bg-black/40 border-t border-neutral-800">
+                                    <button onClick={()=>{ if(isUndoMode) { if(teams[t].corners > 0) setTeams(prev=>({...prev, [t]: {...prev[t], corners: prev[t].corners - 1}})); } else { setTeams(prev=>({...prev, [t]: {...prev[t], corners: prev[t].corners + 1}})); addEvent('CANTO', teams[t].name, 'text-neutral-400'); } }} className={`col-span-2 py-2 rounded-lg border border-neutral-800 text-[8px] font-bold uppercase ${isUndoMode?'text-red-500 bg-red-950/20':'bg-neutral-800 text-green-400'}`}><Target size={12}/> {teams[t].corners}</button>
+                                    <button onClick={()=>{ if(isUndoMode) { if(teams[t].throwIns > 0) setTeams(prev=>({...prev, [t]: {...prev[t], throwIns: prev[t].throwIns - 1}})); } else { setTeams(prev=>({...prev, [t]: {...prev[t], throwIns: prev[t].throwIns + 1}})); addEvent('LATERAL', teams[t].name, 'text-neutral-400'); } }} className={`col-span-2 py-2 rounded-lg border border-neutral-800 text-[8px] font-bold uppercase ${isUndoMode?'text-red-500 bg-red-950/20':'bg-neutral-800 text-yellow-400'}`}><ArrowRight size={12}/> {teams[t].throwIns}</button>
+                                    <button onClick={()=>{ if(isUndoMode) { if(teams[t].fouls > 0) setTeams(prev=>({...prev, [t]: {...prev[t], fouls: prev[t].fouls - 1}})); } else { setTeams(prev=>({...prev, [t]: {...prev[t], fouls: prev[t].fouls + 1}})); addEvent('FALTA', teams[t].name, 'text-orange-500'); } }} className={`col-span-2 py-2 rounded-lg border border-neutral-800 text-[8px] font-bold uppercase ${isUndoMode?'text-red-500 bg-red-950/20':'bg-neutral-800 text-orange-500'}`}><AlertTriangle size={12}/> {teams[t].fouls}</button>
+                                    <button onClick={()=>{ if(isUndoMode) { setTeams(prev=>({...prev, [t]: {...prev[t], shotsTotal: Math.max(0, prev[t].shotsTotal - 1), shotsOnTarget: Math.max(0, prev[t].shotsOnTarget - 1)}})); } else { playSfx('shot'); setTeams(prev=>({...prev, [t]: {...prev[t], shotsTotal: prev[t].shotsTotal + 1, shotsOnTarget: prev[t].shotsOnTarget + 1}})); addEvent('ALVO', teams[t].name, 'text-green-400'); } }} className={`col-span-3 py-2 rounded-lg border border-neutral-800 text-[9px] font-bold uppercase ${isUndoMode?'text-red-500 bg-red-950/20':'bg-neutral-800 text-blue-400'}`}>{isUndoMode?'- ALVO':'ALVO'}</button>
+                                    <button onClick={()=>{ if(isUndoMode) { setTeams(prev=>({...prev, [t]: {...prev[t], shotsTotal: Math.max(0, prev[t].shotsTotal - 1)}})); } else { playSfx('shot'); setTeams(prev=>({...prev, [t]: {...prev[t], shotsTotal: prev[t].shotsTotal + 1}})); addEvent('FORA', teams[t].name, 'text-neutral-500'); } }} className={`col-span-3 py-2 rounded-lg border border-neutral-800 text-[9px] font-bold uppercase ${isUndoMode?'text-red-500 bg-red-950/20':'bg-neutral-800 text-neutral-500'}`}>{isUndoMode?'- FORA':'FORA'}</button>
+                                </div>
                             </div>
                         ))}
-                        {teams[t].players.length === 0 && (
-                            <div className="h-full flex flex-col items-center justify-center text-neutral-600 font-mono uppercase gap-2 opacity-50">
-                            <Shield size={32} />
-                            <span className="text-xs">Elenco Vazio</span>
-                            </div>
-                        )}
-                        </div>
-                    </div>
-                    ))}
-                </div>
-
-                <div className="animate-fade-in-up stagger-3 flex justify-center pt-2 pb-6">
-                    <button 
-                    onClick={() => {
-                        if(!teams.A.name || !teams.B.name) {
-                        alert("Por favor, digite o nome das duas equipas!"); return;
-                        }
-                        if(teams.A.players.length === 0 && teams.B.players.length === 0) {
-                        alert("Registe pelo menos um atleta para iniciar!"); return;
-                        }
-                        initAudio(); 
-                        setTime(matchConfig.durationMinutes * 60);
-                        playWhistle('start');
-                        setAppState('MATCH');
-                    }} 
-                    className="w-full md:w-auto flex items-center justify-center gap-2 bg-gradient-to-r from-green-600 to-green-500 text-white text-lg font-black px-8 py-4 rounded-xl shadow-[0_0_15px_rgba(34,197,94,0.3)] transition-all active:scale-95 uppercase tracking-widest border border-green-400/50"
-                    >
-                    Começar Jogo <Play size={20} />
-                    </button>
-                </div>
-                </div>
-            </div>
-            );
-        }
-
-        // ==========================================
-        // TELA 2 - MATCH
-        // ==========================================
-        if (appState === 'MATCH') {
-            return (
-            <div className="min-h-screen p-2 md:p-4 flex flex-col gap-3">
-                <div className="animate-fade-in-up bg-[#0d0d0d] border border-neutral-800 rounded-[1rem] p-3 md:p-5 shadow-lg flex flex-col md:flex-row justify-between items-center gap-3 relative overflow-hidden">
-                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-green-500 via-yellow-400 to-black"></div>
-                
-                <div className="flex md:hidden w-full justify-between items-center mb-1">
-                    <span className="text-[10px] font-bold text-neutral-400 uppercase bg-neutral-900 px-2 py-1 rounded">{period}</span>
-                    <div className="flex gap-1.5">
-                        <button onClick={() => setTime(t => t + 60)} className="p-1.5 rounded-md bg-[#1f1f1f] border border-neutral-800 text-blue-400 font-bold" title="Acréscimo (+1 Min)">
-                        <Plus size={16} />
-                        </button>
-                        <button onClick={() => setIsTimerRunning(!isTimerRunning)} className={`p-1.5 rounded-md font-black text-black ${isTimerRunning ? 'bg-yellow-400' : 'bg-green-500'}`}>
-                        {isTimerRunning ? <Pause size={16} /> : <Play size={16} />}
-                        </button>
-                        <button onClick={() => setPeriod(p => p === '1º Tempo' ? '2º Tempo' : 'Prorrogação')} className="p-1.5 rounded-md bg-[#1f1f1f] text-neutral-300">
-                        <FastForward size={16} />
-                        </button>
-                        <button onClick={() => { playWhistle('end'); setAppState('DASHBOARD'); }} className="p-1.5 rounded-md bg-red-600 text-white font-bold">
-                        <Flag size={16} />
-                        </button>
-                    </div>
-                </div>
-
-                <div className="flex w-full md:w-auto items-center justify-between md:justify-end gap-2 flex-1">
-                    <h2 className="text-lg md:text-3xl font-black text-green-500 uppercase tracking-tighter truncate max-w-[140px] md:max-w-none">{teams.A.name}</h2>
-                    <span className="text-2xl md:text-4xl drop-shadow-md">{teams.A.flag}</span>
-                </div>
-                
-                <div className="flex flex-col items-center bg-[#050505] px-4 py-2 md:px-8 md:py-4 rounded-xl border border-neutral-800 w-full md:w-auto">
-                    <div className="flex items-center gap-4 md:gap-6 mb-1">
-                    <span className="text-4xl md:text-6xl font-black text-white font-mono leading-none">{teams.A.goals}</span>
-                    <span className="text-neutral-700 text-2xl md:text-4xl leading-none">:</span>
-                    <span className="text-4xl md:text-6xl font-black text-white font-mono leading-none">{teams.B.goals}</span>
-                    </div>
-                    <div className="hidden md:flex items-center gap-3 border-t border-neutral-800 pt-2 w-full justify-center">
-                    <span className="text-xs font-bold text-neutral-400 uppercase bg-neutral-900 px-2 py-0.5 rounded">{period}</span>
-                    <div className="flex items-center gap-1.5 text-yellow-400 font-mono font-black text-xl">
-                        <Clock size={18} className={isTimerRunning ? "animate-pulse" : ""} /> {formatTime(time)}
-                    </div>
-                    <button onClick={() => setTime(t => t + 60)} className="bg-[#171717] hover:bg-neutral-800 border border-neutral-800 text-blue-400 p-1 rounded-md transition-colors" title="Acréscimo (+1 Min)"><Plus size={16}/></button>
-                    </div>
-                    <div className="flex md:hidden items-center gap-1.5 text-yellow-400 font-mono font-black text-xl mt-0.5">
-                        <Clock size={16} className={isTimerRunning ? "animate-pulse" : ""} /> {formatTime(time)}
-                    </div>
-                </div>
-
-                <div className="flex w-full md:w-auto items-center justify-between md:justify-start gap-2 flex-1 flex-row-reverse md:flex-row">
-                    <h2 className="text-lg md:text-3xl font-black text-yellow-400 uppercase tracking-tighter truncate max-w-[140px] md:max-w-none text-right md:text-left">{teams.B.name}</h2>
-                    <span className="text-2xl md:text-4xl drop-shadow-md">{teams.B.flag}</span>
-                </div>
-                
-                <div className="hidden md:flex flex-col gap-2 absolute right-6 z-10">
-                    <button onClick={() => setIsTimerRunning(!isTimerRunning)} className={`p-3 rounded-xl flex justify-center items-center font-black transition-transform hover:scale-105 text-black ${isTimerRunning ? 'bg-yellow-400' : 'bg-green-500'}`}>
-                    {isTimerRunning ? <Pause size={20} /> : <Play size={20} />}
-                    </button>
-                    <button onClick={() => setPeriod(p => p === '1º Tempo' ? '2º Tempo' : 'Prorrogação')} className="p-3 rounded-xl bg-[#1f1f1f] text-neutral-300 border border-neutral-700 hover:bg-neutral-800 transition-transform hover:scale-105">
-                    <FastForward size={20} />
-                    </button>
-                    <button onClick={() => { playWhistle('end'); setAppState('DASHBOARD'); }} className="p-3 rounded-xl bg-red-600 text-white font-bold border border-red-500 hover:bg-red-500 transition-transform hover:scale-105">
-                    <Flag size={20} />
-                    </button>
-                </div>
-                </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 md:gap-5 flex-1">
-                
-                {/* COLUNA A */}
-                <div className="animate-fade-in-up stagger-1 col-span-1 lg:col-span-4 bg-[#0d0d0d] border-t-4 border-neutral-800 border-t-green-500 rounded-[1rem] flex flex-col overflow-hidden h-[380px] md:h-[500px] shadow-lg">
-                    <div className="p-2.5 md:p-3 border-b border-neutral-800 text-center font-bold uppercase tracking-widest text-green-500 text-xs md:text-sm flex items-center justify-center gap-1.5">
-                    <span>{teams.A.flag}</span> Mandante
-                    </div>
-                    <div className="flex-1 overflow-y-auto p-2 space-y-2 no-scrollbar">
-                    {teams.A.players.map(p => (
-                        <div key={p.id} className={`bg-[#050505] p-2 rounded-lg border transition-all ${p.reds > 0 ? 'border-red-900/30 opacity-60' : 'border-neutral-800'} ${animatingPlayer === p.id ? 'animate-pop' : ''}`}>
-                        <div className="flex justify-between items-center mb-2">
-                            <div className="flex items-center gap-2">
-                            <span className="font-mono bg-green-500 text-black px-1.5 py-0.5 rounded text-[10px] font-black">#{p.number}</span>
-                            <span className={`font-bold text-xs md:text-sm truncate max-w-[120px] md:max-w-[150px] ${p.reds > 0 ? 'line-through text-neutral-500' : 'text-white'}`}>{p.name}</span>
-                            </div>
-                            <div className="flex gap-1 items-center">
-                            {motm?.id === p.id && <Award size={12} className="text-yellow-400" />}
-                            {Array.from({length: p.goals}).map((_, i) => <span key={`g${i}`} className="text-[10px]">⚽</span>)}
-                            {Array.from({length: p.yellows}).map((_, i) => <div key={`y${i}`} className="w-1.5 h-2.5 bg-yellow-400 rounded-sm"></div>)}
-                            {p.reds > 0 && <div className="w-1.5 h-2.5 bg-red-500 rounded-sm"></div>}
+                        <div className="col-span-1 lg:col-span-4 bg-[#0d0d0d] border border-neutral-800 rounded-2xl flex flex-col h-[150px] md:h-auto overflow-hidden">
+                            <div className="p-3 border-b border-neutral-800 text-center font-bold uppercase text-[9px] text-neutral-500">ÚLTIMOS EVENTOS</div>
+                            <div className="flex-1 overflow-y-auto p-2 space-y-1.5 no-scrollbar font-mono text-[9px]">
+                                {timeline.map((it, idx) => (
+                                    <div key={idx} className="bg-black/30 p-2 rounded-lg border border-neutral-900 animate-fade flex justify-between">
+                                        <span className="text-neutral-500">{it.time}</span>
+                                        <span className={`${it.colorClass} font-black`}>{it.type}</span>
+                                        <span className="text-neutral-400 uppercase truncate w-24 text-right">{it.description}</span>
+                                    </div>
+                                ))}
                             </div>
                         </div>
-                        {p.reds === 0 && (
-                            <div className="flex gap-1.5 pt-1.5 border-t border-neutral-800/50">
-                            <button onClick={() => setMotm(p)} className="flex-1 py-1.5 bg-[#171717] text-neutral-400 active:bg-neutral-800 rounded-md flex justify-center text-xs transition-transform active:scale-90">⭐</button>
-                            <button onClick={() => handlePlayerAction('A', p.id, 'GOAL')} className="flex-1 py-1.5 bg-[#171717] text-green-500 active:bg-green-900/40 rounded-md flex justify-center text-xs transition-transform active:scale-90">⚽</button>
-                            <button onClick={() => handlePlayerAction('A', p.id, 'YELLOW')} className="flex-1 py-1.5 bg-[#171717] text-yellow-500 active:bg-yellow-900/40 rounded-md flex justify-center text-xs transition-transform active:scale-90">🟨</button>
-                            <button onClick={() => handlePlayerAction('A', p.id, 'RED')} className="flex-1 py-1.5 bg-[#171717] text-red-500 active:bg-red-900/40 rounded-md flex justify-center text-xs transition-transform active:scale-90">🟥</button>
-                            </div>
-                        )}
-                        </div>
-                    ))}
                     </div>
-                    <div className="grid grid-cols-6 gap-1.5 p-2 bg-[#0a0a0a] border-t border-neutral-800">
-                    <button onClick={() => handleTeamAction('A', 'corners')} className="col-span-2 py-1.5 bg-[#1f1f1f] rounded-md border border-neutral-800 text-green-400 text-[9px] font-bold uppercase active:bg-neutral-800 flex flex-col items-center">
-                        <Target size={12} className="mb-0.5"/> Esc. ({teams.A.corners})
-                    </button>
-                    <button onClick={() => handleTeamAction('A', 'throwIns')} className="col-span-2 py-1.5 bg-[#1f1f1f] rounded-md border border-neutral-800 text-yellow-400 text-[9px] font-bold uppercase active:bg-neutral-800 flex flex-col items-center">
-                        <ArrowRight size={12} className="mb-0.5"/> Lat. ({teams.A.throwIns})
-                    </button>
-                    <button onClick={() => handleTeamAction('A', 'fouls')} className="col-span-2 py-1.5 bg-[#1f1f1f] rounded-md border border-neutral-800 text-orange-500 text-[9px] font-bold uppercase active:bg-neutral-800 flex flex-col items-center">
-                        <AlertTriangle size={12} className="mb-0.5"/> Falta ({teams.A.fouls})
-                    </button>
-                    <button onClick={() => handleShot('A', true)} className="col-span-3 py-1.5 bg-[#1f1f1f] rounded-md border border-neutral-800 text-blue-400 text-[9px] font-bold uppercase active:bg-neutral-800 flex items-center justify-center gap-1">
-                        <Crosshair size={12} /> Chute Alvo
-                    </button>
-                    <button onClick={() => handleShot('A', false)} className="col-span-3 py-1.5 bg-[#1f1f1f] rounded-md border border-neutral-800 text-neutral-400 text-[9px] font-bold uppercase active:bg-neutral-800 flex items-center justify-center gap-1">
-                        <Wind size={12} /> Chute Fora
-                    </button>
-                    </div>
-                </div>
-
-                {/* COLUNA B */}
-                <div className="animate-fade-in-up stagger-2 col-span-1 lg:col-span-4 bg-[#0d0d0d] border-t-4 border-neutral-800 border-t-yellow-400 rounded-[1rem] flex flex-col overflow-hidden h-[380px] md:h-[500px] shadow-lg">
-                    <div className="p-2.5 md:p-3 border-b border-neutral-800 text-center font-bold uppercase tracking-widest text-yellow-400 text-xs md:text-sm flex items-center justify-center gap-1.5">
-                    <span>{teams.B.flag}</span> Visitante
-                    </div>
-                    <div className="flex-1 overflow-y-auto p-2 space-y-2 no-scrollbar">
-                    {teams.B.players.map(p => (
-                        <div key={p.id} className={`bg-[#050505] p-2 rounded-lg border transition-all ${p.reds > 0 ? 'border-red-900/30 opacity-60' : 'border-neutral-800'} ${animatingPlayer === p.id ? 'animate-pop' : ''}`}>
-                        <div className="flex justify-between items-center mb-2">
-                            <div className="flex items-center gap-2">
-                            <span className="font-mono bg-yellow-400 text-black px-1.5 py-0.5 rounded text-[10px] font-black">#{p.number}</span>
-                            <span className={`font-bold text-xs md:text-sm truncate max-w-[120px] md:max-w-[150px] ${p.reds > 0 ? 'line-through text-neutral-500' : 'text-white'}`}>{p.name}</span>
-                            </div>
-                            <div className="flex gap-1 items-center">
-                            {motm?.id === p.id && <Award size={12} className="text-yellow-400" />}
-                            {Array.from({length: p.goals}).map((_, i) => <span key={`g${i}`} className="text-[10px]">⚽</span>)}
-                            {Array.from({length: p.yellows}).map((_, i) => <div key={`y${i}`} className="w-1.5 h-2.5 bg-yellow-400 rounded-sm"></div>)}
-                            {p.reds > 0 && <div className="w-1.5 h-2.5 bg-red-500 rounded-sm"></div>}
-                            </div>
-                        </div>
-                        {p.reds === 0 && (
-                            <div className="flex gap-1.5 pt-1.5 border-t border-neutral-800/50">
-                            <button onClick={() => setMotm(p)} className="flex-1 py-1.5 bg-[#171717] text-neutral-400 active:bg-neutral-800 rounded-md flex justify-center text-xs transition-transform active:scale-90">⭐</button>
-                            <button onClick={() => handlePlayerAction('B', p.id, 'GOAL')} className="flex-1 py-1.5 bg-[#171717] text-green-500 active:bg-green-900/40 rounded-md flex justify-center text-xs transition-transform active:scale-90">⚽</button>
-                            <button onClick={() => handlePlayerAction('B', p.id, 'YELLOW')} className="flex-1 py-1.5 bg-[#171717] text-yellow-500 active:bg-yellow-900/40 rounded-md flex justify-center text-xs transition-transform active:scale-90">🟨</button>
-                            <button onClick={() => handlePlayerAction('B', p.id, 'RED')} className="flex-1 py-1.5 bg-[#171717] text-red-500 active:bg-red-900/40 rounded-md flex justify-center text-xs transition-transform active:scale-90">🟥</button>
-                            </div>
-                        )}
-                        </div>
-                    ))}
-                    </div>
-                    <div className="grid grid-cols-6 gap-1.5 p-2 bg-[#0a0a0a] border-t border-neutral-800">
-                    <button onClick={() => handleTeamAction('B', 'corners')} className="col-span-2 py-1.5 bg-[#1f1f1f] rounded-md border border-neutral-800 text-green-400 text-[9px] font-bold uppercase active:bg-neutral-800 flex flex-col items-center">
-                        <Target size={12} className="mb-0.5"/> Esc. ({teams.B.corners})
-                    </button>
-                    <button onClick={() => handleTeamAction('B', 'throwIns')} className="col-span-2 py-1.5 bg-[#1f1f1f] rounded-md border border-neutral-800 text-yellow-400 text-[9px] font-bold uppercase active:bg-neutral-800 flex flex-col items-center">
-                        <ArrowRight size={12} className="mb-0.5"/> Lat. ({teams.B.throwIns})
-                    </button>
-                    <button onClick={() => handleTeamAction('B', 'fouls')} className="col-span-2 py-1.5 bg-[#1f1f1f] rounded-md border border-neutral-800 text-orange-500 text-[9px] font-bold uppercase active:bg-neutral-800 flex flex-col items-center">
-                        <AlertTriangle size={12} className="mb-0.5"/> Falta ({teams.B.fouls})
-                    </button>
-                    <button onClick={() => handleShot('B', true)} className="col-span-3 py-1.5 bg-[#1f1f1f] rounded-md border border-neutral-800 text-blue-400 text-[9px] font-bold uppercase active:bg-neutral-800 flex items-center justify-center gap-1">
-                        <Crosshair size={12} /> Chute Alvo
-                    </button>
-                    <button onClick={() => handleShot('B', false)} className="col-span-3 py-1.5 bg-[#1f1f1f] rounded-md border border-neutral-800 text-neutral-400 text-[9px] font-bold uppercase active:bg-neutral-800 flex items-center justify-center gap-1">
-                        <Wind size={12} /> Chute Fora
-                    </button>
-                    </div>
-                </div>
-
-                {/* COLUNA TIMELINE (Fundo) */}
-                <div className="animate-fade-in-up stagger-3 col-span-1 lg:col-span-4 bg-[#0d0d0d] border border-neutral-800 rounded-[1rem] flex flex-col overflow-hidden h-[250px] md:h-[500px] shadow-lg">
-                    <div className="p-2.5 md:p-3 border-b border-neutral-800 flex items-center justify-center gap-1.5 font-bold uppercase tracking-widest text-neutral-300 text-xs md:text-sm">
-                    <Activity size={14} className="text-green-500"/> Registro Oficial
-                    </div>
-                    <div className="flex-1 overflow-y-auto p-2 md:p-3 space-y-2 font-mono text-[10px] md:text-xs bg-[#050505] no-scrollbar">
-                    {timeline.map((item, i) => (
-                        <div key={i} className="animate-slide-in bg-[#171717] p-2 rounded-lg border border-neutral-800 flex flex-col gap-1">
-                        <div className="flex justify-between items-center border-b border-neutral-800 pb-1">
-                            <span className="font-bold text-neutral-400">{item.time}</span>
-                            <span className={`${item.colorClass} uppercase font-bold text-[9px] md:text-[10px] tracking-wider bg-[#0a0a0a] px-1.5 py-0.5 rounded`}>{item.type}</span>
-                        </div>
-                        <div className="text-neutral-200 truncate">{item.description}</div>
-                        </div>
-                    ))}
-                    <div ref={timelineEndRef} />
-                    </div>
-                </div>
-
-                </div>
-            </div>
-            );
-        }
-
-        // ==========================================
-        // TELA 3 - DASHBOARD FINAL
-        // ==========================================
-        if (appState === 'DASHBOARD') {
-            return (
-            <div className="animate-fade-in-up min-h-screen p-3 md:p-6">
-                <div className="max-w-4xl mx-auto space-y-4 md:space-y-8">
-                <div className="text-center border-b border-neutral-800 pb-4 md:pb-6">
-                    <h1 className="text-2xl md:text-4xl font-black text-white uppercase tracking-widest">Relatório Completo</h1>
-                    <p className="text-green-500 font-mono mt-1 md:mt-2 text-xs md:text-sm">PARTIDA ENCERRADA</p>
-                </div>
-
-                <div className="bg-[#0d0d0d] border border-neutral-800 rounded-[1.5rem] p-4 md:p-8 shadow-xl relative overflow-hidden">
-                    <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-green-500 via-yellow-400 to-black"></div>
-                    
-                    <div className="flex justify-between items-center mb-6 pb-4 border-b border-neutral-800 mt-2">
-                    <h2 className="text-lg md:text-3xl font-black text-green-500 uppercase flex flex-col md:flex-row items-center md:gap-3 text-center w-1/3">
-                        <span className="text-xl md:text-4xl">{teams.A.flag}</span> <span className="mt-1 md:mt-0">{teams.A.name}</span>
-                    </h2>
-                    <div className="flex justify-between items-center px-2 w-1/3 text-center">
-                        <div className="text-4xl md:text-6xl font-black text-white w-1/2">{teams.A.goals}</div>
-                        <div className="text-lg md:text-3xl text-neutral-600 px-1">X</div>
-                        <div className="text-4xl md:text-6xl font-black text-white w-1/2">{teams.B.goals}</div>
-                    </div>
-                    <h2 className="text-lg md:text-3xl font-black text-yellow-400 uppercase flex flex-col md:flex-row items-center md:gap-3 text-center w-1/3 justify-end">
-                        <span className="mt-1 md:mt-0">{teams.B.name}</span> <span className="text-xl md:text-4xl">{teams.B.flag}</span>
-                    </h2>
-                    </div>
-
-                    <div className="pt-2">
-                    <StatLine label="Gols Marcados" valA={teams.A.goals} valB={teams.B.goals} />
-                    <StatLine label="Finalizações Totais" valA={teams.A.shotsTotal} valB={teams.B.shotsTotal} />
-                    <StatLine label="Chutes no Alvo" valA={teams.A.shotsOnTarget} valB={teams.B.shotsOnTarget} />
-                    <StatLine label="Escanteios" valA={teams.A.corners} valB={teams.B.corners} />
-                    <StatLine label="Laterais" valA={teams.A.throwIns} valB={teams.B.throwIns} />
-                    <StatLine label="Faltas Cometidas" valA={teams.A.fouls} valB={teams.B.fouls} />
-                    <StatLine label="Cartões Amarelos" valA={teams.A.players.reduce((a,b)=>a+b.yellows,0)} valB={teams.B.players.reduce((a,b)=>a+b.yellows,0)} />
-                    <StatLine label="Cartões Vermelhos" valA={teams.A.players.reduce((a,b)=>a+b.reds,0)} valB={teams.B.players.reduce((a,b)=>a+b.reds,0)} />
-                    </div>
-                </div>
-
-                <div className="flex flex-col md:flex-row justify-center pt-2 gap-3">
-                    <button onClick={() => setAppState('SETUP')} className="w-full md:w-auto flex justify-center items-center gap-2 bg-[#171717] active:bg-neutral-800 text-white font-bold px-6 py-3 rounded-xl border border-neutral-700 transition-transform active:scale-95 uppercase text-xs md:text-sm">
-                    <Square size={16} /> Descartar
-                    </button>
-                    <button 
-                    onClick={saveMatchToDatabase} 
-                    disabled={isSaving}
-                    className="w-full md:w-auto flex justify-center items-center gap-2 bg-gradient-to-r from-green-600 to-green-500 text-white font-black px-8 py-3 rounded-xl border border-green-400/50 transition-transform active:scale-95 uppercase text-xs md:text-sm disabled:opacity-50 shadow-md"
-                    >
-                    <Database size={18} /> {isSaving ? 'Salvando...' : 'Salvar no Banco'}
-                    </button>
-                </div>
-                </div>
-            </div>
-            );
-        }
-
-        // ==========================================
-        // TELA 4 - HISTORY & DETAILS
-        // ==========================================
-        if (appState === 'HISTORY') {
-            
-            if (selectedMatch) {
-            const tmA = selectedMatch.teamA;
-            const tmB = selectedMatch.teamB;
-
-            const RosterList = ({ team, colorClass, borderColorClass }) => (
-                <div className={`bg-[#050505] rounded-xl border ${borderColorClass} p-3 md:p-4`}>
-                <div className={`text-center font-bold uppercase mb-3 text-xs md:text-sm ${colorClass}`}>{team.name}</div>
-                <div className="space-y-1.5 max-h-[250px] overflow-y-auto no-scrollbar pr-1">
-                    {team.players && team.players.map(p => (
-                    <div key={p.id} className="flex justify-between items-center bg-[#111] p-2 rounded-lg border border-neutral-800 text-[10px] md:text-xs">
-                        <div className="flex items-center gap-2">
-                        <span className={`font-mono px-1.5 py-0.5 rounded text-[9px] md:text-[10px] text-black font-bold ${colorClass.includes('green') ? 'bg-green-500' : 'bg-yellow-400'}`}>#{p.number}</span>
-                        <span className={`font-bold ${p.reds > 0 ? 'line-through text-neutral-500' : 'text-white'}`}>{p.name}</span>
-                        </div>
-                        <div className="flex gap-1">
-                        {Array.from({length: p.goals}).map((_, i) => <span key={i} className="text-[8px]">⚽</span>)}
-                        {Array.from({length: p.yellows}).map((_, i) => <div key={i} className="w-1.5 h-2.5 bg-yellow-400 rounded-sm"></div>)}
-                        {p.reds > 0 && <div className="w-1.5 h-2.5 bg-red-500 rounded-sm"></div>}
-                        </div>
-                    </div>
-                    ))}
-                    {(!team.players || team.players.length === 0) && <div className="text-center text-neutral-600 text-[10px] py-4">Sem registos</div>}
-                </div>
                 </div>
             );
 
-            return (
-                <div className="animate-fade-in-up min-h-screen p-3 md:p-6">
-                <div className="max-w-4xl mx-auto space-y-4 md:space-y-6">
-                    
-                    <div className="flex flex-col md:flex-row items-center justify-between border-b border-neutral-800 pb-3 gap-3">
-                    <div className="text-center md:text-left">
-                        <h1 className="text-xl md:text-2xl font-black text-white uppercase tracking-wider flex items-center justify-center md:justify-start gap-2">
-                        <FileText size={20} className="text-green-500" /> Súmula Oficial
-                        </h1>
-                        <p className="text-neutral-500 font-mono text-[10px] md:text-xs mt-1">Ref: {selectedMatch.id}</p>
-                    </div>
-                    <button onClick={() => setSelectedMatch(null)} className="w-full md:w-auto flex justify-center items-center gap-2 bg-[#171717] active:bg-neutral-800 border border-neutral-700 px-4 py-2 rounded-xl text-xs font-bold transition-transform active:scale-95">
-                        <ArrowLeft size={14} /> Voltar à Lista
-                    </button>
-                    </div>
-
-                    <div className="bg-[#0d0d0d] border border-neutral-800 rounded-[1.5rem] p-4 md:p-6 shadow-xl relative">
-                    <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-green-500 via-yellow-400 to-black rounded-t-[1.5rem]"></div>
-                    
-                    <div className="flex flex-col md:flex-row justify-between items-center mb-4 bg-[#050505] p-3 rounded-xl border border-neutral-800">
-                        <div className="font-mono text-neutral-400 text-[10px] md:text-xs mb-2 md:mb-0">{selectedMatch.dateString}</div>
-                        <div className="flex gap-3 text-[10px] md:text-xs font-bold">
-                            <span className="flex items-center gap-1 text-yellow-400"><Award size={14}/> Craque: <span className="text-white">{selectedMatch.highlights?.motm}</span></span>
-                            <span className="flex items-center gap-1 text-green-500"><Target size={14}/> Artilheiro: <span className="text-white">{selectedMatch.highlights?.topScorer}</span></span>
+            if (appState === 'DASHBOARD') return (
+                <div className="min-h-screen p-4 md:p-8 animate-fade">
+                    <div className="max-w-3xl mx-auto space-y-6">
+                        <h1 className="text-3xl font-black text-white uppercase text-center tracking-widest">Relatório Final</h1>
+                        <div className="bg-[#0d0d0d] border border-neutral-800 rounded-3xl p-6 relative overflow-hidden shadow-2xl">
+                            <div className="absolute top-0 left-0 w-full h-1 bg-jamaica-gradient"></div>
+                            <div className="flex justify-between items-center mb-8 pb-4 border-b border-neutral-800">
+                                <div className="w-1/4 flex flex-col items-center gap-2"><FlagImage code={teams.A.flag} className="w-14 h-9"/><h2 className="text-green-500 font-black uppercase text-[10px] truncate w-full text-center">{teams.A.name}</h2></div>
+                                <div className="text-6xl md:text-8xl font-black text-white">{teams.A.goals}<span className="text-neutral-700 text-2xl px-2">X</span>{teams.B.goals}</div>
+                                <div className="w-1/4 flex flex-col items-center gap-2"><FlagImage code={teams.B.flag} className="w-14 h-9"/><h2 className="text-yellow-400 font-black uppercase text-[10px] truncate w-full text-center">{teams.B.name}</h2></div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4 mb-8">
+                                <div className="bg-black/40 p-4 rounded-xl border border-neutral-800 flex items-center gap-3 text-left"><Trophy size={24} className="text-yellow-500"/><div><p className="text-[8px] text-neutral-500 uppercase font-black">CRAQUE</p><p className="text-sm font-black text-white uppercase truncate">{motm?.name || '---'}</p></div></div>
+                                <div className="bg-black/40 p-4 rounded-xl border border-neutral-800 flex items-center gap-3 text-left"><Target size={24} className="text-green-500"/><div><p className="text-[8px] text-neutral-500 uppercase font-black">ARTILHEIRO</p><p className="text-sm font-black text-white uppercase truncate">{teams.A.players.concat(teams.B.players).sort((a,b)=>b.goals-a.goals)[0]?.name || '---'}</p></div></div>
+                            </div>
+                            <div className="space-y-1">
+                                <StatBar label="GOLS" valA={teams.A.goals} valB={teams.B.goals} />
+                                <StatBar label="ASSISTÊNCIAS" valA={teams.A.players.reduce((a,b)=>a+(b.assists||0),0)} valB={teams.B.players.reduce((a,b)=>a+(b.assists||0),0)} />
+                                <StatBar label="FINALIZAÇÕES" valA={teams.A.shotsTotal} valB={teams.B.shotsTotal} />
+                                <StatBar label="CHUTES AO ALVO" valA={teams.A.shotsOnTarget} valB={teams.B.shotsOnTarget} />
+                                <StatBar label="ESCANTREIOS" valA={teams.A.corners} valB={teams.B.corners} />
+                                <StatBar label="LATERAIS" valA={teams.A.throwIns} valB={teams.B.throwIns} />
+                                <StatBar label="FALTAS" valA={teams.A.fouls} valB={teams.B.fouls} />
+                                <StatBar label="AMARELOS" valA={teams.A.players.reduce((a,b)=>a+b.yellows,0)} valB={teams.B.players.reduce((a,b)=>a+b.yellows,0)} />
+                                <StatBar label="VERMELHOS" valA={teams.A.players.reduce((a,b)=>a+b.reds,0)} valB={teams.B.players.reduce((a,b)=>a+b.reds,0)} />
+                            </div>
+                        </div>
+                        <div className="flex flex-col md:flex-row gap-4 justify-center">
+                            <button onClick={()=>setAppState('SETUP')} className="flex-1 py-4 bg-neutral-900 border border-neutral-800 rounded-2xl text-white font-black uppercase text-sm active:scale-95">DESCARTAR</button>
+                            <button onClick={saveMatch} disabled={isSaving} className="flex-1 py-4 bg-gradient-to-r from-green-600 to-green-500 text-white font-black rounded-2xl uppercase text-sm shadow-xl active:scale-95 disabled:opacity-50">{isSaving?'SALVANDO...':'SALVAR NO FIREBASE'}</button>
                         </div>
                     </div>
+                </div>
+            );
 
-                    <div className="flex justify-between items-center mb-6 border-b border-neutral-800 pb-4">
-                        <div className="w-1/3 text-center">
-                        <div className="text-2xl md:text-3xl mb-1">{tmA.flag}</div>
-                        <h2 className="text-sm md:text-lg font-black text-green-500 uppercase truncate">{tmA.name}</h2>
+            if (appState === 'HISTORY') return (
+                <div className="min-h-screen p-4 md:p-8 animate-fade">
+                    <div className="max-w-4xl mx-auto space-y-6">
+                        <div className="flex justify-between items-center border-b border-neutral-800 pb-4">
+                            <h1 className="text-3xl font-black text-white uppercase flex items-center gap-3"><HistoryIcon size={32} className="text-green-500"/> ARQUIVO DIGITAL</h1>
+                            <button onClick={()=>setAppState('SETUP')} className="p-3 bg-neutral-900 border border-neutral-800 rounded-xl active:scale-90"><ArrowLeft size={20}/></button>
                         </div>
-                        <div className="w-1/3 flex justify-center items-center">
-                        <div className="text-3xl md:text-5xl font-black text-white">{tmA.goals}</div>
-                        <div className="text-lg md:text-2xl text-neutral-600 px-2 md:px-4">X</div>
-                        <div className="text-3xl md:text-5xl font-black text-white">{tmB.goals}</div>
-                        </div>
-                        <div className="w-1/3 text-center">
-                        <div className="text-2xl md:text-3xl mb-1">{tmB.flag}</div>
-                        <h2 className="text-sm md:text-lg font-black text-yellow-400 uppercase truncate">{tmB.name}</h2>
-                        </div>
-                    </div>
-
-                    <div className="mb-6">
-                        <h3 className="text-neutral-400 font-bold uppercase text-center mb-3 tracking-widest text-[10px] md:text-xs border-b border-neutral-800 pb-1.5 inline-block mx-auto flex items-center justify-center gap-1.5"><Activity size={14}/> Estatísticas da Partida</h3>
-                        <StatLine label="Gols Marcados" valA={tmA.goals} valB={tmB.goals} />
-                        <StatLine label="Finalizações Totais" valA={tmA.shotsTotal || 0} valB={tmB.shotsTotal || 0} />
-                        <StatLine label="Chutes no Alvo" valA={tmA.shotsOnTarget || 0} valB={tmB.shotsOnTarget || 0} />
-                        <StatLine label="Escanteios" valA={tmA.corners} valB={tmB.corners} />
-                        <StatLine label="Laterais" valA={tmA.throwIns} valB={tmB.throwIns} />
-                        <StatLine label="Faltas Cometidas" valA={tmA.fouls} valB={tmB.fouls} />
-                        <StatLine label="Cartões Amarelos" valA={tmA.yellows || 0} valB={tmB.yellows || 0} />
-                        <StatLine label="Cartões Vermelhos" valA={tmA.reds || 0} valB={tmB.reds || 0} />
-                    </div>
-
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 pt-4 border-t border-neutral-800">
-                        <RosterList team={tmA} colorClass="text-green-500" borderColorClass="border-green-900/50" />
-                        
-                        <div className="bg-[#050505] rounded-xl border border-neutral-800 p-3 h-[250px] md:h-[300px] flex flex-col">
-                        <div className="text-center font-bold uppercase mb-3 text-neutral-400 text-[10px] md:text-xs flex justify-center items-center gap-1.5"><Clock size={14}/> Linha do Tempo</div>
-                        <div className="flex-1 overflow-y-auto space-y-1.5 no-scrollbar pr-1">
-                            {selectedMatch.timeline && selectedMatch.timeline.map((item, i) => (
-                            <div key={i} className="bg-[#111] p-1.5 rounded-md border border-neutral-800 text-[9px] md:text-[10px]">
-                                <div className="flex justify-between items-center mb-0.5">
-                                <span className="font-bold text-neutral-500">{item.time}</span>
-                                <span className={`${item.colorClass} font-bold`}>{item.type}</span>
+                        {selectedMatch ? (
+                            <div className="bg-[#0d0d0d] p-6 rounded-3xl border border-neutral-800 animate-fade relative overflow-hidden">
+                                <div className="absolute top-0 left-0 w-full h-1 bg-jamaica-gradient"></div>
+                                <div className="flex justify-between items-center mb-8 mt-2">
+                                    <div className="flex flex-col items-center gap-2"><FlagImage code={selectedMatch.teamA.flag} className="w-16 h-11"/><p className="text-green-500 font-black text-xs uppercase">{selectedMatch.teamA.name}</p></div>
+                                    <div className="text-5xl font-black text-white">{selectedMatch.teamA.goals} : {selectedMatch.teamB.goals}</div>
+                                    <div className="flex flex-col items-center gap-2"><FlagImage code={selectedMatch.teamB.flag} className="w-16 h-11"/><p className="text-yellow-400 font-black text-xs uppercase">{selectedMatch.teamB.name}</p></div>
                                 </div>
-                                <div className="text-neutral-300 truncate">{item.description}</div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4 mb-8">
+                                    <StatBar label="GOLS" valA={selectedMatch.teamA.goals} valB={selectedMatch.teamB.goals} />
+                                    <StatBar label="FALTAS" valA={selectedMatch.teamA.fouls} valB={selectedMatch.teamB.fouls} />
+                                    <StatBar label="ESCANTREIOS" valA={selectedMatch.teamA.corners} valB={selectedMatch.teamB.corners} />
+                                    <StatBar label="CHUTES" valA={selectedMatch.teamA.shotsTotal || 0} valB={selectedMatch.teamB.shotsTotal || 0} />
+                                </div>
+                                <div className="h-48 overflow-y-auto no-scrollbar border-t border-neutral-800 pt-4 font-mono text-[10px] space-y-2">
+                                    <p className="text-neutral-500 font-black border-b border-neutral-900 pb-1 uppercase">Elenco e Desempenho</p>
+                                    <div className="grid grid-cols-2 gap-8">
+                                        <div className="space-y-1">
+                                            {selectedMatch.teamA.players.map(p=>(<div key={p.id} className="flex justify-between text-green-500/80"><span>#{p.number} {p.name}</span><span>⚽{p.goals} 🤝{p.assists||0}</span></div>))}
+                                        </div>
+                                        <div className="space-y-1">
+                                            {selectedMatch.teamB.players.map(p=>(<div key={p.id} className="flex justify-between text-yellow-500/80"><span>#{p.number} {p.name}</span><span>⚽{p.goals} 🤝{p.assists||0}</span></div>))}
+                                        </div>
+                                    </div>
+                                </div>
+                                <button onClick={()=>setSelectedMatch(null)} className="mt-6 w-full py-4 bg-neutral-900 border border-neutral-800 rounded-2xl font-black uppercase text-sm">FECHAR SÚMULA</button>
                             </div>
-                            ))}
-                            {(!selectedMatch.timeline || selectedMatch.timeline.length === 0) && <div className="text-center text-neutral-600 text-[9px] py-2">Sem registos.</div>}
-                        </div>
-                        </div>
-
-                        <RosterList team={tmB} colorClass="text-yellow-400" borderColorClass="border-yellow-900/50" />
+                        ) : (
+                            <div className="space-y-4">
+                                {matchHistory.map(m=>(
+                                    <div key={m.id} onClick={()=>setSelectedMatch(m)} className="bg-[#0d0d0d] p-5 rounded-2xl border border-neutral-800 flex justify-between items-center hover:border-green-500 transition-all cursor-pointer group shadow-xl">
+                                        <div className="flex flex-col"><span className="text-[10px] text-neutral-600 font-mono mb-1">{m.dateString}</span><div className="flex items-center gap-2 text-green-500 font-black text-sm uppercase"><FlagImage code={m.teamA.flag} className="w-8 h-5"/> {m.teamA.name}</div></div>
+                                        <div className="text-3xl font-black text-white">{m.teamA.goals} - {m.teamB.goals}</div>
+                                        <div className="flex flex-col items-end"><div className="flex items-center gap-2 text-yellow-400 font-black text-sm uppercase">{m.teamB.name} <FlagImage code={m.teamB.flag} className="w-8 h-5"/></div></div>
+                                        <button onClick={(e)=>{ e.stopPropagation(); if(confirm("Apagar súmula permanentemente?")) deleteDoc(doc(db, 'artifacts', appRootId, 'users', user.uid, 'matches', m.id)); }} className="ml-4 p-3 text-neutral-700 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all"><Trash2 size={20}/></button>
+                                    </div>
+                                ))}
+                                {matchHistory.length === 0 && <div className="text-center py-20 bg-[#0d0d0d] rounded-3xl border border-neutral-900 text-neutral-600 font-mono italic">Nenhum registro no banco de dados.</div>}
+                            </div>
+                        )}
                     </div>
-                    </div>
-                </div>
                 </div>
             );
-            }
-
-            return (
-            <div className="animate-fade-in-up min-h-screen p-3 md:p-6">
-                <div className="max-w-4xl mx-auto space-y-4 md:space-y-6">
-                
-                <div className="flex flex-col md:flex-row items-center justify-between border-b border-neutral-800 pb-4 gap-3">
-                    <div className="text-center md:text-left">
-                    <h1 className="text-xl md:text-3xl font-black text-white uppercase tracking-wider flex items-center justify-center md:justify-start gap-2">
-                        <Database className="text-green-500" size={24} /> Arquivo Digital
-                    </h1>
-                    <p className="text-neutral-400 font-mono text-[10px] md:text-xs mt-1">Toque numa partida para ver a súmula completa.</p>
-                    </div>
-                    <button onClick={() => setAppState('SETUP')} className="w-full md:w-auto flex justify-center items-center gap-2 bg-[#171717] active:bg-neutral-800 border border-neutral-700 px-4 py-2.5 rounded-xl text-xs font-bold transition-transform active:scale-95">
-                    <ArrowLeft size={16} /> Novo Jogo
-                    </button>
-                </div>
-
-                <div className="space-y-3 md:space-y-4">
-                    {matchHistory.length === 0 ? (
-                    <div className="bg-[#0d0d0d] border border-neutral-800 rounded-2xl p-8 md:p-12 text-center text-neutral-500 font-mono text-xs md:text-sm">
-                        Nenhuma partida registada no banco.
-                    </div>
-                    ) : (
-                    matchHistory.map((match, idx) => (
-                        <div 
-                        key={match.id} 
-                        onClick={() => setSelectedMatch(match)}
-                        className="animate-slide-in cursor-pointer bg-[#0d0d0d] hover:bg-[#111] border border-neutral-800 hover:border-neutral-600 rounded-[1.2rem] p-4 md:p-6 flex flex-col md:flex-row justify-between items-center gap-4 shadow-md transition-all hover:scale-[1.01]" 
-                        style={{animationDelay: `${idx * 0.05}s`}}
-                        >
-                        
-                        <div className="text-center md:text-left w-full md:w-auto flex flex-col items-center md:items-start">
-                            <div className="text-[10px] md:text-xs font-mono text-neutral-500 bg-[#050505] px-2.5 py-1 rounded-md inline-block border border-neutral-800 mb-1.5">
-                            {match.dateString}
-                            </div>
-                            <div className="text-[9px] md:text-[10px] uppercase font-bold text-green-500 mt-0.5 flex items-center gap-1"><FileText size={10}/> Abrir Súmula</div>
-                        </div>
-
-                        <div className="flex items-center gap-3 md:gap-6 bg-[#050505] px-3 md:px-6 py-3 rounded-xl border border-neutral-800 w-full justify-between">
-                            <div className="text-right w-[40%]">
-                            <div className="font-black text-green-500 uppercase tracking-widest text-xs md:text-base flex flex-col md:flex-row items-end md:items-center justify-end gap-1">
-                                <span className="truncate max-w-[70px] md:max-w-none">{match.teamA.name}</span> <span className="text-base md:text-2xl">{match.teamA.flag}</span>
-                            </div>
-                            </div>
-                            
-                            <div className="text-2xl md:text-4xl font-black text-white font-mono flex gap-2 md:gap-3 items-center">
-                            <span>{match.teamA.goals}</span>
-                            <span className="text-neutral-700 text-lg md:text-2xl">X</span>
-                            <span>{match.teamB.goals}</span>
-                            </div>
-
-                            <div className="text-left w-[40%]">
-                            <div className="font-black text-yellow-400 uppercase tracking-widest text-xs md:text-base flex flex-col md:flex-row items-start md:items-center justify-start gap-1">
-                                <span className="text-base md:text-2xl">{match.teamB.flag}</span> <span className="truncate max-w-[70px] md:max-w-none">{match.teamB.name}</span> 
-                            </div>
-                            </div>
-                        </div>
-
-                        <button 
-                            onClick={(e) => deleteMatch(e, match.id)} 
-                            className="w-full md:w-auto p-3 bg-red-900/10 text-red-500 active:bg-red-500 active:text-white hover:bg-red-900/30 rounded-xl border border-red-900/30 transition-transform active:scale-95 flex justify-center z-10" 
-                            title="Excluir Permanentemente"
-                        >
-                            <Trash2 size={18} />
-                        </button>
-                        </div>
-                    ))
-                    )}
-                </div>
-                </div>
-            </div>
-            );
-        }
         }
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
