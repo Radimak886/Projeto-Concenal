@@ -1,616 +1,969 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RadLot PRO</title>
+import React, { useState, useEffect, useRef } from 'react';
+import { 
+  Play, Square, Trophy, Shield, Target, AlertTriangle, 
+  Clock, Zap, Activity, Award, UserPlus, ArrowRight, 
+  Trash2, Pause, FastForward, Flag, Database,
+  History, ArrowLeft, Crosshair, Wind, FileText, Users, Plus
+} from 'lucide-react';
+
+// --- CONFIGURAÇÃO FIREBASE ---
+import { initializeApp } from 'firebase/app';
+import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'firebase/auth';
+import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc } from 'firebase/firestore';
+
+const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+const app = Object.keys(firebaseConfig).length > 0 ? initializeApp(firebaseConfig) : null;
+const auth = app ? getAuth(app) : null;
+const db = app ? getFirestore(app) : null;
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
+// --- SISTEMA DE AUDIO (APITO) ---
+let audioCtx = null;
+const initAudio = () => {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if (audioCtx.state === 'suspended') {
+    audioCtx.resume();
+  }
+};
+
+const playWhistle = (type) => {
+  try {
+    initAudio();
+    const playBeep = (startTime, duration) => {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(1400, startTime);
+      osc.frequency.setValueAtTime(1800, startTime + 0.1);
+      gain.gain.setValueAtTime(0.3, startTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(startTime);
+      osc.stop(startTime + duration);
+    };
+    const now = audioCtx.currentTime;
+    if (type === 'start') {
+      playBeep(now, 0.6);
+    } else if (type === 'end') {
+      playBeep(now, 0.4);
+      playBeep(now + 0.5, 0.4);
+      playBeep(now + 1.0, 1.2);
+    }
+  } catch (e) { console.log('Erro de áudio', e); }
+};
+
+// --- LISTA DE BANDEIRAS ---
+const COUNTRY_FLAGS = [
+  { id: 'BR', emoji: '🇧🇷', name: 'Brasil' },
+  { id: 'JM', emoji: '🇯🇲', name: 'Jamaica' },
+  { id: 'AR', emoji: '🇦🇷', name: 'Argentina' },
+  { id: 'UY', emoji: '🇺🇾', name: 'Uruguai' },
+  { id: 'CO', emoji: '🇨🇴', name: 'Colômbia' },
+  { id: 'CL', emoji: '🇨🇱', name: 'Chile' },
+  { id: 'PE', emoji: '🇵🇪', name: 'Peru' },
+  { id: 'US', emoji: '🇺🇸', name: 'EUA' },
+  { id: 'MX', emoji: '🇲🇽', name: 'México' },
+  { id: 'CA', emoji: '🇨🇦', name: 'Canadá' },
+  { id: 'EN', emoji: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', name: 'Inglaterra' },
+  { id: 'ES', emoji: '🇪🇸', name: 'Espanha' },
+  { id: 'FR', emoji: '🇫🇷', name: 'França' },
+  { id: 'DE', emoji: '🇩🇪', name: 'Alemanha' },
+  { id: 'IT', emoji: '🇮🇹', name: 'Itália' },
+  { id: 'PT', emoji: '🇵🇹', name: 'Portugal' },
+  { id: 'NL', emoji: '🇳🇱', name: 'Holanda' },
+  { id: 'BE', emoji: '🇧🇪', name: 'Bélgica' },
+  { id: 'JP', emoji: '🇯🇵', name: 'Japão' },
+  { id: 'KR', emoji: '🇰🇷', name: 'Coreia do Sul' },
+  { id: 'SN', emoji: '🇸🇳', name: 'Senegal' },
+  { id: 'MA', emoji: '🇲🇦', name: 'Marrocos' }
+];
+
+// --- COMPONENTE GRÁFICO GLOBAL ---
+const StatLine = ({ label, valA, valB }) => {
+  const total = valA + valB || 1;
+  const pctA = (valA / total) * 100;
+  const pctB = (valB / total) * 100;
+  return (
+    <div className="mb-4 md:mb-5 w-full">
+      <div className="flex justify-between items-center text-[10px] md:text-xs font-bold text-white mb-1.5 uppercase tracking-widest px-1">
+        <span className="w-6 md:w-8 font-mono text-base md:text-lg text-green-500">{valA}</span>
+        <span className="text-neutral-400 text-center flex-1">{label}</span>
+        <span className="w-6 md:w-8 text-right font-mono text-base md:text-lg text-yellow-400">{valB}</span>
+      </div>
+      <div className="h-1.5 md:h-2 w-full bg-[#0a0a0a] rounded-full flex overflow-hidden border border-neutral-800">
+        <div style={{ width: `${pctA}%` }} className="h-full bg-green-500 transition-all duration-1000"></div>
+        <div style={{ width: `${pctB}%` }} className="h-full bg-yellow-400 transition-all duration-1000"></div>
+      </div>
+    </div>
+  );
+};
+
+export default function App() {
+  // --- ESTADOS ---
+  const [user, setUser] = useState(null);
+  const [matchHistory, setMatchHistory] = useState([]);
+  const [selectedMatch, setSelectedMatch] = useState(null); 
+  const [isSaving, setIsSaving] = useState(false);
+
+  const [appState, setAppState] = useState('SETUP'); 
+  const [time, setTime] = useState(0);
+  const [isTimerRunning, setIsTimerRunning] = useState(false);
+  const [period, setPeriod] = useState('1º Tempo');
+  const [timeline, setTimeline] = useState([]);
+  const timelineEndRef = useRef(null);
+
+  const getInitialTeams = () => ({
+    A: { name: '', flag: '🏳️', color: 'green', goals: 0, corners: 0, throwIns: 0, fouls: 0, shotsTotal: 0, shotsOnTarget: 0, players: [] },
+    B: { name: '', flag: '🏴', color: 'yellow', goals: 0, corners: 0, throwIns: 0, fouls: 0, shotsTotal: 0, shotsOnTarget: 0, players: [] }
+  });
+
+  const [teams, setTeams] = useState(getInitialTeams());
+  const [motm, setMotm] = useState(null);
+  const [newPlayer, setNewPlayer] = useState({ A: { name: '', number: '', hist: '' }, B: { name: '', number: '', hist: '' } });
+  const [activeFlagPicker, setActiveFlagPicker] = useState(null);
+  const [animatingPlayer, setAnimatingPlayer] = useState(null); 
+  
+  // NOVA CONFIGURAÇÃO DA PARTIDA
+  const [matchConfig, setMatchConfig] = useState({ durationMinutes: 10, goalLimit: 3 });
+
+  // --- EFEITOS DB ---
+  useEffect(() => {
+    if (!auth) return;
+    const initAuth = async () => {
+      try {
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+          await signInWithCustomToken(auth, __initial_auth_token);
+        } else {
+          await signInAnonymously(auth);
+        }
+      } catch (error) {}
+    };
+    initAuth();
+    const unsubscribe = onAuthStateChanged(auth, setUser);
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (!user || !db) return;
+    const matchesRef = collection(db, 'artifacts', appId, 'users', user.uid, 'matches');
+    const unsubscribe = onSnapshot(matchesRef, (snapshot) => {
+      const history = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      history.sort((a, b) => b.timestamp - a.timestamp);
+      setMatchHistory(history);
+    }, (error) => {
+      console.error("Erro na escuta do Firestore:", error);
+    });
+    return () => unsubscribe();
+  }, [user]);
+
+  // --- CRONÔMETRO REGRESSIVO ---
+  useEffect(() => {
+    let interval;
+    if (isTimerRunning && appState === 'MATCH') {
+      interval = setInterval(() => {
+        setTime(t => {
+          if (t <= 1) {
+            clearInterval(interval);
+            setIsTimerRunning(false);
+            playWhistle('end');
+            return 0;
+          }
+          return t - 1;
+        });
+      }, 1000);
+    } else {
+      clearInterval(interval);
+    }
+    return () => clearInterval(interval);
+  }, [isTimerRunning, appState]);
+
+  // REMOVIDO AUTO-SCROLL DA TIMELINE QUE INCOMODAVA (Usuário Solicitou)
+  // useEffect(() => {
+  //   timelineEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  // }, [timeline]);
+
+  const formatTime = (seconds) => `${Math.floor(seconds / 60).toString().padStart(2, '0')}:${(seconds % 60).toString().padStart(2, '0')}`;
+  const getMatchMinute = () => `${period} - ${Math.floor(time / 60)}'`;
+
+  const addEvent = (type, description, colorClass) => {
+    setTimeline(prev => [...prev, { time: getMatchMinute(), type, description, colorClass }]);
+  };
+
+  const triggerPopAnimation = (playerId) => {
+    setAnimatingPlayer(playerId);
+    setTimeout(() => setAnimatingPlayer(null), 300);
+  };
+
+  const handleEndGame = () => {
+    setIsTimerRunning(false);
+    playWhistle('end');
+    setTimeout(() => setAppState('DASHBOARD'), 1000);
+  };
+
+  // --- MOTOR LÓGICO ---
+  const handlePlayerAction = (teamId, playerId, action) => {
+    const team = teams[teamId];
+    const player = team.players.find(p => p.id === playerId);
+    if (!player) return;
+
+    let updatedPlayer = { ...player };
+    let updatedTeam = { ...team };
+    triggerPopAnimation(playerId);
+
+    if (action === 'GOAL') {
+      updatedPlayer.goals += 1;
+      updatedTeam.goals += 1;
+      updatedTeam.shotsTotal += 1;
+      updatedTeam.shotsOnTarget += 1;
+      addEvent('GOL', `${player.name} (${team.name})`, 'text-green-400 font-bold');
+      
+      // VERIFICA LIMITE DE GOLS PARA ENCERRAR A PARTIDA
+      if (matchConfig.goalLimit > 0 && updatedTeam.goals >= matchConfig.goalLimit) {
+        setTeams(prev => ({
+          ...prev,
+          [teamId]: { ...updatedTeam, players: updatedTeam.players.map(p => p.id === playerId ? updatedPlayer : p) }
+        }));
+        handleEndGame();
+        return;
+      }
+    } 
+    else if (action === 'YELLOW') {
+      if (updatedPlayer.reds > 0) return;
+      updatedPlayer.yellows += 1;
+      addEvent('Amarelo', `${player.name}`, 'text-yellow-400');
+
+      if (updatedPlayer.yellows === 2) {
+        updatedPlayer.reds = 1;
+        addEvent('Expulsão', `${player.name} (2º Amarelo)`, 'text-red-500 font-bold');
+      }
+
+      if ((updatedPlayer.historicYellows + updatedPlayer.yellows) % 3 === 0) {
+        addEvent('Alerta', `${player.name} suspenso do próx. jogo`, 'text-orange-400');
+        updatedPlayer.suspendedNext = true;
+      }
+    } 
+    else if (action === 'RED') {
+      if (updatedPlayer.reds > 0) return;
+      updatedPlayer.reds = 1;
+      addEvent('Vermelho', `${player.name} expulso diretam.`, 'text-red-500 font-bold');
+    }
+
+    setTeams(prev => ({
+      ...prev,
+      [teamId]: { ...updatedTeam, players: updatedTeam.players.map(p => p.id === playerId ? updatedPlayer : p) }
+    }));
+  };
+
+  const handleTeamAction = (teamId, action) => {
+    setTeams(prev => ({ ...prev, [teamId]: { ...prev[teamId], [action]: prev[teamId][action] + 1 } }));
+    const labels = { 
+      corners: ['Escanteio', 'text-green-400'], 
+      throwIns: ['Lateral', 'text-yellow-400'], 
+      fouls: ['Falta', 'text-orange-400'] 
+    };
+    if (labels[action]) {
+      addEvent(labels[action][0], `Para: ${teams[teamId].name}`, labels[action][1]);
+    }
+  };
+
+  const handleShot = (teamId, isOnTarget) => {
+    setTeams(prev => {
+      const team = prev[teamId];
+      return {
+        ...prev,
+        [teamId]: {
+          ...team,
+          shotsTotal: team.shotsTotal + 1,
+          shotsOnTarget: isOnTarget ? team.shotsOnTarget + 1 : team.shotsOnTarget
+        }
+      };
+    });
+    addEvent(isOnTarget ? 'No Alvo' : 'Pra Fora', `Finalização: ${teams[teamId].name}`, isOnTarget ? 'text-green-400' : 'text-neutral-400');
+  };
+
+  const handleAddPlayer = (teamId) => {
+    const data = newPlayer[teamId];
+    if (!data.name || !data.number) return;
     
-    <!-- Bibliotecas Core -->
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    const newP = {
+      id: Math.random().toString(36).substr(2, 9),
+      name: data.name.toUpperCase(),
+      number: parseInt(data.number),
+      goals: 0, yellows: 0, reds: 0,
+      historicYellows: parseInt(data.hist) || 0,
+      suspendedNext: false
+    };
+
+    setTeams(prev => ({ ...prev, [teamId]: { ...prev[teamId], players: [...prev[teamId].players, newP] } }));
+    setNewPlayer(prev => ({ ...prev, [teamId]: { name: '', number: '', hist: '' } }));
+  };
+
+  const removePlayer = (teamId, playerId) => {
+    setTeams(prev => ({ ...prev, [teamId]: { ...prev[teamId], players: prev[teamId].players.filter(p => p.id !== playerId) } }));
+  };
+
+  // --- PERSISTÊNCIA NO DB ---
+  const saveMatchToDatabase = async () => {
+    if (!user || !db) return;
+    setIsSaving(true);
+    try {
+      const matchesRef = collection(db, 'artifacts', appId, 'users', user.uid, 'matches');
+      const allPlayers = [...teams.A.players, ...teams.B.players];
+      const topScorer = allPlayers.reduce((max, p) => p.goals > max.goals ? p : max, allPlayers[0] || {goals: 0});
+
+      await addDoc(matchesRef, {
+        timestamp: Date.now(),
+        dateString: new Date().toLocaleDateString('pt-BR') + ' ' + new Date().toLocaleTimeString('pt-BR'),
+        teamA: teams.A, 
+        teamB: teams.B, 
+        timeline: timeline, 
+        highlights: {
+          motm: motm ? motm.name : 'Nenhum',
+          topScorer: topScorer?.goals > 0 ? topScorer.name : 'Nenhum'
+        }
+      });
+      
+      setTeams(getInitialTeams());
+      setTimeline([]);
+      setTime(0);
+      setPeriod('1º Tempo');
+      setMotm(null);
+      setAppState('HISTORY'); 
+    } catch (error) {
+      console.error("Erro ao salvar:", error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const deleteMatch = async (e, matchId) => {
+    e.stopPropagation(); 
+    if (!user || !db) return;
+    if (confirm("Confirma a exclusão permanente desta súmula?")) {
+      try {
+        await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'matches', matchId));
+        if(selectedMatch && selectedMatch.id === matchId) setSelectedMatch(null);
+      } catch (error) {}
+    }
+  };
+
+  // --- ESTILOS GLOBAIS ---
+  const customStyles = `
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes pop { 0% { transform: scale(1); } 50% { transform: scale(1.03); } 100% { transform: scale(1); } }
+    @keyframes slideInRight { from { opacity: 0; transform: translateX(15px); } to { opacity: 1; transform: translateX(0); } }
     
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+    .animate-fade-in-up { animation: fadeInUp 0.4s ease-out forwards; }
+    .animate-pop { animation: pop 0.2s ease-out; }
+    .animate-slide-in { animation: slideInRight 0.3s ease-out forwards; }
+    
+    .stagger-1 { animation-delay: 0.1s; opacity: 0; }
+    .stagger-2 { animation-delay: 0.2s; opacity: 0; }
+    .stagger-3 { animation-delay: 0.3s; opacity: 0; }
+    
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  `;
+
+  // ==========================================
+  // TELA 1 - SETUP
+  // ==========================================
+  if (appState === 'SETUP') {
+    return (
+      <div className="min-h-screen bg-[#050505] text-neutral-200 p-2 md:p-6 font-sans overflow-x-hidden">
+        <style>{customStyles}</style>
         
-        html, body, #root {
-            height: 100%;
-            margin: 0;
-            padding: 0;
-            background-color: #020617;
-            overflow: hidden;
-            overscroll-behavior: none;
-        }
+        <div className="max-w-6xl mx-auto space-y-4 md:space-y-8">
+          <div className="animate-fade-in-up flex flex-col md:flex-row justify-between items-center bg-[#0d0d0d]/90 backdrop-blur-xl p-4 md:p-6 rounded-[1rem] md:rounded-[1.5rem] border border-neutral-800 shadow-xl gap-3 relative z-20">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-green-500 via-yellow-400 to-black rounded-t-[1rem]"></div>
+            
+            <div className="text-center md:text-left">
+              <h1 className="text-2xl md:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-yellow-400 uppercase tracking-tighter">
+                Súmula Digital
+              </h1>
+              <p className="text-neutral-400 font-mono text-[10px] md:text-xs mt-1 flex items-center justify-center md:justify-start gap-1.5">
+                <Database size={12} className={user ? "text-green-500" : "text-yellow-500"}/>
+                Nuvem: {user ? <span className="text-green-400 font-bold">Conectado</span> : <span className="text-yellow-400">Aguardando...</span>}
+              </p>
+            </div>
 
-        body { 
-            font-family: 'Inter', sans-serif; 
-            color: #f8fafc; 
-            -webkit-font-smoothing: antialiased;
-        }
-        
-        /* Estilo Profissional para Inputs */
-        input, select, textarea {
-            color: #ffffff !important;
-            background-color: rgba(30, 41, 59, 0.5) !important;
-            border: 1px solid rgba(255, 255, 255, 0.1) !important;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        input:focus, select:focus {
-            border-color: #10b981 !important;
-            background-color: rgba(30, 41, 59, 0.8) !important;
-            box-shadow: 0 0 15px rgba(16, 185, 129, 0.2);
-            outline: none;
-        }
-        
-        .custom-scrollbar::-webkit-scrollbar { width: 5px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
-        
-        .page-transition { animation: slideUp 0.4s cubic-bezier(0, 0, 0.2, 1) forwards; }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        
-        .pulse-emerald { animation: pulseE 2s infinite; }
-        @keyframes pulseE { 0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); } 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } }
+            <div className="flex w-full md:w-auto gap-2">
+              <div className="flex items-center gap-2 bg-[#050505] p-2 rounded-xl border border-neutral-800">
+                <div className="flex flex-col">
+                  <label className="text-[9px] text-neutral-500 uppercase font-bold px-1">Tempo (Min)</label>
+                  <input type="number" className="w-12 bg-transparent text-white font-mono text-center outline-none text-sm" value={matchConfig.durationMinutes} onChange={e => setMatchConfig(p => ({...p, durationMinutes: parseInt(e.target.value) || 0}))} title="Duração total (Retroativo)" />
+                </div>
+                <div className="w-px h-6 bg-neutral-800 mx-1"></div>
+                <div className="flex flex-col">
+                  <label className="text-[9px] text-neutral-500 uppercase font-bold px-1">Finaliza com Gols</label>
+                  <input type="number" className="w-12 bg-transparent text-white font-mono text-center outline-none text-sm" value={matchConfig.goalLimit} onChange={e => setMatchConfig(p => ({...p, goalLimit: parseInt(e.target.value) || 0}))} title="Finaliza o jogo com X gols" />
+                </div>
+              </div>
+              <button onClick={() => { setSelectedMatch(null); setAppState('HISTORY'); }} className="flex justify-center items-center gap-2 bg-[#171717] hover:bg-neutral-800 border border-neutral-700 px-4 py-2.5 rounded-xl transition-all active:scale-95 text-xs md:text-sm font-bold text-white">
+                <History size={14} className="text-green-400" />
+              </button>
+            </div>
+          </div>
 
-        .icon-container { display: inline-flex; align-items: center; justify-content: center; }
-        
-        .glass-nav {
-            background: rgba(9, 14, 26, 0.85);
-            backdrop-filter: blur(16px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        .dynamic-grid {
-            display: grid;
-            gap: 4px;
-        }
-
-        .no-select { user-select: none; -webkit-tap-highlight-color: transparent; }
-    </style>
-</head>
-<body>
-    <div id="root"></div>
-
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, setDoc, onSnapshot, doc, getDoc, updateDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyCqTWx5laCDp4jrySVXz_0kt43sOscPogo",
-            authDomain: "radlot-pro.firebaseapp.com",
-            projectId: "radlot-pro",
-            storageBucket: "radlot-pro.firebasestorage.app",
-            messagingSenderId: "367073747408",
-            appId: "1:367073747408:web:83b9c26cd6808294cdd9d5"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-
-        window.RadCore = {
-            auth, db,
-            api: { signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail, updatePassword, reauthenticateWithCredential, EmailAuthProvider },
-            dbOps: { collection, addDoc, setDoc, onSnapshot, doc, getDoc, updateDoc, deleteDoc, serverTimestamp }
-        };
-    </script>
-
-    <script type="text/babel">
-        const { useState, useEffect, useRef } = React;
-
-        const MODS = {
-            mega: { n: 'Mega-Sena', api: 'megasena', max: 60, k: 6, color: '#10b981', hot: [10, 53, 5, 4, 33, 23, 27, 30, 37, 42], gridCols: 10 },
-            facil: { n: 'Lotofácil', api: 'lotofacil', max: 25, k: 15, color: '#a855f7', hot: [20, 11, 10, 13, 24, 25, 14, 3, 4, 12], gridCols: 5 },
-            quina: { n: 'Quina', api: 'quina', max: 80, k: 5, color: '#3b82f6', hot: [4, 49, 31, 39, 52, 16, 18, 53, 10, 38], gridCols: 10 },
-            mania: { n: 'Lotomania', api: 'lotomania', max: 100, k: 50, color: '#f97316', hot: [47, 43, 54, 48, 92, 49, 17, 31, 41, 64, 45, 11, 58, 91, 76, 26, 85, 42, 51, 82, 0, 19, 38, 44, 27], gridCols: 10 },
-            timemania: { n: 'Timemania', api: 'timemania', max: 80, k: 10, color: '#eab308', hot: [20, 71, 80, 4, 6, 70, 72, 60, 21, 25], gridCols: 10 },
-            sorte: { n: 'Dia de Sorte', api: 'diadesorte', max: 31, k: 7, color: '#f97316', hot: [10, 7, 23, 31, 9, 21, 15, 1, 14, 8], gridCols: 7 }
-        };
-
-        const Icon = ({ name, className = "w-5 h-5" }) => {
-            const iconRef = useRef(null);
-            useEffect(() => {
-                if (iconRef.current && window.lucide) {
-                    iconRef.current.innerHTML = `<i data-lucide="${name}" class="${className}"></i>`;
-                    window.lucide.createIcons();
-                }
-            }, [name, className]);
-            return <span ref={iconRef} className="icon-container"></span>;
-        };
-
-        const App = () => {
-            const [user, setUser] = useState(null);
-            const [profile, setProfile] = useState(null);
-            const [init, setInit] = useState(false);
-            const [tab, setTab] = useState('gerador');
-            const [activeLotto, setActiveLotto] = useState('mega');
-            const [game, setGame] = useState(null);
-            const [vault, setVault] = useState([]);
-            const [view, setView] = useState('login'); 
-            const [isBusy, setIsBusy] = useState(false);
-            const [msg, setMsg] = useState({ type: '', text: '' });
-            const [timer, setTimer] = useState(300); 
-            const [showHeatHelp, setShowHeatHelp] = useState(false);
-
-            const [authForm, setAuthForm] = useState({ 
-                id: '', pass: '', nome: '', apelido: '', tel: '', cTel: '', 
-                email: '', cEmail: '', passReg: '', cPassReg: '', sexo: 'masculino', nascimento: '' 
-            });
-            const [editForm, setEditForm] = useState({ nome: '', apelido: '', telefone: '', sexo: 'masculino', oldPass: '', newPass: '', cNewPass: '' });
-            const [apiData, setApiData] = useState({});
-
-            // Inatividade de 5 minutos
-            useEffect(() => {
-                if (!user) return;
-                const countdown = setInterval(() => {
-                    setTimer(prev => {
-                        if (prev <= 1) {
-                            window.RadCore.api.signOut(window.RadCore.auth);
-                            return 300;
-                        }
-                        return prev - 1;
-                    });
-                }, 1000);
-                const resetTimer = () => setTimer(300);
-                const events = ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'];
-                events.forEach(e => window.addEventListener(e, resetTimer));
-                return () => {
-                    clearInterval(countdown);
-                    events.forEach(e => window.removeEventListener(e, resetTimer));
-                };
-            }, [user]);
-
-            useEffect(() => {
-                const check = setInterval(() => {
-                    if (window.RadCore) {
-                        clearInterval(check);
-                        window.RadCore.api.onAuthStateChanged(window.RadCore.auth, async (u) => {
-                            if (u) {
-                                try {
-                                    const snap = await window.RadCore.dbOps.getDoc(window.RadCore.dbOps.doc(window.RadCore.db, 'artifacts', 'radlot-pro-main', 'users', u.uid, 'profile', 'data'));
-                                    if (snap.exists()) {
-                                        const d = snap.data();
-                                        setProfile(d);
-                                        setEditForm({ nome: d.nome || '', apelido: d.apelido || '', telefone: d.telefone || '', sexo: d.sexo || 'masculino', oldPass: '', newPass: '', cNewPass: '' });
-                                    }
-                                } catch(e) {}
-                                setUser(u);
-                            } else { setUser(null); setProfile(null); }
-                            setInit(true);
-                        });
-                    }
-                }, 100);
-            }, []);
-
-            useEffect(() => {
-                if (!user) return;
-                const q = window.RadCore.dbOps.collection(window.RadCore.db, 'artifacts', 'radlot-pro-main', 'users', user.uid, 'vault');
-                return window.RadCore.dbOps.onSnapshot(q, (s) => setVault(s.docs.map(d => ({ id: d.id, ...d.data() }))));
-            }, [user]);
-
-            const handleAuth = async (e) => {
-                e.preventDefault();
-                setMsg({ type: '', text: '' });
-                setIsBusy(true);
-                try {
-                    if (view === 'register') {
-                        if (authForm.email !== authForm.cEmail) throw new Error("Os e-mails não coincidem.");
-                        if (authForm.tel !== authForm.cTel) throw new Error("Os telefones não coincidem.");
-                        if (authForm.passReg !== authForm.cPassReg) throw new Error("As senhas não coincidem.");
-                        
-                        const uc = await window.RadCore.api.createUserWithEmailAndPassword(window.RadCore.auth, authForm.email, authForm.passReg);
-                        const pData = { nome: authForm.nome, apelido: authForm.apelido, telefone: authForm.tel, email: authForm.email, sexo: authForm.sexo, nascimento: authForm.nascimento, createdAt: window.RadCore.dbOps.serverTimestamp() };
-                        await window.RadCore.dbOps.setDoc(window.RadCore.dbOps.doc(window.RadCore.db, 'artifacts', 'radlot-pro-main', 'users', uc.user.uid, 'profile', 'data'), pData);
-                        await window.RadCore.dbOps.setDoc(window.RadCore.dbOps.doc(window.RadCore.db, 'artifacts', 'radlot-pro-main', 'public', 'data', 'nicknames', authForm.apelido.toLowerCase()), { email: authForm.email });
-                    } else if (view === 'login') {
-                        let email = authForm.id;
-                        if (!email.includes('@')) {
-                            const snap = await window.RadCore.dbOps.getDoc(window.RadCore.dbOps.doc(window.RadCore.db, 'artifacts', 'radlot-pro-main', 'public', 'data', 'nicknames', email.toLowerCase()));
-                            if (snap.exists()) email = snap.data().email;
-                            else throw new Error("Usuário não encontrado.");
-                        }
-                        await window.RadCore.api.signInWithEmailAndPassword(window.RadCore.auth, email, authForm.pass);
-                    } else if (view === 'recovery') {
-                        await window.RadCore.api.sendPasswordResetEmail(window.RadCore.auth, authForm.email);
-                        setMsg({ type: 'success', text: "Link de recuperação enviado com sucesso!" });
-                        setTimeout(() => setView('login'), 3000);
-                    }
-                } catch (err) { setMsg({ type: 'error', text: err.message || "Falha na autenticação." }); }
-                setIsBusy(false);
-            };
-
-            const handleProfileUpdate = async (e) => {
-                e.preventDefault();
-                setIsBusy(true);
-                setMsg({ type: '', text: '' });
-                try {
-                    const ref = window.RadCore.dbOps.doc(window.RadCore.db, 'artifacts', 'radlot-pro-main', 'users', user.uid, 'profile', 'data');
-                    const updateData = { nome: editForm.nome, apelido: editForm.apelido, telefone: editForm.telefone, sexo: editForm.sexo };
-                    await window.RadCore.dbOps.updateDoc(ref, updateData);
-                    if (editForm.newPass) {
-                        if (editForm.newPass !== editForm.cNewPass) throw new Error("Novas senhas não coincidem.");
-                        const cred = window.RadCore.api.EmailAuthProvider.credential(user.email, editForm.oldPass);
-                        await window.RadCore.api.reauthenticateWithCredential(user, cred);
-                        await window.RadCore.api.updatePassword(user, editForm.newPass);
-                    }
-                    if (editForm.apelido !== profile.apelido) {
-                         await window.RadCore.dbOps.setDoc(window.RadCore.dbOps.doc(window.RadCore.db, 'artifacts', 'radlot-pro-main', 'public', 'data', 'nicknames', editForm.apelido.toLowerCase()), { email: profile.email });
-                    }
-                    setProfile({ ...profile, ...updateData });
-                    setMsg({ type: 'success', text: "Perfil atualizado com sucesso!" });
-                } catch (err) { setMsg({ type: 'error', text: "Falha ao salvar. Valide a sua senha." }); }
-                setIsBusy(false);
-            };
-
-            const generate = () => {
-                setIsBusy(true);
-                const cfg = MODS[activeLotto];
-                setTimeout(() => {
-                    let pool = [];
-                    cfg.hot.forEach(n => { for(let i=0; i<15; i++) pool.push(n); });
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-8">
+            {['A', 'B'].map((t, index) => (
+              <div key={t} className={`animate-fade-in-up stagger-${index + 1} bg-[#0d0d0d] rounded-[1rem] md:rounded-[1.5rem] border border-neutral-800 flex flex-col overflow-visible shadow-lg`}>
+                <div className={`p-3 md:p-5 border-b border-neutral-800 flex items-center gap-3 rounded-t-[1rem] md:rounded-t-[1.5rem] relative ${t==='A' ? 'bg-gradient-to-br from-green-950/40 to-transparent' : 'bg-gradient-to-br from-yellow-950/30 to-transparent'}`}>
+                  
+                  <div className="relative flex-shrink-0">
+                    <button 
+                      onClick={() => setActiveFlagPicker(activeFlagPicker === t ? null : t)}
+                      className="text-3xl md:text-5xl hover:scale-105 transition-transform filter drop-shadow-md"
+                    >
+                      {teams[t].flag}
+                    </button>
                     
-                    // CORREÇÃO: Lógica de intervalo para evitar o 00 na Lotofácil
-                    const isMania = activeLotto === 'mania';
-                    const startNum = isMania ? 0 : 1;
-                    const endNum = isMania ? 99 : cfg.max;
+                    {activeFlagPicker === t && (
+                      <div className="absolute top-12 left-0 z-50 bg-[#1a1a1a] border border-neutral-700 rounded-xl p-2 shadow-2xl grid grid-cols-4 gap-1.5 w-56 md:w-72 h-48 overflow-y-auto no-scrollbar animate-fade-in-up">
+                        <div className="col-span-4 text-[9px] md:text-[10px] text-neutral-400 font-bold uppercase mb-1 border-b border-neutral-700 pb-1 sticky top-0 bg-[#1a1a1a]">Escolha a Nação</div>
+                        {COUNTRY_FLAGS.map(country => (
+                          <button 
+                            key={country.id} 
+                            onClick={() => {
+                              setTeams(prev => ({...prev, [t]: {...prev[t], flag: country.emoji}}));
+                              setActiveFlagPicker(null);
+                            }}
+                            className="text-xl md:text-2xl hover:bg-neutral-800 p-1.5 rounded-lg transition-colors flex justify-center items-center active:scale-90"
+                          >
+                            {country.emoji}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
 
-                    for(let i = startNum; i <= endNum; i++) pool.push(i);
-                    
-                    let res = [];
-                    while(res.length < cfg.k) {
-                        let n = pool[Math.floor(Math.random() * pool.length)];
-                        if(!res.includes(n)) res.push(n);
-                    }
-                    setGame(res.sort((a,b)=>a-b));
-                    setIsBusy(false);
-                }, 700);
-            };
+                  <input 
+                    className="bg-transparent text-xl md:text-3xl font-black text-white outline-none w-full uppercase placeholder-neutral-700 tracking-tighter"
+                    value={teams[t].name}
+                    onChange={(e) => setTeams(prev => ({...prev, [t]: {...prev[t], name: e.target.value.toUpperCase()}}))}
+                    placeholder="NOME DA EQUIPE"
+                  />
+                </div>
 
-            const saveGame = async () => {
-                if (!user || !game) return;
-                const p = game.filter(n => n % 2 === 0).length;
-                await window.RadCore.dbOps.addDoc(window.RadCore.dbOps.collection(window.RadCore.db, 'artifacts', 'radlot-pro-main', 'users', user.uid, 'vault'), {
-                    tipo: activeLotto, numeros: game, stats: { pares: p, impares: game.length-p, soma: game.reduce((a,b)=>a+b,0) }, criadoEm: window.RadCore.dbOps.serverTimestamp()
-                });
-                setGame(null);
-            };
-
-            const syncOfficial = async () => {
-                setIsBusy(true);
-                try {
-                    const r = await fetch(`https://loteriascaixa-api.herokuapp.com/api/${MODS[activeLotto].api}/latest`);
-                    const d = await r.json();
-                    setApiData(prev => ({ ...prev, [activeLotto]: d }));
-                } catch (e) { setMsg({ type: 'error', text: "Erro ao sincronizar API." }); }
-                setIsBusy(false);
-            };
-
-            const imprimirPDF = (j) => {
-                if (!window.jspdf) return;
-                const { jsPDF } = window.jspdf;
-                const doc = new jsPDF({ format: [80, 180], unit: 'mm' });
-                const config = MODS[j.tipo || activeLotto];
-                const numsArray = Array.isArray(j) ? j : j.numeros;
-                doc.setFillColor(15, 23, 42);
-                doc.rect(0, 0, 80, 25, 'F');
-                doc.setTextColor(255, 255, 255);
-                doc.setFontSize(14);
-                doc.text("RADLOT PRO", 40, 12, { align: 'center' });
-                doc.setFontSize(8);
-                doc.text("PROCESSAMENTO ESTATÍSTICO 2025", 40, 18, { align: 'center' });
-                doc.setTextColor(0, 0, 0);
-                doc.setFontSize(10);
-                doc.text(`TIPO: ${config.n.toUpperCase()}`, 10, 35);
-                doc.text(`DATA: ${new Date().toLocaleDateString('pt-BR')}`, 10, 42);
-                doc.line(10, 48, 70, 48);
-                doc.setFontSize(9);
-                let y = 60;
-                const chunks = [];
-                for(let i=0; i<numsArray.length; i+=5) chunks.push(numsArray.slice(i, i+5));
-                chunks.forEach(chunk => {
-                    doc.text(chunk.map(n => n.toString().padStart(2, '0')).join('  '), 40, y, { align: 'center' });
-                    y += 6;
-                });
-                doc.save(`RadLot_${config.n}.pdf`);
-            };
-
-            const formatTimer = (s) => {
-                const min = Math.floor(s / 60);
-                const sec = s % 60;
-                return `${min}:${sec < 10 ? '0' : ''}${sec}`;
-            };
-
-            if (!init) return <div className="min-h-screen bg-[#020617] flex items-center justify-center"><Icon name="refresh-cw" className="w-12 h-12 animate-spin text-emerald-500" /></div>;
-
-            if (!user) return (
-                <div className="h-full overflow-y-auto custom-scrollbar flex items-center justify-center p-4 bg-[#020617] selection:bg-emerald-500/30">
-                    <div className="w-full max-w-xl bg-[#090e1a] border border-white/5 p-8 md:p-12 rounded-[3rem] shadow-2xl my-10 relative overflow-hidden">
-                        <div className="absolute -top-24 -left-24 w-48 h-48 bg-emerald-500/10 blur-[80px]"></div>
-                        <div className="text-center mb-10 relative z-10">
-                            <div className="p-5 bg-emerald-500 rounded-[2rem] w-fit mx-auto mb-6 text-black shadow-lg pulse-emerald"><Icon name="clover" className="w-12 h-12" /></div>
-                            <h1 className="text-4xl font-black uppercase italic tracking-tighter text-white leading-none">RadLot <span className="text-emerald-500 not-italic">PRO</span></h1>
-                        </div>
-
-                        <form onSubmit={handleAuth} className="space-y-6 relative z-10 no-select">
-                            {view === 'register' ? (
-                                <div className="space-y-5 fade-in">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <input type="text" placeholder="Nome Completo" onChange={e=>setAuthForm({...authForm, nome:e.target.value})} className="w-full py-4 px-5 rounded-2xl outline-none" required />
-                                        <input type="text" placeholder="Apelido" onChange={e=>setAuthForm({...authForm, apelido:e.target.value})} className="w-full py-4 px-5 rounded-2xl outline-none" required />
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <input type="date" onChange={e=>setAuthForm({...authForm, nascimento:e.target.value})} className="w-full py-4 px-5 rounded-2xl outline-none text-slate-400" required />
-                                        <select onChange={e=>setAuthForm({...authForm, sexo:e.target.value})} className="w-full py-4 px-5 rounded-2xl outline-none">
-                                            <option value="masculino">Masculino</option>
-                                            <option value="feminino">Feminino</option>
-                                        </select>
-                                    </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <input type="tel" placeholder="Telefone" onChange={e=>setAuthForm({...authForm, tel:e.target.value})} className="w-full py-4 px-5 rounded-2xl outline-none" required />
-                                        <input type="tel" placeholder="Confirmar Telefone" onChange={e=>setAuthForm({...authForm, cTel:e.target.value})} className="w-full py-4 px-5 rounded-2xl outline-none" required />
-                                    </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <input type="email" placeholder="E-mail" onChange={e=>setAuthForm({...authForm, email:e.target.value})} className="w-full py-4 px-5 rounded-2xl outline-none" required />
-                                        <input type="email" placeholder="Confirmar E-mail" onChange={e=>setAuthForm({...authForm, cEmail:e.target.value})} className="w-full py-4 px-5 rounded-2xl outline-none" required />
-                                    </div>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <input type="password" placeholder="Senha" onChange={e=>setAuthForm({...authForm, passReg:e.target.value})} className="w-full py-4 px-5 rounded-2xl outline-none" required />
-                                        <input type="password" placeholder="Confirmar Senha" onChange={e=>setAuthForm({...authForm, cPassReg:e.target.value})} className="w-full py-4 px-5 rounded-2xl outline-none" required />
-                                    </div>
-                                </div>
-                            ) : view === 'login' ? (
-                                <div className="space-y-4 fade-in">
-                                    <input type="text" placeholder="E-mail ou Apelido" onChange={e=>setAuthForm({...authForm, id:e.target.value})} className="w-full py-5 px-6 rounded-2xl outline-none font-bold text-lg text-white shadow-inner" required />
-                                    <input type="password" placeholder="Senha" onChange={e=>setAuthForm({...authForm, pass:e.target.value})} className="w-full py-5 px-6 rounded-2xl outline-none font-bold text-lg text-white shadow-inner" required />
-                                    <div className="text-right"><button type="button" onClick={()=>setView('recovery')} className="text-[10px] text-slate-500 font-bold uppercase hover:text-emerald-400 tracking-widest">Esqueceu a senha?</button></div>
-                                </div>
-                            ) : (
-                                <div className="space-y-4 fade-in">
-                                    <p className="text-xs text-slate-400 text-center uppercase font-black tracking-widest">Recuperação de Acesso</p>
-                                    <input type="email" placeholder="Seu e-mail cadastrado" onChange={e=>setAuthForm({...authForm, email:e.target.value})} className="w-full py-5 px-6 rounded-2xl outline-none font-bold text-lg text-white shadow-inner" required />
-                                </div>
-                            )}
-
-                            {msg.text && <div className={`p-4 border text-[10px] font-bold text-center rounded-xl ${msg.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-red-500/10 border-red-500/20 text-red-500'}`}>{msg.text}</div>}
-                            
-                            <button type="submit" disabled={isBusy} className="w-full bg-emerald-600 hover:bg-emerald-500 py-6 rounded-[2rem] font-black uppercase text-sm tracking-widest text-black shadow-xl active:scale-95 transition-all">
-                                {isBusy ? <Icon name="refresh-cw" className="animate-spin w-5 h-5 mx-auto" /> : view === 'recovery' ? 'Enviar Link' : 'Entrar no Sistema'}
-                            </button>
-
-                            <div className="text-center pt-2 border-t border-white/5">
-                                <button type="button" onClick={()=>setView(view==='login'?'register':'login')} className="text-slate-500 text-[10px] font-black uppercase tracking-widest hover:text-emerald-400">
-                                    {view==='login'?'Novo por aqui? Criar conta agora':'Já possui conta? Entrar'}
-                                </button>
-                            </div>
-                        </form>
+                <div className="p-3 md:p-5 bg-[#050505] border-b border-neutral-800">
+                  <div className="flex flex-col gap-2">
+                    <div className="flex gap-2">
+                      <input type="number" placeholder="Nº" className="w-14 bg-[#171717] border border-neutral-700 rounded-lg p-2 text-center text-sm text-white focus:border-green-500 outline-none font-mono" value={newPlayer[t].number} onChange={e => setNewPlayer(p => ({...p, [t]: {...p[t], number: e.target.value}}))} />
+                      <input type="text" placeholder="Nome do Atleta" className="flex-1 bg-[#171717] border border-neutral-700 rounded-lg p-2 text-sm text-white focus:border-green-500 outline-none uppercase" value={newPlayer[t].name} onChange={e => setNewPlayer(p => ({...p, [t]: {...p[t], name: e.target.value}}))} />
                     </div>
+                    <div className="flex gap-2">
+                      <input type="number" placeholder="CA Ant." className="flex-1 bg-[#171717] border border-neutral-700 rounded-lg p-2 text-center text-sm text-yellow-400 focus:border-green-500 outline-none font-mono" value={newPlayer[t].hist} onChange={e => setNewPlayer(p => ({...p, [t]: {...p[t], hist: e.target.value}}))} />
+                      <button onClick={() => handleAddPlayer(t)} className={`px-4 py-2 text-black rounded-lg flex items-center justify-center transition-all active:scale-95 font-black ${t==='A' ? 'bg-green-500' : 'bg-yellow-400'}`}>
+                        <UserPlus size={18}/>
+                      </button>
+                    </div>
+                  </div>
                 </div>
-            );
-
-            return (
-                <div className="h-full flex flex-col lg:flex-row bg-[#020617] overflow-hidden no-select">
-                    {/* Sidebar fixa lateral */}
-                    <aside className="hidden lg:flex w-80 bg-[#090e1a] border-r border-white/5 p-10 flex flex-col gap-10 flex-shrink-0 h-full relative z-20">
-                        <div className="flex items-center gap-4 group">
-                            <div className="p-3 bg-emerald-500 rounded-2xl shadow-lg shadow-emerald-500/20 group-hover:rotate-12 transition-transform"><Icon name="clover" className="text-black" /></div>
-                            <h1 className="text-2xl font-black italic uppercase tracking-tighter text-white leading-none">RadLot <span className="text-emerald-500 not-italic">PRO</span></h1>
+                
+                <div className="p-3 md:p-5 h-[200px] md:h-[280px] overflow-y-auto space-y-2 no-scrollbar">
+                  {teams[t].players.map((p, idx) => (
+                    <div key={p.id} className="animate-slide-in flex justify-between items-center bg-[#111] p-2.5 rounded-lg border border-neutral-800" style={{animationDelay: `${idx * 0.05}s`}}>
+                      <div className="flex items-center gap-3">
+                        <span className={`font-mono text-xs md:text-sm px-2 py-1 rounded-md border min-w-[2.5rem] text-center text-black font-black ${t==='A' ? 'bg-green-500 border-green-600' : 'bg-yellow-400 border-yellow-500'}`}>
+                          {p.number}
+                        </span>
+                        <div className="flex flex-col">
+                           <span className="font-bold text-xs md:text-sm text-white tracking-wide">{p.name}</span>
+                           {p.historicYellows > 0 && (
+                             <span className="text-[8px] md:text-[10px] uppercase font-bold text-yellow-400 mt-0.5">
+                               {p.historicYellows} CA Ant.
+                             </span>
+                           )}
                         </div>
-                        <nav className="flex flex-col gap-4">
-                            {[
-                                { id: 'gerador', icon: 'layout-dashboard', label: 'Gerador' },
-                                { id: 'cofre', icon: 'history', label: 'Cofre' },
-                                { id: 'scanner', icon: 'shield-check', label: 'Scanner' },
-                                { id: 'perfil', icon: 'settings', label: 'Perfil' }
-                            ].map(item => (
-                                <button key={item.id} onClick={()=>setTab(item.id)} className={`flex items-center gap-5 px-8 py-5 rounded-[1.5rem] w-full border text-xs font-black uppercase transition-all ${tab === item.id ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 shadow-inner' : 'border-transparent text-slate-500 hover:bg-white/5'}`}>
-                                    <Icon name={item.icon} className="w-5 h-5" />
-                                    <span>{item.label}</span>
-                                </button>
-                            ))}
-                        </nav>
-                        <div className="mt-auto">
-                            <button onClick={()=>window.RadCore.api.signOut(window.RadCore.auth)} className="w-full py-5 bg-red-500/5 text-red-500 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all shadow-sm">Sair do Sistema</button>
-                        </div>
-                    </aside>
-
-                    <main className="flex-grow relative h-full overflow-hidden flex flex-col">
-                        {/* Status Header Fixo - Identidade por Apelido */}
-                        <div className="sticky top-0 left-0 w-full h-20 lg:h-28 glass-nav flex items-center justify-between lg:justify-end px-6 lg:px-12 z-50">
-                            <div className="lg:hidden flex items-center gap-3">
-                                <Icon name="clover" className="text-emerald-500" />
-                                <span className="font-black text-sm uppercase italic">RadLot PRO</span>
-                            </div>
-                            <div className="flex items-center gap-4 lg:gap-6">
-                                <div className="text-right">
-                                    <p className="text-[11px] lg:text-sm font-black text-white uppercase tracking-tighter leading-none mb-1">@{profile?.apelido || 'Operador'}</p>
-                                    <div className="flex items-center justify-end gap-2">
-                                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.5)]"></span>
-                                        <p className="text-[9px] lg:text-[10px] font-bold text-emerald-500 uppercase tracking-widest italic opacity-80 leading-none">Online: {formatTimer(timer)}</p>
-                                    </div>
-                                </div>
-                                <div className="w-12 h-12 lg:w-16 lg:h-16 rounded-2xl bg-slate-800 border border-white/10 flex items-center justify-center text-emerald-500 shadow-inner">
-                                    {profile?.sexo === 'feminino' ? <Icon name="circle-user" className="w-7 h-7 lg:w-9 lg:h-9" /> : <Icon name="user-square-2" className="w-7 h-7 lg:w-9 lg:h-9" />}
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Scrollable Workspace Area */}
-                        <div className="flex-grow overflow-y-auto custom-scrollbar p-6 lg:p-20 pt-6 pb-32 lg:pb-16">
-                            <div className="max-w-6xl mx-auto w-full">
-                                {tab === 'gerador' && (
-                                    <div className="space-y-12 page-transition">
-                                        <header className="flex flex-col lg:flex-row justify-between gap-8">
-                                            <div className="text-center lg:text-left"><h2 className="text-4xl lg:text-6xl font-black uppercase italic tracking-tighter text-white leading-none">Processador</h2><p className="text-slate-500 text-xs lg:text-sm mt-2 font-medium italic opacity-80">Dataset Consolidado 2009-2025.</p></div>
-                                            <div className="flex flex-wrap gap-2 p-1.5 bg-[#0c1220] rounded-[2rem] border border-white/5 shadow-2xl justify-center h-fit">
-                                                {Object.keys(MODS).map(k => (
-                                                    <button key={k} onClick={()=>{setActiveLotto(k);setGame(null);}} className={`px-5 lg:px-7 py-3 lg:py-4 rounded-[1.5rem] text-[9px] lg:text-[11px] font-black uppercase transition-all ${activeLotto === k ? 'bg-emerald-500 text-black shadow-lg' : 'text-slate-500 hover:text-white'}`}>{MODS[k].n}</button>
-                                                ))}
-                                            </div>
-                                        </header>
-
-                                        <div className="grid grid-cols-1 xl:grid-cols-3 gap-12">
-                                            <div className="xl:col-span-2 bg-[#0c1220] border border-white/5 rounded-[3rem] lg:rounded-[4.5rem] p-8 lg:p-20 flex flex-col items-center justify-center text-center shadow-2xl min-h-[450px] lg:min-h-[600px] relative overflow-hidden group transition-all">
-                                                {game ? (
-                                                    <div className="space-y-10 w-full animate-in zoom-in-95">
-                                                        <div className="flex flex-wrap justify-center gap-3 lg:gap-5">
-                                                            {game.map((n, i) => <div key={i} className="w-12 h-12 lg:w-20 lg:h-20 rounded-2xl lg:rounded-[2.5rem] bg-[#1e293b] border-2 border-emerald-500/30 flex items-center justify-center text-white font-black text-xl lg:text-4xl shadow-xl hover:scale-110 transition-transform">{n.toString().padStart(2,'0')}</div>)}
-                                                        </div>
-                                                        <div className="grid grid-cols-2 gap-6 lg:gap-10 max-w-lg mx-auto pt-10 border-t border-white/5">
-                                                            <div className="text-center p-5 bg-white/5 rounded-[2rem]"><span className="text-[10px] text-slate-500 uppercase block mb-1 font-black">Paridade</span><p className="text-2xl font-black text-emerald-400 italic font-black">{game.filter(n=>n%2===0).length}P / {game.length-game.filter(n=>n%2===0).length}Í</p></div>
-                                                            <div className="text-center p-5 bg-white/5 rounded-[2rem]"><span className="text-[10px] text-slate-500 uppercase block mb-1 font-black">Soma</span><p className="text-2xl font-black text-emerald-400 italic font-black">{game.reduce((a,b)=>a+b,0)}</p></div>
-                                                        </div>
-                                                        <div className="flex flex-wrap gap-4 justify-center pt-6">
-                                                            <button onClick={saveGame} className="px-10 lg:px-14 py-5 lg:py-7 bg-emerald-600 hover:bg-emerald-500 rounded-3xl font-black text-[10px] uppercase tracking-widest text-black shadow-xl active:scale-95 transition-all flex items-center gap-3"><Icon name="save" /> SALVAR</button>
-                                                            <button onClick={() => imprimirPDF(game)} className="px-10 lg:px-14 py-5 lg:py-7 bg-blue-600 hover:bg-blue-500 rounded-3xl font-black text-[10px] uppercase tracking-widest text-white shadow-xl active:scale-95 transition-all flex items-center gap-3"><Icon name="printer" /> IMPRIMIR</button>
-                                                            <button onClick={()=>setGame(null)} className="px-10 py-5 text-slate-500 font-black text-[10px] hover:text-red-500">LIMPAR</button>
-                                                        </div>
-                                                    </div>
-                                                ) : (
-                                                    <div className="space-y-12">
-                                                        <div className="w-32 h-32 lg:w-56 lg:h-56 bg-emerald-500/5 rounded-[3rem] lg:rounded-[5rem] flex items-center justify-center mx-auto border-2 border-dashed border-emerald-500/20 relative group-hover:scale-105 transition-transform duration-500"><Icon name="zap" className="w-16 h-16 lg:w-24 lg:h-24 text-emerald-500 animate-pulse" /></div>
-                                                        <h3 className="text-3xl lg:text-5xl font-black uppercase italic tracking-tighter text-white uppercase">Otimização Pronta</h3>
-                                                        <button onClick={generate} disabled={isBusy} className="px-14 lg:px-24 py-6 lg:py-10 bg-emerald-600 hover:bg-emerald-500 rounded-[2rem] lg:rounded-[3rem] font-black text-black uppercase tracking-[0.4em] text-sm lg:text-lg shadow-2xl active:scale-95 border-b-8 border-emerald-900 transition-all">PROCESSAR AGORA</button>
-                                                    </div>
-                                                )}
-                                            </div>
-
-                                            <div className="bg-[#0c1220] rounded-[3rem] p-10 border border-white/5 shadow-inner h-fit">
-                                                <div className="flex justify-between items-center mb-8"><h4 className="text-[11px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-3"><Icon name="layout-grid" className="text-emerald-500" /> Grade de Dispersão</h4><button onClick={()=>setShowHeatHelp(!showHeatHelp)} className="text-slate-500 hover:text-emerald-500"><Icon name="help-circle" /></button></div>
-                                                {showHeatHelp && <div className="mb-6 p-6 bg-emerald-500/10 border border-emerald-500/20 rounded-[2rem] text-[10px] text-emerald-400 leading-relaxed italic fade-in">A Grade analisa a distribuição física das dezenas no volante. Jogos equilibrados possuem maior incidência estatística que agrupamentos extremos.</div>}
-                                                <div className="dynamic-grid p-4 bg-black/40 rounded-[2.5rem] border border-white/5 shadow-inner" style={{ gridTemplateColumns: `repeat(${MODS[activeLotto].gridCols}, 1fr)` }}>
-                                                    {Array.from({length: activeLotto === 'mania' ? 100 : MODS[activeLotto].max}).map((_,i)=>(
-                                                        <div key={i} className={`rounded-sm lg:rounded-md transition-all duration-700 ${activeLotto === 'mania' ? 'h-3 lg:h-5' : 'h-6 lg:h-8'} ${game?.includes(i+(activeLotto === 'mania' ? 0 : 1))?'bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.5)]':'bg-white/5 opacity-10'}`}></div>
-                                                    ))}
-                                                </div>
-                                                <p className="text-[9px] text-slate-600 uppercase font-black text-center mt-8 tracking-widest italic opacity-50">Visualização Geo-Espacial</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {tab === 'perfil' && (
-                                    <div className="space-y-12 page-transition max-w-5xl mx-auto pb-20">
-                                        <h2 className="text-5xl font-black uppercase italic tracking-tighter text-white text-center lg:text-left">Gestão de Cadastro</h2>
-                                        <div className="bg-[#0c1220] border border-white/5 p-8 lg:p-16 rounded-[3rem] lg:rounded-[4.5rem] shadow-2xl">
-                                            <form onSubmit={handleProfileUpdate} className="space-y-10">
-                                                <div className="flex flex-col md:flex-row items-center gap-12 pb-10 border-b border-white/5">
-                                                    <div className="w-32 h-32 lg:w-44 lg:h-44 rounded-[3rem] bg-slate-800 border-2 border-emerald-500/20 flex items-center justify-center text-emerald-500 shadow-inner">
-                                                        {profile?.sexo === 'feminino' ? <Icon name="circle-user" className="w-20 h-20 lg:w-28 lg:h-28" /> : <Icon name="user-square-2" className="w-20 h-20 lg:w-28 lg:h-28" />}
-                                                    </div>
-                                                    <div className="space-y-6 text-center md:text-left text-white uppercase font-black tracking-widest">
-                                                        <label className="text-[11px] text-slate-500">Avatar e Identidade</label>
-                                                        <div className="flex gap-4 justify-center md:justify-start">
-                                                            <button type="button" onClick={()=>setEditForm({...editForm, sexo:'masculino'})} className={`px-12 py-4 rounded-2xl text-[10px] border transition-all ${editForm.sexo === 'masculino'?'bg-emerald-500 border-emerald-400 text-black shadow-xl':'bg-white/5 border-white/5 text-slate-500'}`}>Masculino</button>
-                                                            <button type="button" onClick={()=>setEditForm({...editForm, sexo:'feminino'})} className={`px-12 py-4 rounded-2xl text-[10px] border transition-all ${editForm.sexo === 'feminino'?'bg-emerald-500 border-emerald-400 text-black shadow-xl':'bg-white/5 border-white/5 text-slate-500'}`}>Feminino</button>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-white font-medium">
-                                                    <div className="space-y-2"><label className="text-[10px] font-black text-slate-500 uppercase ml-1 tracking-widest">Nome Permanente</label><input type="text" value={editForm.nome} onChange={e=>setEditForm({...editForm, nome:e.target.value})} className="w-full rounded-2xl py-5 px-6 outline-none shadow-inner" required /></div>
-                                                    <div className="space-y-2"><label className="text-[10px] font-black text-slate-500 uppercase ml-1 tracking-widest">Apelido Profissional</label><input type="text" value={editForm.apelido} onChange={e=>setEditForm({...editForm, apelido:e.target.value})} className="w-full rounded-2xl py-5 px-6 outline-none shadow-inner" required /></div>
-                                                </div>
-                                                <div className="space-y-2 text-white font-medium"><label className="text-[10px] font-black text-slate-500 uppercase ml-1 tracking-widest">Telefone de Contato</label><input type="tel" value={editForm.telefone} onChange={e=>setEditForm({...editForm, telefone:e.target.value})} className="w-full rounded-2xl py-5 px-6 outline-none shadow-inner" required /></div>
-                                                <div className="pt-10 border-t border-white/5 space-y-8">
-                                                    <h4 className="text-sm font-black uppercase text-emerald-500 flex items-center gap-3 italic"><Icon name="lock" /> Alterar Chave de Segurança</h4>
-                                                    <input type="password" placeholder="Senha Atual (Necessária)" value={editForm.oldPass} onChange={e=>setEditForm({...editForm, oldPass:e.target.value})} className="w-full rounded-2xl py-5 px-6 outline-none text-white font-medium shadow-inner" />
-                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                        <input type="password" placeholder="Nova Senha" value={editForm.newPass} onChange={e=>setEditForm({...editForm, newPass:e.target.value})} className="w-full rounded-2xl py-5 px-6 outline-none text-white font-medium shadow-inner" />
-                                                        <input type="password" placeholder="Confirmar Nova" value={editForm.cNewPass} onChange={e=>setEditForm({...editForm, cNewPass:e.target.value})} className="w-full rounded-2xl py-5 px-6 outline-none text-white font-medium shadow-inner" />
-                                                    </div>
-                                                </div>
-                                                <button type="submit" disabled={isBusy} className="w-full py-8 bg-emerald-600 hover:bg-emerald-500 text-black font-black rounded-[2.5rem] uppercase text-sm tracking-[0.2em] shadow-2xl active:scale-95 border-b-8 border-emerald-900 transition-all">SALVAR ALTERAÇÕES</button>
-                                                {msg.text && <div className={`p-6 rounded-[2rem] border text-[10px] font-black uppercase text-center flex items-center justify-center gap-3 shadow-lg ${msg.type==='success'?'bg-emerald-500/10 text-emerald-400 border-emerald-500/20':'bg-red-500/10 text-red-400 border-red-500/20'}`}>{msg.text}</div>}
-                                            </form>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {tab === 'cofre' && (
-                                    <div className="space-y-12 page-transition max-w-6xl mx-auto pb-20 text-white font-black">
-                                        <h2 className="text-5xl font-black uppercase italic tracking-tighter text-center lg:text-left">Meu Cofre</h2>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 lg:gap-8">
-                                            {vault.length === 0 ? <div className="col-span-full py-48 text-center opacity-10"><Icon name="database" className="w-24 h-24 mx-auto mb-8 text-white" /><p className="text-2xl uppercase font-black tracking-[0.8em]">Vault Vazio</p></div> : 
-                                                vault.map(j => (
-                                                    <div key={j.id} className="bg-[#0c1220] border border-white/5 p-8 lg:p-10 rounded-[3rem] flex flex-col gap-6 lg:gap-10 shadow-2xl relative group overflow-hidden transition-all hover:border-emerald-500/30">
-                                                        <div className="flex justify-between items-start relative z-10">
-                                                            <div className="px-5 py-2.5 rounded-xl text-[10px] font-black text-white uppercase shadow-2xl" style={{backgroundColor:MODS[j.tipo]?.color}}>{MODS[j.tipo]?.n}</div>
-                                                            <div className="flex gap-2">
-                                                                <button onClick={() => imprimirPDF(j)} className="p-3 lg:p-4 bg-white/5 text-slate-400 rounded-xl lg:rounded-3xl hover:text-blue-400 transition-all shadow-inner"><Icon name="printer" /></button>
-                                                                <button onClick={()=>window.RadCore.dbOps.deleteDoc(window.RadCore.dbOps.doc(window.RadCore.db,'artifacts','radlot-pro-main','users',user.uid,'vault',j.id))} className="p-3 lg:p-4 bg-white/5 text-slate-400 rounded-xl lg:rounded-3xl hover:text-red-500 transition-all shadow-inner"><Icon name="trash-2" /></button>
-                                                            </div>
-                                                        </div>
-                                                        <div className="flex flex-wrap gap-2 lg:gap-4 relative z-10">{j.numeros.map((n, i) => <span key={i} className="w-9 h-9 lg:w-12 lg:h-12 flex items-center justify-center bg-black/60 rounded-xl lg:rounded-[1.5rem] text-sm lg:text-xl font-mono font-black text-emerald-400 border border-emerald-500/10 shadow-2xl">{n.toString().padStart(2, '0')}</span>)}</div>
-                                                        <div className="flex justify-between items-center text-[9px] lg:text-[11px] text-slate-600 font-black border-t border-white/5 pt-6 lg:pt-8 uppercase tracking-widest relative z-10"><span>Soma: {j.stats?.soma}</span><span>{new Date(j.criadoEm?.seconds * 1000).toLocaleDateString('pt-BR')}</span></div>
-                                                    </div>
-                                                ))
-                                            }
-                                        </div>
-                                    </div>
-                                )}
-
-                                {tab === 'scanner' && (
-                                    <div className="space-y-12 page-transition max-w-6xl mx-auto pb-20 text-white font-black text-center lg:text-left">
-                                        <header className="flex flex-col lg:flex-row lg:items-end justify-between gap-10">
-                                            <div><h2 className="text-5xl font-black uppercase italic tracking-tighter">Conferência Automática</h2><p className="text-slate-500 text-sm mt-2 font-medium italic opacity-80 uppercase tracking-widest">Sincronização Oficial Caixa (2009-2025).</p></div>
-                                            <button onClick={syncOfficial} disabled={isBusy} className="px-14 py-8 bg-emerald-500/10 border border-emerald-500/20 rounded-[3rem] text-emerald-400 font-black uppercase text-xs tracking-widest flex items-center gap-5 hover:bg-emerald-500/20 shadow-2xl transition-all active:scale-95">{isBusy ? <Icon name="refresh-cw" className="animate-spin" /> : <Icon name="globe" />} SINCRONIZAR AGORA</button>
-                                        </header>
-                                        {apiData[activeLotto] && (
-                                            <div className="bg-[#0c1220] border border-white/5 rounded-[4rem] p-12 lg:p-24 flex flex-col items-center gap-16 shadow-2xl relative overflow-hidden animate-pop">
-                                                <div className="absolute top-0 left-0 w-full h-2 bg-emerald-500 opacity-30"></div>
-                                                <div className="text-center space-y-4 relative z-10 font-black uppercase"><h3 className="text-[16px] text-emerald-500 tracking-[0.8em]">Concurso Oficial #{apiData[activeLotto].concurso}</h3><p className="text-slate-500 text-sm opacity-60 italic">{apiData[activeLotto].data}</p></div>
-                                                <div className="flex flex-wrap justify-center gap-4 lg:gap-8 relative z-10">{apiData[activeLotto].dezenas.map((n, i) => <div key={i} className="w-14 h-14 lg:w-28 lg:h-28 rounded-2xl lg:rounded-[3rem] bg-emerald-500 text-black flex items-center justify-center font-black text-xl lg:text-6xl shadow-lg border-4 border-emerald-400/50">{n}</div>)}</div>
-                                                
-                                                <div className="w-full space-y-12 pt-10 border-t border-white/5">
-                                                    <h4 className="text-[11px] text-slate-500 uppercase tracking-[0.5em] text-center">Cruzamento de Resultados no Cofre</h4>
-                                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 text-left">
-                                                        {vault.filter(v => v.tipo === activeLotto).map(j => {
-                                                            const drawnNums = apiData[activeLotto].dezenas.map(Number);
-                                                            const hits = j.numeros.filter(n => drawnNums.includes(n)).length;
-                                                            const isWinner = hits >= (j.tipo === 'facil' ? 11 : 4);
-                                                            return (
-                                                                <div key={j.id} className={`p-8 rounded-[2.5rem] border transition-all ${isWinner ? 'bg-emerald-500/20 border-emerald-500/40 shadow-[0_0_40px_rgba(16,185,129,0.2)]' : 'bg-white/5 border-white/5 opacity-60'}`}>
-                                                                    <div className="flex justify-between items-center mb-6"><span className="text-[10px] text-slate-500 uppercase">Bilhete</span><span className={`px-3 py-1 rounded-xl text-[10px] font-black ${isWinner ? 'bg-emerald-500 text-black' : 'bg-slate-800 text-slate-400'}`}>{hits} ACERTOS</span></div>
-                                                                    <div className="flex flex-wrap gap-2">{j.numeros.map((n, idx) => {
-                                                                        const isHit = drawnNums.includes(n);
-                                                                        return <span key={idx} className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs font-mono font-black border ${isHit ? 'bg-emerald-500 border-emerald-400 text-black shadow-lg shadow-emerald-500/50' : 'bg-black/20 border-white/10 text-slate-700'}`}>{n.toString().padStart(2, '0')}</span>
-                                                                    })}</div>
-                                                                </div>
-                                                            )
-                                                        })}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Mobile Navigation (Fixed Bottom) */}
-                        <nav className="lg:hidden fixed bottom-0 left-0 w-full h-24 bg-[#090e1a]/95 backdrop-blur-2xl border-t border-white/10 flex items-center justify-around px-4 z-50">
-                            {[
-                                { id: 'gerador', icon: 'layout-dashboard', label: 'Início' },
-                                { id: 'cofre', icon: 'history', label: 'Cofre' },
-                                { id: 'scanner', icon: 'shield-check', label: 'Scanner' },
-                                { id: 'perfil', icon: 'settings', label: 'Perfil' }
-                            ].map(item => (
-                                <button key={item.id} onClick={()=>setTab(item.id)} className={`flex flex-col items-center gap-1 transition-all ${tab === item.id ? 'text-emerald-500 scale-110' : 'text-slate-500 scale-100'}`}>
-                                    <Icon name={item.icon} className="w-7 h-7" />
-                                    <span className="text-[10px] font-black uppercase tracking-widest">{item.label}</span>
-                                </button>
-                            ))}
-                        </nav>
-                    </main>
+                      </div>
+                      <button onClick={() => removePlayer(t, p.id)} className="p-2 text-neutral-600 hover:text-red-500 bg-[#1a1a1a] rounded-md transition-all active:scale-90"><Trash2 size={16}/></button>
+                    </div>
+                  ))}
+                  {teams[t].players.length === 0 && (
+                    <div className="h-full flex flex-col items-center justify-center text-neutral-600 font-mono uppercase gap-2 opacity-50">
+                      <Shield size={32} />
+                      <span className="text-xs">Elenco Vazio</span>
+                    </div>
+                  )}
                 </div>
-            );
-        };
+              </div>
+            ))}
+          </div>
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
-    </script>
-</body>
-</html>
+          <div className="animate-fade-in-up stagger-3 flex justify-center pt-2 pb-6">
+            <button 
+              onClick={() => {
+                if(!teams.A.name || !teams.B.name) {
+                  alert("Por favor, digite o nome das duas equipes!"); return;
+                }
+                if(teams.A.players.length === 0 && teams.B.players.length === 0) {
+                  alert("Cadastre pelo menos um atleta para iniciar a partida oficial!"); return;
+                }
+                initAudio(); // Habilita o contexto de audio do navegador
+                setTime(matchConfig.durationMinutes * 60); // Ajusta o relógio inicial
+                playWhistle('start'); // Toca o apito inicial
+                setAppState('MATCH');
+              }} 
+              className="w-full md:w-auto flex items-center justify-center gap-2 bg-gradient-to-r from-green-600 to-green-500 text-white text-lg font-black px-8 py-4 rounded-xl shadow-[0_0_15px_rgba(34,197,94,0.3)] transition-all active:scale-95 uppercase tracking-widest border border-green-400/50"
+            >
+              Começar Jogo <Play size={20} />
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ==========================================
+  // TELA 2 - MATCH
+  // ==========================================
+  if (appState === 'MATCH') {
+    return (
+      <div className="min-h-screen bg-[#050505] text-neutral-200 p-2 md:p-4 font-sans flex flex-col gap-3">
+        <style>{customStyles}</style>
+        
+        <div className="animate-fade-in-up bg-[#0d0d0d] border border-neutral-800 rounded-[1rem] p-3 md:p-5 shadow-lg flex flex-col md:flex-row justify-between items-center gap-3 relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-green-500 via-yellow-400 to-black"></div>
+          
+          {/* Header Mobile Controles */}
+          <div className="flex md:hidden w-full justify-between items-center mb-1">
+             <span className="text-[10px] font-bold text-neutral-400 uppercase bg-neutral-900 px-2 py-1 rounded">{period}</span>
+             <div className="flex gap-1.5">
+                <button onClick={() => setTime(t => t + 60)} className="p-1.5 rounded-md bg-[#1f1f1f] border border-neutral-800 text-blue-400 font-bold" title="Acréscimo (+1 Min)">
+                  <Plus size={16} />
+                </button>
+                <button onClick={() => setIsTimerRunning(!isTimerRunning)} className={`p-1.5 rounded-md font-black text-black ${isTimerRunning ? 'bg-yellow-400' : 'bg-green-500'}`}>
+                  {isTimerRunning ? <Pause size={16} /> : <Play size={16} />}
+                </button>
+                <button onClick={() => setPeriod(p => p === '1º Tempo' ? '2º Tempo' : 'Prorrogação')} className="p-1.5 rounded-md bg-[#1f1f1f] text-neutral-300">
+                  <FastForward size={16} />
+                </button>
+                <button onClick={() => { playWhistle('end'); setAppState('DASHBOARD'); }} className="p-1.5 rounded-md bg-red-600 text-white font-bold">
+                  <Flag size={16} />
+                </button>
+             </div>
+          </div>
+
+          {/* Time A */}
+          <div className="flex w-full md:w-auto items-center justify-between md:justify-end gap-2 flex-1">
+            <h2 className="text-lg md:text-3xl font-black text-green-500 uppercase tracking-tighter truncate max-w-[140px] md:max-w-none">{teams.A.name}</h2>
+            <span className="text-2xl md:text-4xl drop-shadow-md">{teams.A.flag}</span>
+          </div>
+          
+          {/* Placar Central */}
+          <div className="flex flex-col items-center bg-[#050505] px-4 py-2 md:px-8 md:py-4 rounded-xl border border-neutral-800 w-full md:w-auto">
+            <div className="flex items-center gap-4 md:gap-6 mb-1">
+              <span className="text-4xl md:text-6xl font-black text-white font-mono leading-none">{teams.A.goals}</span>
+              <span className="text-neutral-700 text-2xl md:text-4xl leading-none">:</span>
+              <span className="text-4xl md:text-6xl font-black text-white font-mono leading-none">{teams.B.goals}</span>
+            </div>
+            <div className="hidden md:flex items-center gap-3 border-t border-neutral-800 pt-2 w-full justify-center">
+              <span className="text-xs font-bold text-neutral-400 uppercase bg-neutral-900 px-2 py-0.5 rounded">{period}</span>
+              <div className="flex items-center gap-1.5 text-yellow-400 font-mono font-black text-xl">
+                <Clock size={18} className={isTimerRunning ? "animate-pulse" : ""} /> {formatTime(time)}
+              </div>
+              <button onClick={() => setTime(t => t + 60)} className="bg-[#171717] hover:bg-neutral-800 border border-neutral-800 text-blue-400 p-1 rounded-md transition-colors" title="Acréscimo (+1 Min)"><Plus size={16}/></button>
+            </div>
+            {/* Relógio Mobile */}
+            <div className="flex md:hidden items-center gap-1.5 text-yellow-400 font-mono font-black text-xl mt-0.5">
+                <Clock size={16} className={isTimerRunning ? "animate-pulse" : ""} /> {formatTime(time)}
+            </div>
+          </div>
+
+          {/* Time B */}
+          <div className="flex w-full md:w-auto items-center justify-between md:justify-start gap-2 flex-1 flex-row-reverse md:flex-row">
+            <h2 className="text-lg md:text-3xl font-black text-yellow-400 uppercase tracking-tighter truncate max-w-[140px] md:max-w-none text-right md:text-left">{teams.B.name}</h2>
+            <span className="text-2xl md:text-4xl drop-shadow-md">{teams.B.flag}</span>
+          </div>
+          
+          {/* Controles Desktop */}
+          <div className="hidden md:flex flex-col gap-2 absolute right-6 z-10">
+            <button onClick={() => setIsTimerRunning(!isTimerRunning)} className={`p-3 rounded-xl flex justify-center items-center font-black transition-transform hover:scale-105 text-black ${isTimerRunning ? 'bg-yellow-400' : 'bg-green-500'}`}>
+              {isTimerRunning ? <Pause size={20} /> : <Play size={20} />}
+            </button>
+            <button onClick={() => setPeriod(p => p === '1º Tempo' ? '2º Tempo' : 'Prorrogação')} className="p-3 rounded-xl bg-[#1f1f1f] text-neutral-300 border border-neutral-700 hover:bg-neutral-800 transition-transform hover:scale-105">
+              <FastForward size={20} />
+            </button>
+            <button onClick={() => { playWhistle('end'); setAppState('DASHBOARD'); }} className="p-3 rounded-xl bg-red-600 text-white font-bold border border-red-500 hover:bg-red-500 transition-transform hover:scale-105">
+              <Flag size={20} />
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 md:gap-5 flex-1">
+          
+          {/* COLUNA A */}
+          <div className="animate-fade-in-up stagger-1 col-span-1 lg:col-span-4 bg-[#0d0d0d] border-t-4 border-neutral-800 border-t-green-500 rounded-[1rem] flex flex-col overflow-hidden h-[380px] md:h-[500px] shadow-lg">
+            <div className="p-2.5 md:p-3 border-b border-neutral-800 text-center font-bold uppercase tracking-widest text-green-500 text-xs md:text-sm flex items-center justify-center gap-1.5">
+              <span>{teams.A.flag}</span> Mandante
+            </div>
+            <div className="flex-1 overflow-y-auto p-2 space-y-2 no-scrollbar">
+              {teams.A.players.map(p => (
+                <div key={p.id} className={`bg-[#050505] p-2 rounded-lg border transition-all ${p.reds > 0 ? 'border-red-900/30 opacity-60' : 'border-neutral-800'} ${animatingPlayer === p.id ? 'animate-pop' : ''}`}>
+                  <div className="flex justify-between items-center mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono bg-green-500 text-black px-1.5 py-0.5 rounded text-[10px] font-black">#{p.number}</span>
+                      <span className={`font-bold text-xs md:text-sm truncate max-w-[120px] md:max-w-[150px] ${p.reds > 0 ? 'line-through text-neutral-500' : 'text-white'}`}>{p.name}</span>
+                    </div>
+                    <div className="flex gap-1 items-center">
+                      {motm?.id === p.id && <Award size={12} className="text-yellow-400" />}
+                      {Array.from({length: p.goals}).map((_, i) => <span key={`g${i}`} className="text-[10px]">⚽</span>)}
+                      {Array.from({length: p.yellows}).map((_, i) => <div key={`y${i}`} className="w-1.5 h-2.5 bg-yellow-400 rounded-sm"></div>)}
+                      {p.reds > 0 && <div className="w-1.5 h-2.5 bg-red-500 rounded-sm"></div>}
+                    </div>
+                  </div>
+                  {p.reds === 0 && (
+                    <div className="flex gap-1.5 pt-1.5 border-t border-neutral-800/50">
+                      <button onClick={() => setMotm(p)} className="flex-1 py-1.5 bg-[#171717] text-neutral-400 active:bg-neutral-800 rounded-md flex justify-center text-xs transition-transform active:scale-90">⭐</button>
+                      <button onClick={() => handlePlayerAction('A', p.id, 'GOAL')} className="flex-1 py-1.5 bg-[#171717] text-green-500 active:bg-green-900/40 rounded-md flex justify-center text-xs transition-transform active:scale-90">⚽</button>
+                      <button onClick={() => handlePlayerAction('A', p.id, 'YELLOW')} className="flex-1 py-1.5 bg-[#171717] text-yellow-500 active:bg-yellow-900/40 rounded-md flex justify-center text-xs transition-transform active:scale-90">🟨</button>
+                      <button onClick={() => handlePlayerAction('A', p.id, 'RED')} className="flex-1 py-1.5 bg-[#171717] text-red-500 active:bg-red-900/40 rounded-md flex justify-center text-xs transition-transform active:scale-90">🟥</button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+            {/* Ações Coletivas Mobile */}
+            <div className="grid grid-cols-6 gap-1.5 p-2 bg-[#0a0a0a] border-t border-neutral-800">
+              <button onClick={() => handleTeamAction('A', 'corners')} className="col-span-2 py-1.5 bg-[#1f1f1f] rounded-md border border-neutral-800 text-green-400 text-[9px] font-bold uppercase active:bg-neutral-800 flex flex-col items-center">
+                <Target size={12} className="mb-0.5"/> Esc. ({teams.A.corners})
+              </button>
+              <button onClick={() => handleTeamAction('A', 'throwIns')} className="col-span-2 py-1.5 bg-[#1f1f1f] rounded-md border border-neutral-800 text-yellow-400 text-[9px] font-bold uppercase active:bg-neutral-800 flex flex-col items-center">
+                <ArrowRight size={12} className="mb-0.5"/> Lat. ({teams.A.throwIns})
+              </button>
+              <button onClick={() => handleTeamAction('A', 'fouls')} className="col-span-2 py-1.5 bg-[#1f1f1f] rounded-md border border-neutral-800 text-orange-500 text-[9px] font-bold uppercase active:bg-neutral-800 flex flex-col items-center">
+                <AlertTriangle size={12} className="mb-0.5"/> Falta ({teams.A.fouls})
+              </button>
+              <button onClick={() => handleShot('A', true)} className="col-span-3 py-1.5 bg-[#1f1f1f] rounded-md border border-neutral-800 text-blue-400 text-[9px] font-bold uppercase active:bg-neutral-800 flex items-center justify-center gap-1">
+                <Crosshair size={12} /> Chute Alvo
+              </button>
+              <button onClick={() => handleShot('A', false)} className="col-span-3 py-1.5 bg-[#1f1f1f] rounded-md border border-neutral-800 text-neutral-400 text-[9px] font-bold uppercase active:bg-neutral-800 flex items-center justify-center gap-1">
+                <Wind size={12} /> Chute Fora
+              </button>
+            </div>
+          </div>
+
+          {/* COLUNA B */}
+          <div className="animate-fade-in-up stagger-2 col-span-1 lg:col-span-4 bg-[#0d0d0d] border-t-4 border-neutral-800 border-t-yellow-400 rounded-[1rem] flex flex-col overflow-hidden h-[380px] md:h-[500px] shadow-lg">
+            <div className="p-2.5 md:p-3 border-b border-neutral-800 text-center font-bold uppercase tracking-widest text-yellow-400 text-xs md:text-sm flex items-center justify-center gap-1.5">
+              <span>{teams.B.flag}</span> Visitante
+            </div>
+            <div className="flex-1 overflow-y-auto p-2 space-y-2 no-scrollbar">
+              {teams.B.players.map(p => (
+                <div key={p.id} className={`bg-[#050505] p-2 rounded-lg border transition-all ${p.reds > 0 ? 'border-red-900/30 opacity-60' : 'border-neutral-800'} ${animatingPlayer === p.id ? 'animate-pop' : ''}`}>
+                  <div className="flex justify-between items-center mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono bg-yellow-400 text-black px-1.5 py-0.5 rounded text-[10px] font-black">#{p.number}</span>
+                      <span className={`font-bold text-xs md:text-sm truncate max-w-[120px] md:max-w-[150px] ${p.reds > 0 ? 'line-through text-neutral-500' : 'text-white'}`}>{p.name}</span>
+                    </div>
+                    <div className="flex gap-1 items-center">
+                      {motm?.id === p.id && <Award size={12} className="text-yellow-400" />}
+                      {Array.from({length: p.goals}).map((_, i) => <span key={`g${i}`} className="text-[10px]">⚽</span>)}
+                      {Array.from({length: p.yellows}).map((_, i) => <div key={`y${i}`} className="w-1.5 h-2.5 bg-yellow-400 rounded-sm"></div>)}
+                      {p.reds > 0 && <div className="w-1.5 h-2.5 bg-red-500 rounded-sm"></div>}
+                    </div>
+                  </div>
+                  {p.reds === 0 && (
+                    <div className="flex gap-1.5 pt-1.5 border-t border-neutral-800/50">
+                      <button onClick={() => setMotm(p)} className="flex-1 py-1.5 bg-[#171717] text-neutral-400 active:bg-neutral-800 rounded-md flex justify-center text-xs transition-transform active:scale-90">⭐</button>
+                      <button onClick={() => handlePlayerAction('B', p.id, 'GOAL')} className="flex-1 py-1.5 bg-[#171717] text-green-500 active:bg-green-900/40 rounded-md flex justify-center text-xs transition-transform active:scale-90">⚽</button>
+                      <button onClick={() => handlePlayerAction('B', p.id, 'YELLOW')} className="flex-1 py-1.5 bg-[#171717] text-yellow-500 active:bg-yellow-900/40 rounded-md flex justify-center text-xs transition-transform active:scale-90">🟨</button>
+                      <button onClick={() => handlePlayerAction('B', p.id, 'RED')} className="flex-1 py-1.5 bg-[#171717] text-red-500 active:bg-red-900/40 rounded-md flex justify-center text-xs transition-transform active:scale-90">🟥</button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+            <div className="grid grid-cols-6 gap-1.5 p-2 bg-[#0a0a0a] border-t border-neutral-800">
+              <button onClick={() => handleTeamAction('B', 'corners')} className="col-span-2 py-1.5 bg-[#1f1f1f] rounded-md border border-neutral-800 text-green-400 text-[9px] font-bold uppercase active:bg-neutral-800 flex flex-col items-center">
+                <Target size={12} className="mb-0.5"/> Esc. ({teams.B.corners})
+              </button>
+              <button onClick={() => handleTeamAction('B', 'throwIns')} className="col-span-2 py-1.5 bg-[#1f1f1f] rounded-md border border-neutral-800 text-yellow-400 text-[9px] font-bold uppercase active:bg-neutral-800 flex flex-col items-center">
+                <ArrowRight size={12} className="mb-0.5"/> Lat. ({teams.B.throwIns})
+              </button>
+              <button onClick={() => handleTeamAction('B', 'fouls')} className="col-span-2 py-1.5 bg-[#1f1f1f] rounded-md border border-neutral-800 text-orange-500 text-[9px] font-bold uppercase active:bg-neutral-800 flex flex-col items-center">
+                <AlertTriangle size={12} className="mb-0.5"/> Falta ({teams.B.fouls})
+              </button>
+              <button onClick={() => handleShot('B', true)} className="col-span-3 py-1.5 bg-[#1f1f1f] rounded-md border border-neutral-800 text-blue-400 text-[9px] font-bold uppercase active:bg-neutral-800 flex items-center justify-center gap-1">
+                <Crosshair size={12} /> Chute Alvo
+              </button>
+              <button onClick={() => handleShot('B', false)} className="col-span-3 py-1.5 bg-[#1f1f1f] rounded-md border border-neutral-800 text-neutral-400 text-[9px] font-bold uppercase active:bg-neutral-800 flex items-center justify-center gap-1">
+                <Wind size={12} /> Chute Fora
+              </button>
+            </div>
+          </div>
+
+          {/* COLUNA TIMELINE (Fundo) */}
+          <div className="animate-fade-in-up stagger-3 col-span-1 lg:col-span-4 bg-[#0d0d0d] border border-neutral-800 rounded-[1rem] flex flex-col overflow-hidden h-[250px] md:h-[500px] shadow-lg">
+            <div className="p-2.5 md:p-3 border-b border-neutral-800 flex items-center justify-center gap-1.5 font-bold uppercase tracking-widest text-neutral-300 text-xs md:text-sm">
+              <Activity size={14} className="text-green-500"/> Registro Oficial
+            </div>
+            <div className="flex-1 overflow-y-auto p-2 md:p-3 space-y-2 font-mono text-[10px] md:text-xs bg-[#050505] no-scrollbar">
+              {timeline.map((item, i) => (
+                <div key={i} className="animate-slide-in bg-[#171717] p-2 rounded-lg border border-neutral-800 flex flex-col gap-1">
+                  <div className="flex justify-between items-center border-b border-neutral-800 pb-1">
+                    <span className="font-bold text-neutral-400">{item.time}</span>
+                    <span className={`${item.colorClass} uppercase font-bold text-[9px] md:text-[10px] tracking-wider bg-[#0a0a0a] px-1.5 py-0.5 rounded`}>{item.type}</span>
+                  </div>
+                  <div className="text-neutral-200 truncate">{item.description}</div>
+                </div>
+              ))}
+              <div ref={timelineEndRef} />
+            </div>
+          </div>
+
+        </div>
+      </div>
+    );
+  }
+
+  // ==========================================
+  // TELA 3 - DASHBOARD FINAL
+  // ==========================================
+  if (appState === 'DASHBOARD') {
+    return (
+      <div className="animate-fade-in-up min-h-screen bg-[#050505] text-neutral-200 p-3 md:p-6 font-sans">
+        <style>{customStyles}</style>
+        <div className="max-w-4xl mx-auto space-y-4 md:space-y-8">
+          <div className="text-center border-b border-neutral-800 pb-4 md:pb-6">
+            <h1 className="text-2xl md:text-4xl font-black text-white uppercase tracking-widest">Relatório Completo</h1>
+            <p className="text-green-500 font-mono mt-1 md:mt-2 text-xs md:text-sm">PARTIDA ENCERRADA</p>
+          </div>
+
+          <div className="bg-[#0d0d0d] border border-neutral-800 rounded-[1.5rem] p-4 md:p-8 shadow-xl relative overflow-hidden">
+             <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-green-500 via-yellow-400 to-black"></div>
+            
+            <div className="flex justify-between items-center mb-6 pb-4 border-b border-neutral-800 mt-2">
+              <h2 className="text-lg md:text-3xl font-black text-green-500 uppercase flex flex-col md:flex-row items-center md:gap-3 text-center w-1/3">
+                <span className="text-xl md:text-4xl">{teams.A.flag}</span> <span className="mt-1 md:mt-0">{teams.A.name}</span>
+              </h2>
+              <div className="flex justify-between items-center px-2 w-1/3 text-center">
+                 <div className="text-4xl md:text-6xl font-black text-white w-1/2">{teams.A.goals}</div>
+                 <div className="text-lg md:text-3xl text-neutral-600 px-1">X</div>
+                 <div className="text-4xl md:text-6xl font-black text-white w-1/2">{teams.B.goals}</div>
+              </div>
+              <h2 className="text-lg md:text-3xl font-black text-yellow-400 uppercase flex flex-col md:flex-row items-center md:gap-3 text-center w-1/3 justify-end">
+                 <span className="mt-1 md:mt-0">{teams.B.name}</span> <span className="text-xl md:text-4xl">{teams.B.flag}</span>
+              </h2>
+            </div>
+
+            <div className="pt-2">
+               <StatLine label="Gols Marcados" valA={teams.A.goals} valB={teams.B.goals} />
+               <StatLine label="Finalizações Totais" valA={teams.A.shotsTotal} valB={teams.B.shotsTotal} />
+               <StatLine label="Chutes no Alvo" valA={teams.A.shotsOnTarget} valB={teams.B.shotsOnTarget} />
+               <StatLine label="Escanteios" valA={teams.A.corners} valB={teams.B.corners} />
+               <StatLine label="Laterais" valA={teams.A.throwIns} valB={teams.B.throwIns} />
+               <StatLine label="Faltas Cometidas" valA={teams.A.fouls} valB={teams.B.fouls} />
+               <StatLine label="Cartões Amarelos" valA={teams.A.players.reduce((a,b)=>a+b.yellows,0)} valB={teams.B.players.reduce((a,b)=>a+b.yellows,0)} />
+               <StatLine label="Cartões Vermelhos" valA={teams.A.players.reduce((a,b)=>a+b.reds,0)} valB={teams.B.players.reduce((a,b)=>a+b.reds,0)} />
+            </div>
+          </div>
+
+          <div className="flex flex-col md:flex-row justify-center pt-2 gap-3">
+            <button onClick={() => setAppState('SETUP')} className="w-full md:w-auto flex justify-center items-center gap-2 bg-[#171717] active:bg-neutral-800 text-white font-bold px-6 py-3 rounded-xl border border-neutral-700 transition-transform active:scale-95 uppercase text-xs md:text-sm">
+              <Square size={16} /> Descartar
+            </button>
+            <button 
+              onClick={saveMatchToDatabase} 
+              disabled={isSaving}
+              className="w-full md:w-auto flex justify-center items-center gap-2 bg-gradient-to-r from-green-600 to-green-500 text-white font-black px-8 py-3 rounded-xl border border-green-400/50 transition-transform active:scale-95 uppercase text-xs md:text-sm disabled:opacity-50 shadow-md"
+            >
+              <Database size={18} /> {isSaving ? 'Salvando...' : 'Salvar no Banco'}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ==========================================
+  // TELA 4 - HISTORY & DETAILS
+  // ==========================================
+  if (appState === 'HISTORY') {
+    
+    if (selectedMatch) {
+      const tmA = selectedMatch.teamA;
+      const tmB = selectedMatch.teamB;
+
+      const RosterList = ({ team, colorClass, borderColorClass }) => (
+        <div className={`bg-[#050505] rounded-xl border ${borderColorClass} p-3 md:p-4`}>
+          <div className={`text-center font-bold uppercase mb-3 text-xs md:text-sm ${colorClass}`}>{team.name}</div>
+          <div className="space-y-1.5 max-h-[250px] overflow-y-auto no-scrollbar pr-1">
+            {team.players && team.players.map(p => (
+              <div key={p.id} className="flex justify-between items-center bg-[#111] p-2 rounded-lg border border-neutral-800 text-[10px] md:text-xs">
+                <div className="flex items-center gap-2">
+                  <span className={`font-mono px-1.5 py-0.5 rounded text-[9px] md:text-[10px] text-black font-bold ${colorClass.includes('green') ? 'bg-green-500' : 'bg-yellow-400'}`}>#{p.number}</span>
+                  <span className={`font-bold ${p.reds > 0 ? 'line-through text-neutral-500' : 'text-white'}`}>{p.name}</span>
+                </div>
+                <div className="flex gap-1">
+                  {Array.from({length: p.goals}).map((_, i) => <span key={i} className="text-[8px]">⚽</span>)}
+                  {Array.from({length: p.yellows}).map((_, i) => <div key={i} className="w-1.5 h-2.5 bg-yellow-400 rounded-sm"></div>)}
+                  {p.reds > 0 && <div className="w-1.5 h-2.5 bg-red-500 rounded-sm"></div>}
+                </div>
+              </div>
+            ))}
+            {(!team.players || team.players.length === 0) && <div className="text-center text-neutral-600 text-[10px] py-4">Sem registros</div>}
+          </div>
+        </div>
+      );
+
+      return (
+        <div className="animate-fade-in-up min-h-screen bg-[#050505] text-neutral-200 p-3 md:p-6 font-sans">
+          <style>{customStyles}</style>
+          <div className="max-w-4xl mx-auto space-y-4 md:space-y-6">
+            
+            <div className="flex flex-col md:flex-row items-center justify-between border-b border-neutral-800 pb-3 gap-3">
+              <div className="text-center md:text-left">
+                <h1 className="text-xl md:text-2xl font-black text-white uppercase tracking-wider flex items-center justify-center md:justify-start gap-2">
+                  <FileText size={20} className="text-green-500" /> Súmula Oficial
+                </h1>
+                <p className="text-neutral-500 font-mono text-[10px] md:text-xs mt-1">Ref: {selectedMatch.id}</p>
+              </div>
+              <button onClick={() => setSelectedMatch(null)} className="w-full md:w-auto flex justify-center items-center gap-2 bg-[#171717] active:bg-neutral-800 border border-neutral-700 px-4 py-2 rounded-xl text-xs font-bold transition-transform active:scale-95">
+                <ArrowLeft size={14} /> Voltar à Lista
+              </button>
+            </div>
+
+            <div className="bg-[#0d0d0d] border border-neutral-800 rounded-[1.5rem] p-4 md:p-6 shadow-xl relative">
+              <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-green-500 via-yellow-400 to-black rounded-t-[1.5rem]"></div>
+              
+              <div className="flex flex-col md:flex-row justify-between items-center mb-4 bg-[#050505] p-3 rounded-xl border border-neutral-800">
+                 <div className="font-mono text-neutral-400 text-[10px] md:text-xs mb-2 md:mb-0">{selectedMatch.dateString}</div>
+                 <div className="flex gap-3 text-[10px] md:text-xs font-bold">
+                    <span className="flex items-center gap-1 text-yellow-400"><Award size={14}/> Craque: <span className="text-white">{selectedMatch.highlights?.motm}</span></span>
+                    <span className="flex items-center gap-1 text-green-500"><Target size={14}/> Artilheiro: <span className="text-white">{selectedMatch.highlights?.topScorer}</span></span>
+                 </div>
+              </div>
+
+              <div className="flex justify-between items-center mb-6 border-b border-neutral-800 pb-4">
+                <div className="w-1/3 text-center">
+                  <div className="text-2xl md:text-3xl mb-1">{tmA.flag}</div>
+                  <h2 className="text-sm md:text-lg font-black text-green-500 uppercase truncate">{tmA.name}</h2>
+                </div>
+                <div className="w-1/3 flex justify-center items-center">
+                   <div className="text-3xl md:text-5xl font-black text-white">{tmA.goals}</div>
+                   <div className="text-lg md:text-2xl text-neutral-600 px-2 md:px-4">X</div>
+                   <div className="text-3xl md:text-5xl font-black text-white">{tmB.goals}</div>
+                </div>
+                <div className="w-1/3 text-center">
+                  <div className="text-2xl md:text-3xl mb-1">{tmB.flag}</div>
+                  <h2 className="text-sm md:text-lg font-black text-yellow-400 uppercase truncate">{tmB.name}</h2>
+                </div>
+              </div>
+
+              <div className="mb-6">
+                 <h3 className="text-neutral-400 font-bold uppercase text-center mb-3 tracking-widest text-[10px] md:text-xs border-b border-neutral-800 pb-1.5 inline-block mx-auto flex items-center justify-center gap-1.5"><Activity size={14}/> Estatísticas da Partida</h3>
+                 <StatLine label="Gols Marcados" valA={tmA.goals} valB={tmB.goals} />
+                 <StatLine label="Finalizações Totais" valA={tmA.shotsTotal || 0} valB={tmB.shotsTotal || 0} />
+                 <StatLine label="Chutes no Alvo" valA={tmA.shotsOnTarget || 0} valB={tmB.shotsOnTarget || 0} />
+                 <StatLine label="Escanteios" valA={tmA.corners} valB={tmB.corners} />
+                 <StatLine label="Laterais" valA={tmA.throwIns} valB={tmB.throwIns} />
+                 <StatLine label="Faltas Cometidas" valA={tmA.fouls} valB={tmB.fouls} />
+                 <StatLine label="Cartões Amarelos" valA={tmA.yellows || 0} valB={tmB.yellows || 0} />
+                 <StatLine label="Cartões Vermelhos" valA={tmA.reds || 0} valB={tmB.reds || 0} />
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 pt-4 border-t border-neutral-800">
+                <RosterList team={tmA} colorClass="text-green-500" borderColorClass="border-green-900/50" />
+                
+                <div className="bg-[#050505] rounded-xl border border-neutral-800 p-3 h-[250px] md:h-[300px] flex flex-col">
+                  <div className="text-center font-bold uppercase mb-3 text-neutral-400 text-[10px] md:text-xs flex justify-center items-center gap-1.5"><Clock size={14}/> Linha do Tempo</div>
+                  <div className="flex-1 overflow-y-auto space-y-1.5 no-scrollbar pr-1">
+                    {selectedMatch.timeline && selectedMatch.timeline.map((item, i) => (
+                      <div key={i} className="bg-[#111] p-1.5 rounded-md border border-neutral-800 text-[9px] md:text-[10px]">
+                        <div className="flex justify-between items-center mb-0.5">
+                          <span className="font-bold text-neutral-500">{item.time}</span>
+                          <span className={`${item.colorClass} font-bold`}>{item.type}</span>
+                        </div>
+                        <div className="text-neutral-300 truncate">{item.description}</div>
+                      </div>
+                    ))}
+                    {(!selectedMatch.timeline || selectedMatch.timeline.length === 0) && <div className="text-center text-neutral-600 text-[9px] py-2">Sem registros.</div>}
+                  </div>
+                </div>
+
+                <RosterList team={tmB} colorClass="text-yellow-400" borderColorClass="border-yellow-900/50" />
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="animate-fade-in-up min-h-screen bg-[#050505] text-neutral-200 p-3 md:p-6 font-sans">
+        <style>{customStyles}</style>
+        <div className="max-w-4xl mx-auto space-y-4 md:space-y-6">
+          
+          <div className="flex flex-col md:flex-row items-center justify-between border-b border-neutral-800 pb-4 gap-3">
+            <div className="text-center md:text-left">
+              <h1 className="text-xl md:text-3xl font-black text-white uppercase tracking-wider flex items-center justify-center md:justify-start gap-2">
+                <Database className="text-green-500" size={24} /> Arquivo Digital
+              </h1>
+              <p className="text-neutral-400 font-mono text-[10px] md:text-xs mt-1">Toque em uma partida para ver a súmula completa.</p>
+            </div>
+            <button onClick={() => setAppState('SETUP')} className="w-full md:w-auto flex justify-center items-center gap-2 bg-[#171717] active:bg-neutral-800 border border-neutral-700 px-4 py-2.5 rounded-xl text-xs font-bold transition-transform active:scale-95">
+              <ArrowLeft size={16} /> Novo Jogo
+            </button>
+          </div>
+
+          <div className="space-y-3 md:space-y-4">
+            {matchHistory.length === 0 ? (
+              <div className="bg-[#0d0d0d] border border-neutral-800 rounded-2xl p-8 md:p-12 text-center text-neutral-500 font-mono text-xs md:text-sm">
+                Nenhuma partida registrada no banco.
+              </div>
+            ) : (
+              matchHistory.map((match, idx) => (
+                <div 
+                  key={match.id} 
+                  onClick={() => setSelectedMatch(match)}
+                  className="animate-slide-in cursor-pointer bg-[#0d0d0d] hover:bg-[#111] border border-neutral-800 hover:border-neutral-600 rounded-[1.2rem] p-4 md:p-6 flex flex-col md:flex-row justify-between items-center gap-4 shadow-md transition-all hover:scale-[1.01]" 
+                  style={{animationDelay: `${idx * 0.05}s`}}
+                >
+                  
+                  <div className="text-center md:text-left w-full md:w-auto flex flex-col items-center md:items-start">
+                    <div className="text-[10px] md:text-xs font-mono text-neutral-500 bg-[#050505] px-2.5 py-1 rounded-md inline-block border border-neutral-800 mb-1.5">
+                      {match.dateString}
+                    </div>
+                    <div className="text-[9px] md:text-[10px] uppercase font-bold text-green-500 mt-0.5 flex items-center gap-1"><FileText size={10}/> Abrir Súmula</div>
+                  </div>
+
+                  <div className="flex items-center gap-3 md:gap-6 bg-[#050505] px-3 md:px-6 py-3 rounded-xl border border-neutral-800 w-full justify-between">
+                    <div className="text-right w-[40%]">
+                      <div className="font-black text-green-500 uppercase tracking-widest text-xs md:text-base flex flex-col md:flex-row items-end md:items-center justify-end gap-1">
+                        <span className="truncate max-w-[70px] md:max-w-none">{match.teamA.name}</span> <span className="text-base md:text-2xl">{match.teamA.flag}</span>
+                      </div>
+                    </div>
+                    
+                    <div className="text-2xl md:text-4xl font-black text-white font-mono flex gap-2 md:gap-3 items-center">
+                      <span>{match.teamA.goals}</span>
+                      <span className="text-neutral-700 text-lg md:text-2xl">X</span>
+                      <span>{match.teamB.goals}</span>
+                    </div>
+
+                    <div className="text-left w-[40%]">
+                      <div className="font-black text-yellow-400 uppercase tracking-widest text-xs md:text-base flex flex-col md:flex-row items-start md:items-center justify-start gap-1">
+                         <span className="text-base md:text-2xl">{match.teamB.flag}</span> <span className="truncate max-w-[70px] md:max-w-none">{match.teamB.name}</span> 
+                      </div>
+                    </div>
+                  </div>
+
+                  <button 
+                    onClick={(e) => deleteMatch(e, match.id)} 
+                    className="w-full md:w-auto p-3 bg-red-900/10 text-red-500 active:bg-red-500 active:text-white hover:bg-red-900/30 rounded-xl border border-red-900/30 transition-transform active:scale-95 flex justify-center z-10" 
+                    title="Excluir Permanentemente"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+}
